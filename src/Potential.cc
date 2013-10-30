@@ -17,7 +17,7 @@ void Potential::AddValue(Interval toAdd)
 	{
 	  if(it->Overlaps(toAdd))
 		{
-		  throw basisException("Attempted to add an overlapping interval.");
+		  throw RLException("Attempted to add an overlapping interval.");
 		}
 	}
   minX = MIN(minX, toAdd.x1);

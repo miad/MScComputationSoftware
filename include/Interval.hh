@@ -1,6 +1,6 @@
 #ifndef Interval_hh
 #define Interval_hh 1
-#include "basisException.hh"
+#include "RLException.hh"
 #include "Globals.hpp"
 #include <algorithm>
 

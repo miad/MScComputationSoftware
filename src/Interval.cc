@@ -5,7 +5,7 @@ Interval::Interval(double _x1, double _x2, double _y)
   if( x1 > x2 )
 	swap(x1, x2);
   if( x1 == x2 )
-	throw basisException("Invalid interval: length was zero");
+	throw RLException("Invalid interval: length was zero");
 }
 
 Interval::~Interval()

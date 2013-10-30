@@ -4,6 +4,7 @@
 KPoints::KPoints(unsigned int nPoints, double _kCutoff, double _kMid, double _kDepth)
   : kCutoff(_kCutoff), kMid(_kMid), kDepth(_kDepth)
 {
+  ValidateArguments(nPoints);
   kPoints = new vector< ComplexDouble >();
   double spacing = kCutoff / nPoints;
   
@@ -13,7 +14,7 @@ KPoints::KPoints(unsigned int nPoints, double _kCutoff, double _kMid, double _kD
 	  double imagPart = 0;
 	  if( abs(realPart) > 0  && abs(realPart) <= kMid  && kMid > 0)
 		{
-		  realPart = SGN(realPart)*( -1* realPart * kDepth / kMid );
+		  imagPart = SGN(realPart)*( -1* realPart * kDepth / kMid );
 		} 
 	  else if( abs(realPart) > kMid  && abs(realPart) <= 2*kMid  && kMid > 0)
 		{
@@ -25,16 +26,47 @@ KPoints::KPoints(unsigned int nPoints, double _kCutoff, double _kMid, double _kD
 
 void KPoints::ValidateArguments(unsigned int nPoints)
 {
-  if ( nPoints == 0)
-	throw basisException("KPoints: Number of points asked for must be > 0.");
+  if ( nPoints < 2)
+	throw RLException("KPoints: Number of points asked for must be >= 2.");
   if ( kMid < 0 )
-	throw basisException("KPoints: kMid must be >= 0.");
+	throw RLException("KPoints: kMid must be >= 0.");
   if ( kDepth < 0 )
-	throw basisException("KPoints: kDepth must be >= 0.");
+	throw RLException("KPoints: kDepth must be >= 0.");
   if ( ( kMid > 0 && kDepth == 0 ) || (kMid == 0 && kDepth > 0 ) )
-	throw basisException("KPoints: Either both of kMid and kDepth are 0, or none.");
+	throw RLException("KPoints: Either both of kMid and kDepth are 0, or none.");
   if ( kCutoff <= 2 * kMid )
-	throw basisException("KPoints: kCutoff > 2 * kMid is required.");
+	throw RLException("KPoints: kCutoff > 2 * kMid is required.");
+}
+
+ComplexDouble KPoints::GetPoint(unsigned int i) const
+{
+  if( i >= kPoints->size() )
+	{
+	  throw RLException("KPoints: Invalid index requested.");
+	}
+  return kPoints->at(i);
+}
+
+ComplexDouble KPoints::GetStencilDeltaK() const
+{
+  return (kPoints->back()-kPoints->front())/((ComplexDouble)kPoints->size());
+}
+
+ComplexDouble KPoints::GetDeltaK(unsigned int i) const
+{
+  if ( i >= kPoints->size() ) 
+	{
+	  throw RLException("KPoints: Invalid index requested.");
+	}
+  if( i == 0)
+	{
+	  return kPoints->at(i+1) - kPoints->at(i);
+	}
+  else if (i == kPoints->size() - 1)
+	{
+	  return kPoints->at(i)-kPoints->at(i-1);
+	}
+  return (kPoints->at(i+1)-kPoints->at(i-1))/((ComplexDouble)2);
 }
 
 KPoints::~KPoints()

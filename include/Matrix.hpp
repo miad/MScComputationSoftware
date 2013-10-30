@@ -1,13 +1,16 @@
 #ifndef Matrix_hpp
 #define Matrix_hpp
 
-#include "basisException.hh"
+#include "RLException.hh"
 #include "Globals.hpp"
 #include <stdio.h>
+
+#define T_EPS 1E-5
 
 using namespace std;
 
 ///This class should be a wrapper for a matrix stored as a 1D array. In that way, we can extract the array directly to use it with LAPACK.
+
 template<class T>
 class Matrix
 {
@@ -24,39 +27,65 @@ public:
 				 unsigned int column ///Column number. Zero indexed.
 				 ); ///Returns the element in row row and column column. Throws exception if one or both of these parameters are out of bound.
 
-  T * GetArray(); ///Returns the underlying array itself. Use this to send it to LAPACK. Ownership is NOT TRANSFERRED, although the array may (will) be modified (by LAPACK). Do NOT use delete on this, or you will have a segfault on your hands.
+  T Element(unsigned int row, ///Row number. Zero indexed. 
+				 unsigned int column ///Column number. Zero indexed.
+				 ) const; ///Returns the element in row row and column column. Throws exception if one or both of these parameters are out of bound.
 
-  unsigned int Rows(); ///Returns the number of rows in the matrix.
+  T * GetArray() const; ///Returns the underlying array itself. Use this to send it to LAPACK. Ownership is NOT TRANSFERRED, although the array may (will) be modified (by LAPACK). Do NOT use delete on this, or you will have a segfault on your hands.
 
-  unsigned int Columns(); ///Returns the number of columns in the matrix.
+  unsigned int Rows() const; ///Returns the number of rows in the matrix.
 
-  bool IsSquare(); ///Returns true if the number of rows and the number of columns is equal.
+  unsigned int Columns() const; ///Returns the number of columns in the matrix.
+
+  bool IsSquare() const; ///Returns true if the number of rows and the number of columns is equal.
 
   bool IsSymmetric(bool verbose = false ///If set to true, this will print info on the first found cells where symmetricity is violated, if any.
-				   ); ///Checks if the matrix is symmetric, or not. Returns true if symmetric.
+				   ) const; ///Checks if the matrix is symmetric, or not. Returns true if symmetric.
   inline bool IsHermitian(bool verbose = false ///If set to true, this will print info on the first found cells where hermiticity is violated, if any.
-						  ); ///Checks if the matrix is Hermitian or not. Returns true if Hermitian.
+						  ) const; ///Checks if the matrix is Hermitian or not. Returns true if Hermitian.
+
+  void MultiplyBy(T value); ///Multiply each cell in the matrix by this number.
   
 private:
+  inline static bool TEquality(T x1, T x2);
   T * ElementArray; ///The underlying data structure (array) containing the data.
   unsigned int rows; ///Number of rows in the array.
   unsigned int columns; ///Number of columns.
 };
 
 template<class T>
-unsigned int Matrix<T>::Rows()
+inline bool Matrix<T>::TEquality(T x1, T x2)
+{
+  printf("%lf + %lfi %lf + %lfi\n",real(x1), imag(x1),real(x2),imag(x2));
+  return abs(x1+x2) == 0 || (abs(x1-x2)/(abs(x1)+abs(x2))) < T_EPS;
+}
+
+template<class T>
+void Matrix<T>::MultiplyBy(T value)
+{
+  for(unsigned int n = 0; n<rows; ++n)
+	{
+	  for(unsigned int m = 0; m<columns; ++m)
+		{
+		  Element(n, m) *= value;
+		}
+	}
+}
+
+template<class T>
+unsigned int Matrix<T>::Rows() const
 {
   return rows;
 }
 
 template<class T>
-unsigned int Matrix<T>::Columns()
+unsigned int Matrix<T>::Columns() const
 {
   return columns;
 }
 
 template<class T>
-bool Matrix<T>::IsSquare()
+bool Matrix<T>::IsSquare() const
 {
   return rows == columns;
 }
@@ -67,7 +96,7 @@ Matrix<T>::Matrix(unsigned int _rows, unsigned int _columns)
 {
   if( rows < 1 || columns < 1 )
 	{
-	  throw basisException("Matrix: Must have # rows > 0 and # columns > 0");
+	  throw RLException("Matrix: Must have # rows > 0 and # columns > 0");
 	}
   ElementArray = new T[rows*columns];
 }
@@ -88,7 +117,7 @@ Matrix<T>::~Matrix()
 }
 
 template<class T>
-bool Matrix<T>::IsSymmetric( bool verbose )
+bool Matrix<T>::IsSymmetric( bool verbose ) const
 {
   if( !IsSquare() )
 	{
@@ -98,19 +127,19 @@ bool Matrix<T>::IsSymmetric( bool verbose )
 	{
 	  for(unsigned int m = 0; m<n; ++m)
 		{
-		  if(Element(n, m) != Element(m, n) )
+		  if(! TEquality(Element(n, m), Element(m, n)) )
 			{
 			  if(verbose)
 				printf("Symmetricity invalidity detected: (%d, %d) = %lf + %lfi, (%d, %d) = %lf + %lfi.\n",n,m,real(Element(n,m)),imag(Element(n,m)),m,n,real(Element(m, n)), imag(Element(m, n)));
+			  return false;
 			}
-			return false;
 		}
 	}
   return true;
 }
 
 template <>
-inline bool Matrix<ComplexDouble>::IsHermitian(bool verbose)
+inline bool Matrix<ComplexDouble>::IsHermitian(bool verbose) const
 {
   if ( !IsSquare() )
 	{
@@ -120,7 +149,7 @@ inline bool Matrix<ComplexDouble>::IsHermitian(bool verbose)
 	{
 	  for(unsigned int m = 0; m<=n; ++m)
 		{
-		  if(Element(n, m) != conj(Element(m, n)) )
+		  if(! TEquality(Element(n, m),conj(Element(m, n))) )
 			{
 			  if(verbose)
 				printf("Hermiticity invalidity detected: (%d, %d) = %lf + %lfi, (%d, %d) = %lf + %lfi.\n",n,m,real(Element(n,m)),imag(Element(n,m)),m,n,real(Element(m, n)), imag(Element(m, n)));
@@ -136,17 +165,31 @@ T & Matrix<T>::Element(unsigned int row, unsigned int column)
 {
   if(row >= rows)
 	{
-	  throw basisException("Matrix: Row out of bounds.");
+	  throw RLException("Matrix: Row out of bounds.");
 	}
   if( column >= columns )
 	{
-	  throw basisException("Matrix Column out of bounds.");
+	  throw RLException("Matrix Column out of bounds.");
 	}
   return ElementArray[row*columns+column];
 }
 
 template<class T>
-T * Matrix<T>::GetArray()
+T Matrix<T>::Element(unsigned int row, unsigned int column) const
+{
+  if(row >= rows)
+	{
+	  throw RLException("Matrix: Row out of bounds.");
+	}
+  if( column >= columns )
+	{
+	  throw RLException("Matrix Column out of bounds.");
+	}
+  return ElementArray[row*columns+column];
+}
+
+template<class T>
+T * Matrix<T>::GetArray() const
 {
   return ElementArray;
 }

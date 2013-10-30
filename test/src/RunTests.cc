@@ -21,6 +21,5 @@ int main()
 
 void addTests()
 {
-  myTests.push_back((GenericUnitTest*)(new rfacLinearInterpolationTest()));
-  myTests.push_back((GenericUnitTest*)(new rfacDecayableObjectTest()));
+  #include "ExistingTests.cff"
 }

@@ -7,8 +7,37 @@ ComplexDouble IntegrandValue(double x, ComplexDouble k1, ComplexDouble k2)
   return myPotential->Evaluate(x) * exp(ComplexDouble(0,1)*(k1-k2));
 }
 
+
+
+
 int main(int argc, char *argv[])
 {
+  CommandLineInterpreter * myInterpreter = InitInterpreter(); 
+  try
+	{
+	  myInterpreter->Initialize(argc, argv);
+	  if(!myInterpreter->ReadFlaggedCommand("help").empty())
+		{
+		  myInterpreter->PrintHelp();
+		  return 0;
+		}
+	}
+  catch(CommandLineException e)
+	{
+	  myInterpreter->PrintHelp();
+	  return 1;
+	}
+
+  int verbosityLevel = 0;
+  if(myInterpreter->ReadFlaggedCommand("verbose").size()==1)
+    verbosityLevel = atoi((myInterpreter->ReadFlaggedCommand("verbose").front()).c_str());
+
+  unsigned int threads = 10;
+  if(!myInterpreter->ReadFlaggedCommand("threads").empty())
+      threads = atoi(myInterpreter->ReadFlaggedCommand("threads").front().c_str());
+
+
+
   int nKValues = 100;
   myPotential = new Potential();
   KPoints myKPoints(nKValues, 50, 2, 2);
@@ -22,70 +51,37 @@ int main(int argc, char *argv[])
 	  foru(j, (int)myKPoints.GetPoints()->size())
 		{
 
-		  HamiltonianMatrix.Element(i, j) += Integrator::Integrate( IntegrandValue, xPoints, myPotential->GetMinX(), myPotential->GetMaxX(), (*myKPoints.GetPoints())[i], (*myKPoints.GetPoints())[j] );
-
+		  HamiltonianMatrix.Element(i, j) += Integrator::Integrate( IntegrandValue, xPoints, myPotential->GetMinX(), myPotential->GetMaxX(), myKPoints.GetPoint(i), myKPoints.GetPoint(j));
+		  ///Fix the discretization step stuff!!!
+		  HamiltonianMatrix.Element(i, j)/=2*M_PI;
 		  if ( i==j )
-			HamiltonianMatrix.Element(i, j) += pow(HBAR, 2)/(2.*MASS) * pow((*myKPoints.GetPoints())[i], 2);
+			{
+			  HamiltonianMatrix.Element(i, j) += (pow(HBAR, 2)/(2.*MASS) * pow(myKPoints.GetPoint(i), 2))/(real(myKPoints.GetDeltaK(i)));
+			}
 		}
 	}
+  HamiltonianMatrix.MultiplyBy(myKPoints.GetStencilDeltaK());
+
   delete myPotential;
-  if ( ! HamiltonianMatrix.IsHermitian(true) )
-	{
-	  throw basisException("The matrix was found to be non-hermitian.");
-	}
+    if ( ! HamiltonianMatrix.IsHermitian(true) )
+	  {
+		throw RLException("The matrix was found to be non-hermitian.");
+	  }
+	
+  EigenInformation myInfo = EigenvalueSolver::Solve(&HamiltonianMatrix);
 
-  /*  InitializePotential();
-  Complex * test = new Complex[9];
-  foru(i, 9)
-	test[i]=new Complex(i, i);
-
-  //GetXPoints(NUMBER_OF_X_SAMPLE_POINTS, XMIN, XMAX);
-  //GetKPoints(NUMBER_OF_K_VALUES, K_CUTOFF, TRIANGLE_KMID, TRIANGLE_KDEPTH);
-
-  printf("Matrix:\n");
-
-  foru(i, 3)
-	{
-	  printf("(");
-	  foru(j, 3)
-		{
-		  printf("%lf %lf   ", real(test[3*i+j]), imag(test[3*i+j]));
-		}
-	  printf(")\n");
-	}
-
-
-  int matrix_order = LAPACK_ROW_MAJOR;
-  char jobvl = 'N';
-  char jobvr = 'N';
-  lapack_int n = 3;
-  cplex * a = test;
-  lapack_int lda = 3;
-  lapack_complex_double * w = new Complex[n];
-  lapack_complex_double * vl = 0;
-  lapack_int ldvl = 3;
-  lapack_complex_double * vr = 0;
-  lapack_int ldvr = 3;
-
-  int reply = LAPACKE_zgeev(matrix_order, jobvl, jobvr,
-						   n, a, lda, w, vl, ldvl, vr, ldvr);
-
-  printf("Reply value: %d\n", reply);
-
-
-  
-  foru(i, 3)
-	  printf("Eigenvalue: %lf + %lfi\n", real(w[i]), imag(w[i]));
-
-
-lapack_int LAPACKE_zgeev( int matrix_order, char jobvl, char jobvr,
-                          lapack_int n, lapack_complex_double* a,
-                          lapack_int lda, lapack_complex_double* w,
-                          lapack_complex_double* vl, lapack_int ldvl,
-                          lapack_complex_double* vr, lapack_int ldvr );
-
-							
-  ClearPotential();
-*/
   return 0;
 }
+
+
+
+CommandLineInterpreter * InitInterpreter()
+{
+  CommandLineInterpreter * myInterpreter = new CommandLineInterpreter();
+
+  myInterpreter->AddCommandLineArgument(CommandLineArgument("help",0,false, "Displays a help message and quits."));
+
+  myInterpreter->SetDescription("Compute eigenvalues for particle states in a potential.");
+  return myInterpreter;
+}
+

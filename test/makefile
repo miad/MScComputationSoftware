@@ -1,7 +1,6 @@
-INCLUDE:= -Iinclude -I../include
+INCLUDE:= -Iinclude -I../include -I../RLlib/include
 
-LIBS:= $(shell root-config --ldflags --libs --glibs)
-LIBS += -L../lib -lG4Dictionary
+LIBS:=  -lblas -lm -llapack -llapacke -L../RLlib -lRLlib
 
 SRC:= $(wildcard src/*.cc)
 OBJ:= $(SRC:src/%.cc=bin/%.o)
@@ -10,48 +9,71 @@ MAINS:= RunTests
 
 MAINSOBJ:= $(MAINS:%=bin/%.o)
 
-CCFLAGS:=  -pthread -Wall -DExcludeInternalDependencies=1 -fPIC
+NON_TESTABLE_BIN:= ../bin/Compute.o
 
-G4OBJ:= ../lib/libG4Dictionary.a
+TESTABLE_BIN:= $(filter-out $(NON_TESTABLE_BIN), $(wildcard ../bin/*.o))
 
-ROOTCCFLAGS:=  -Wl,--no-as-needed $(shell root-config --cflags) -g
+
+CCFLAGS:=  -pthread -Wall -fPIC -O3 -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP
 
 CC:= g++
 
-.PHONY: clean
+.PHONY: clean update_headers all makerun
 
-all: bin $(MAINS) $(DICTIONARY) $(G4OBJ)
+.NOTPARALLEL: update_headers include/ExistingTests.cff include/AllHeaders.cff
+
+all: bin update_headers $(MAINS) temp
 
 bin:
-	@echo Making directory for binaries
+	@echo Making directory for binaries...
 	@mkdir -p bin
+
+temp:
+	@echo Making temporary file directory...
+	@mkdir -p temp
 
 makerun: all
 	@echo Running tests...
 	@./RunTests
 
-test: $(G4OBJ)
+update_headers: 
+	@./testlist_create.sh
+	@./allheaders_create.sh
+
+test: 
 	@echo Compiling main test object...
 	@$(MAKE) -C test makerun
 
-$(MAINS): %: $(filter-out $(MAINSOBJ), $(OBJ)) bin/%.o
+include/ExistingTests.cff: testlist_create.sh
+	@echo Creating list of existing tests...
+	@./testlist_create.sh
+	@touch include/ExistingTests.cff
+
+include/AllHeaders.cff: allheaders_create.sh
+	@echo Creating list of all other headers...
+	@./allheaders_create.sh
+	@touch include/AllHeaders.cff
+
+$(MAINS): %: $(filter-out $(MAINSOBJ), $(OBJ)) include/ExistingTests.cff include/AllHeaders.cff bin/%.o $(TESTABLE_BIN)
 	@echo Compiling $@
-	@$(CC) $(CCFLAGS) $(INCLUDE) $(ROOTCCFLAGS) $^ $(LIBS) -o $@  
+	@$(CC) $(CCFLAGS) $(INCLUDE) $(filter-out include/ExistingTests.cff include/AllHeaders.cff, $^) $(LIBS) -o $@  
 
 
-bin/%.o: src/%.cc include/%.hh $(G4OBJ)
+bin/%.o: src/%.cc include/%.hh include/ExistingTests.cff include/AllHeaders.cff
 	@echo Compiling $@
-	@$(CC) $(CCFLAGS) $(INCLUDE) $(ROOTCCFLAGS) -c $< $(LIBS) -o $@
+	@$(CC) $(CCFLAGS) $(INCLUDE) -c $< $(LIBS) -o $@
 
 
 clean:
 	@echo Cleaning up test directories...
 	@rm -rf $(MAINS)
 	@rm -rf bin/*
+	@rm -rf include/ExistingTests*.cff
+	@rm -rf include/AllHeaders*.cff
+	@rm -rf temp/*
 	@find . -type f -name "*.o" -exec rm -f {} \;
 	@find . -type f -name "*.a" -exec rm -f {} \;
 	@find . -type f -name "*.d" -exec rm -f {} \;
 	@find . -type f -name "*.of" -exec rm -f {} \;
 	@find . -type f -name "*~" -exec rm -f {} \;
 	@find . -type f -name "\#*\#" -exec rm -f {} \;
-	@find . -type f -name "*AutoDict*" -exec rm -f {} \;

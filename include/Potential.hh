@@ -4,7 +4,7 @@
 #include <list>
 #include <set>
 #include "Interval.hh"
-#include "basisException.hh"
+#include "RLException.hh"
 #include "Globals.hpp"
 
 

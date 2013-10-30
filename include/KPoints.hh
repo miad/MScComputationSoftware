@@ -3,7 +3,8 @@
 
 #include <vector>
 #include "Globals.hpp"
-#include "basisException.hh"
+#include "RLException.hh"
+#include <iostream>
 
 using namespace std;
 
@@ -21,6 +22,9 @@ public:
   double GetKCutoff() const; ///Getter 
   double GetKMid() const; ///Getter 
   double GetKDepth() const; ///Getter
+  ComplexDouble GetPoint(unsigned int i) const; /// Returns a specific point, with index i.
+  ComplexDouble GetDeltaK(unsigned int i) const; /// Returns the local spacing at the point with index i.
+  ComplexDouble GetStencilDeltaK() const;
 private:
   vector< ComplexDouble > * kPoints;
   void ValidateArguments(unsigned int nPoints); /// Throws an exception if the arguments are not conforming with the expected requirements put on them. 
