@@ -11,6 +11,18 @@ Potential::~Potential()
 
 }
 
+ComplexDouble Potential::FastExpIntegrate(ComplexDouble exponentVal)
+{
+  ComplexDouble value = 0;
+  for(list<Interval>::const_iterator it = PotentialPoints.begin(); it!=PotentialPoints.end(); ++it)
+	{
+	  value+=it->y*(exp(ComplexDouble(0, 1)*exponentVal*it->x2) - 
+					exp(ComplexDouble(0, 1)*exponentVal*it->x2) );
+	}
+  value /= ComplexDouble(0, 1)*exponentVal;
+  return value;
+}
+
 void Potential::AddValue(Interval toAdd)
 {
   foric(list<Interval>, PotentialPoints, it)

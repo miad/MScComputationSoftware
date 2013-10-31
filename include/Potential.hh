@@ -23,6 +23,10 @@ public:
 				double x2, ///The x2 value to add.
 				double y ///The y value to add.
 				); ///Adds a value to the stepwise potential.
+
+  ComplexDouble FastExpIntegrate(ComplexDouble exponentVal ///The exponent in the fast integration.
+								 ); ///Fast integration of e^{i*exponentVal*x} over the potential. Returns the integral over the entire potential.
+
   void AddValue(Interval toAdd
 				); ///Adds a value.
 
