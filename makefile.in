@@ -9,7 +9,7 @@ MAINSOBJ:= $(MAINS:%=bin/%.o)
 
 GLOBALDEPEND:= $(wildcard include/*.hpp)
 
-CCFLAGS:=  -pthread -Wall -fPIC -O3 -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP
+CCFLAGS:=  -pthread -Wall -fPIC -g -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP
 
 TEST:= test/RunTests
 

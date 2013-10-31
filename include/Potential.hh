@@ -7,6 +7,9 @@
 #include "RLException.hh"
 #include "Globals.hpp"
 
+#ifndef EPS
+#define EPS (1E-9)
+#endif
 
 
 using namespace std;

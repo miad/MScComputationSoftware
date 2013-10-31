@@ -9,13 +9,13 @@ MAINSOBJ:= $(MAINS:%=bin/%.o)
 
 GLOBALDEPEND:= $(wildcard include/*.hpp)
 
-CCFLAGS:=  -pthread -Wall -fPIC -O3 -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP
+CCFLAGS:=  -pthread -Wall -fPIC -g -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP
 
 TEST:= test/RunTests
 
 CC:= g++
 
-.PHONY: clean doc
+.PHONY: clean doc all
 
 all: bin RLlib/libRLlib.a $(OBJ) $(MAINS) $(TEST)
 

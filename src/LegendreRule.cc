@@ -7,7 +7,7 @@ vector<pair<double, double> > LegendreRule::GetRule(unsigned int numberOfPoints,
   double * weights = new double[numberOfPoints];
   legendre_compute_glr(numberOfPoints, xValues, weights);
   rescale(a, b, (int)numberOfPoints, xValues, weights);
-  for(int i = 0; i<numberOfPoints; ++i)
+  for(unsigned int i = 0; i<numberOfPoints; ++i)
 	{
 	  toReturn.push_back(make_pair(xValues[i], weights[i]));
 	}

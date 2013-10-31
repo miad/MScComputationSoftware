@@ -13,11 +13,20 @@ Potential::~Potential()
 
 ComplexDouble Potential::FastExpIntegrate(ComplexDouble exponentVal)
 {
+  if(abs(exponentVal) < EPS)
+	{
+	  ComplexDouble value = 0;
+	  for(list<Interval>::const_iterator it = PotentialPoints.begin(); it!=PotentialPoints.end(); ++it)
+		{
+		  value += it->x2 - it->x1;
+		}
+	  return value;
+	}
   ComplexDouble value = 0;
   for(list<Interval>::const_iterator it = PotentialPoints.begin(); it!=PotentialPoints.end(); ++it)
 	{
 	  value+=it->y*(exp(ComplexDouble(0, 1)*exponentVal*it->x2) - 
-					exp(ComplexDouble(0, 1)*exponentVal*it->x2) );
+					exp(ComplexDouble(0, 1)*exponentVal*it->x1) );
 	}
   value /= ComplexDouble(0, 1)*exponentVal;
   return value;

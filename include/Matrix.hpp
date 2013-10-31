@@ -56,7 +56,7 @@ private:
 template<class T>
 inline bool Matrix<T>::TEquality(T x1, T x2)
 {
-  printf("%lf + %lfi %lf + %lfi\n",real(x1), imag(x1),real(x2),imag(x2));
+  //printf("%lf + %lfi %lf + %lfi\n",real(x1), imag(x1),real(x2),imag(x2));
   return abs(x1+x2) == 0 || (abs(x1-x2)/(abs(x1)+abs(x2))) < T_EPS;
 }
 

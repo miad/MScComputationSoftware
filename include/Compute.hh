@@ -11,7 +11,6 @@
 #include <iostream>
 #include "Globals.hpp"
 #include "Matrix.hpp"
-#include "SimpsonIntegrator.hpp"
 #include <math.h>
 #include "EigenvalueSolver.hh"
 #include "RLException.hh"
@@ -21,12 +20,15 @@
 #include "VerbosePrinter.hh"
 #include "VerbosePrinterEventEnabled.hh"
 #include "ParametrizedCurve.hh"
+#include "LegendreRule.hh"
 
+
+#define TMP_LIST_STR(n, s) list<string> n; n.push_back(s);
 
 using namespace std;
 
-Potential * myPotential;
 
+ComplexDouble ExpOfInnerProduct(ComplexDouble k1, ComplexDouble k2);
 
 ComplexDouble IntegrandValue(double x, ComplexDouble k1, ComplexDouble k2);
 

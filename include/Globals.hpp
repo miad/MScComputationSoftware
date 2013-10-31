@@ -17,9 +17,6 @@ typedef complex<double> ComplexDouble;
 typedef Matrix<ComplexDouble> CMatrix;
 
 
-#include "SimpsonIntegrator.hpp"
-typedef SimpsonIntegrator<ComplexDouble> Integrator;
-
 #define HBAR 1
 #define MASS 1
 
