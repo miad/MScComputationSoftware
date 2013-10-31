@@ -20,6 +20,7 @@
 #include "CommandLineException.hh"
 #include "VerbosePrinter.hh"
 #include "VerbosePrinterEventEnabled.hh"
+#include "ParametrizedCurve.hh"
 
 
 using namespace std;
@@ -33,8 +34,6 @@ int main(int argc, char *argv[]);
 
 
 CommandLineInterpreter * InitInterpreter();///Returns a command line interpreter with defined commands.
-
-void PrintHelp(); //! Prints help message.
 
 
 #endif

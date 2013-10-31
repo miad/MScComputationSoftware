@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
   try
 	{
 	  myInterpreter->Initialize(argc, argv);
-	  if(!myInterpreter->ReadFlaggedCommand("help").empty())
+	  if(!myInterpreter->ReadFlaggedCommand("help").empty() || argc < 2)
 		{
 		  myInterpreter->PrintHelp();
 		  return 0;
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 	}
   catch(CommandLineException e)
 	{
-	  myInterpreter->PrintHelp();
+	  cerr << e.what() << endl;
 	  return 1;
 	}
 
@@ -80,6 +80,7 @@ CommandLineInterpreter * InitInterpreter()
   CommandLineInterpreter * myInterpreter = new CommandLineInterpreter();
 
   myInterpreter->AddCommandLineArgument(CommandLineArgument("help",0,false, "Displays a help message and quits."));
+  myInterpreter->AddCommandLineArgument(CommandLineArgument("KCutoff", 1, false, "Cutoff for the k-value"));
 
   myInterpreter->SetDescription("Compute eigenvalues for particle states in a potential.");
   return myInterpreter;

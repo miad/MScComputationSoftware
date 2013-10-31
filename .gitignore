@@ -16,3 +16,6 @@
 *.o
 *.a
 *.so
+*.cff
+Compute
+test/RunTests
