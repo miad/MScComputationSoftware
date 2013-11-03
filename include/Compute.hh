@@ -30,6 +30,10 @@
 
 #define EPS 1E-9
 
+#ifndef PI
+#define PI 3.141592653589793238462643
+#endif
+
 #define DBL_EQUAL(a, b) (abs(b-a) < EPS)
 
 using namespace std;

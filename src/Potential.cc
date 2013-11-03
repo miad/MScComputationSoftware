@@ -1,9 +1,9 @@
 #include "Potential.hh"
 
 Potential::Potential()
-  :minX(0), maxX(0)
+  :minX(0.), maxX(0.)
 {
-  InitializeDefault();
+
 }
 
 Potential::~Potential()
@@ -57,7 +57,7 @@ double Potential::Evaluate(double x) const
 {
   foric(list<Interval>, PotentialPoints, it)
 	{
-	  if( it->x1 < x && it->x2 > x )
+	  if( it->x1 <= x && it->x2 > x )
 		{
 		  return it->y;
 		}
@@ -84,14 +84,3 @@ unsigned int Potential::GetNumberOfValues() const
 {
   return PotentialPoints.size();
 }
-
-void Potential::InitializeDefault()
-{
-
-  //Define the shape of the potential.
-  //NOTE: Patches must be in order and non-overlapping.
-  AddValue(-1.0, -0.5, 2);
-  AddValue(-0.5, 0.5, -50);
-  AddValue(0.5, 1.5, 10);
-}
-

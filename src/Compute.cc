@@ -3,7 +3,7 @@
 
 ComplexDouble ExpOfInnerProduct(ComplexDouble k1, ComplexDouble k2)
 {
-  return k1 + k2;
+  return (k1 + k2);
 }
 
 
@@ -48,6 +48,9 @@ int main(int argc, char *argv[])
   kCurve.AddValue(kCutoff);
 
   Potential myPotential;
+  myPotential.AddValue(-1.0, -0.5, 2);
+  myPotential.AddValue(-0.5, 0.5, -50);
+  myPotential.AddValue(0.5, 1.5, 10);
 
   double kPMax = 2*kValues + 1;
 
@@ -76,19 +79,21 @@ int main(int argc, char *argv[])
 		  ComplexDouble kj = kValuesOnCurve[j];
 		  double wj = myLegendreRule[j].second;
 
-		  HamiltonianMatrix.Element(i, j) += sqrt(wi*wj)*
-			myPotential.FastExpIntegrate(ExpOfInnerProduct(kj, ki));
+		  HamiltonianMatrix.Element(i, j) += ComplexDouble(1./(2.*PI*HBAR),0)*
+			sqrt(wi*wj)*
+			myPotential.FastExpIntegrate(ExpOfInnerProduct(kj, ki)/ComplexDouble(HBAR,0));
 		}
-	  HamiltonianMatrix.Element(i,i) -= pow(HBAR,2.)/(2.*MASS) * ki*ki;
+	  HamiltonianMatrix.Element(i,i) += 1./(2.*MASS) * ki*ki;
 	}
 
   myPrinter->Print(1, "Validating symmetricity of matrix.\n");
-  
+
+  /*  
   if ( ! HamiltonianMatrix.IsSymmetric(true) )
 	{
 	  throw RLException("The matrix was found to be non-symmetric.");
 	}
-  
+  */
   myPrinter->Print(1, "Solving for eigenvalues and eigenvectors of the Hamiltonian.\n");
 
   EigenInformation myInfo = EigenvalueSolver::Solve(&HamiltonianMatrix);
@@ -151,7 +156,12 @@ void PrintDataToFile(const string fileName, const EigenInformation & data, const
   for(vector<ComplexDouble>::const_iterator it = data.Eigenvalues.begin(); it!=data.Eigenvalues.end(); ++it)
 	{
 	  ComplexDouble kToPrint = sqrt((*it)*(double)2.*(double)MASS);
-	  fprintf(fout, "%13.6e, %13.6e\n", real(*it), imag(*it));
+	  ///Transform to uhp if numerical stability screwed us over...
+	  if( (abs(imag(kToPrint)) > 1E1*abs(real(kToPrint))  && imag(kToPrint) < 0))
+		kToPrint *= ComplexDouble(-1,0);
+
+
+	  fprintf(fout, "%13.6e, %13.6e\n", real(kToPrint), imag(kToPrint));
 	}
   //  printf("%13.6e + %13.6ei    %13.6e + %13.6ei    %13.6e + %13.6ei\n",real(sqrt(ComplexDouble(-1,0))),imag(sqrt(ComplexDouble(-1,0))), real(sqrt(ComplexDouble(0,1))), imag(sqrt(ComplexDouble(0,1))), real(sqrt(ComplexDouble(0,-1))), imag(sqrt(ComplexDouble(0,-1))));
 
