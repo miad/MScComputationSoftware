@@ -19,3 +19,4 @@
 *.cff
 Compute
 test/RunTests
+*.dat

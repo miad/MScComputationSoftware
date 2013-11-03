@@ -1,8 +1,8 @@
 #include "Potential.hh"
 
 Potential::Potential()
+  :minX(0), maxX(0)
 {
-  minX = 1E99; maxX = -1E99;
   InitializeDefault();
 }
 
@@ -13,22 +13,23 @@ Potential::~Potential()
 
 ComplexDouble Potential::FastExpIntegrate(ComplexDouble exponentVal)
 {
-  if(abs(exponentVal) < EPS)
+  ComplexDouble value = 0;
+  if(abs(exponentVal) < EPS) ///If the exponent is zero, the integrand is computed differently.
 	{
-	  ComplexDouble value = 0;
 	  for(list<Interval>::const_iterator it = PotentialPoints.begin(); it!=PotentialPoints.end(); ++it)
 		{
-		  value += it->x2 - it->x1;
+		  value += it->y*(it->x2 - it->x1);
 		}
 	  return value;
 	}
-  ComplexDouble value = 0;
+
   for(list<Interval>::const_iterator it = PotentialPoints.begin(); it!=PotentialPoints.end(); ++it)
 	{
 	  value+=it->y*(exp(ComplexDouble(0, 1)*exponentVal*it->x2) - 
 					exp(ComplexDouble(0, 1)*exponentVal*it->x1) );
 	}
   value /= ComplexDouble(0, 1)*exponentVal;
+
   return value;
 }
 
@@ -41,8 +42,8 @@ void Potential::AddValue(Interval toAdd)
 		  throw RLException("Attempted to add an overlapping interval.");
 		}
 	}
-  minX = MIN(minX, toAdd.x1);
-  maxX = MAX(maxX, toAdd.x2);
+  minX = PotentialPoints.empty()?toAdd.x1:MIN(minX, toAdd.x1);
+  maxX = PotentialPoints.empty()?toAdd.x2:MAX(maxX, toAdd.x2);
 
   PotentialPoints.push_back(toAdd);
 }
@@ -64,6 +65,11 @@ double Potential::Evaluate(double x) const
   return 0;
 }
 
+list<Interval> Potential::GetPotentialPoints() const
+{
+  return PotentialPoints;
+}
+
 double Potential::GetMinX() const
 {
   return minX;
@@ -81,10 +87,11 @@ unsigned int Potential::GetNumberOfValues() const
 
 void Potential::InitializeDefault()
 {
+
   //Define the shape of the potential.
   //NOTE: Patches must be in order and non-overlapping.
-  AddValue(-1.5, -0.5, 5);
-  AddValue(-0.5, 0.5, -10);
-  AddValue(0.5, 1.5, 5);
+  AddValue(-1.0, -0.5, 2);
+  AddValue(-0.5, 0.5, -50);
+  AddValue(0.5, 1.5, 10);
 }
 

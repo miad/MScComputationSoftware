@@ -39,7 +39,7 @@ public:
 
   bool IsSquare() const; ///Returns true if the number of rows and the number of columns is equal.
 
-  bool IsSymmetric(bool verbose = false ///If set to true, this will print info on the first found cells where symmetricity is violated, if any.
+  inline bool IsSymmetric(bool verbose = false ///If set to true, this will print info on the first found cells where symmetricity is violated, if any.
 				   ) const; ///Checks if the matrix is symmetric, or not. Returns true if symmetric.
   inline bool IsHermitian(bool verbose = false ///If set to true, this will print info on the first found cells where hermiticity is violated, if any.
 						  ) const; ///Checks if the matrix is Hermitian or not. Returns true if Hermitian.
@@ -130,13 +130,38 @@ bool Matrix<T>::IsSymmetric( bool verbose ) const
 		  if(! TEquality(Element(n, m), Element(m, n)) )
 			{
 			  if(verbose)
-				printf("Symmetricity invalidity detected: (%d, %d) = %lf + %lfi, (%d, %d) = %lf + %lfi.\n",n,m,real(Element(n,m)),imag(Element(n,m)),m,n,real(Element(m, n)), imag(Element(m, n)));
+ 				printf("Symmetricity invalidity detected: (%d, %d) = %lf , (%d, %d) = %lf .\n",n,m,Element(n,m),m,n,Element(m, n));
 			  return false;
 			}
 		}
 	}
   return true;
 }
+
+template<>
+inline bool Matrix<ComplexDouble>::IsSymmetric( bool verbose ) const
+{
+  if( !IsSquare() )
+	{
+	  if(verbose)
+		printf("Non-square matrix cannot be symmetric.\n");
+	  return false; ///A matrix must be square in order to be symmetric.
+	}
+  for(unsigned int n = 0; n<rows; ++n)
+	{
+	  for(unsigned int m = 0; m<n; ++m)
+		{
+		  if(! TEquality(Element(n, m), Element(m, n)) )
+			{
+			  if(verbose)
+ 				printf("Symmetricity invalidity detected: (%d, %d) = %lf + %lfi, (%d, %d) = %lf + %lfi.\n",n,m,real(Element(n,m)),imag(Element(n,m)),m,n,real(Element(m, n)), imag(Element(m, n)));
+			  return false;
+			}
+		}
+	}
+  return true;
+}
+
 
 template <>
 inline bool Matrix<ComplexDouble>::IsHermitian(bool verbose) const
@@ -165,11 +190,11 @@ T & Matrix<T>::Element(unsigned int row, unsigned int column)
 {
   if(row >= rows)
 	{
-	  throw RLException("Matrix: Row out of bounds.");
+	  throw RLException("Matrix: Row out of bounds: asked for %d, but there are %d rows.", row, rows);
 	}
   if( column >= columns )
 	{
-	  throw RLException("Matrix Column out of bounds.");
+	  throw RLException("Matrix Column out of bounds: asked for %d, but there are %d columns.", column, columns);
 	}
   return ElementArray[row*columns+column];
 }
@@ -179,11 +204,11 @@ T Matrix<T>::Element(unsigned int row, unsigned int column) const
 {
   if(row >= rows)
 	{
-	  throw RLException("Matrix: Row out of bounds.");
+	  throw RLException("Matrix: Row out of bounds: asked for %d, but there are %d rows.", row, rows);
 	}
   if( column >= columns )
 	{
-	  throw RLException("Matrix Column out of bounds.");
+	  throw RLException("Matrix Column out of bounds: asked for %d, but there are %d columns.", column, columns);
 	}
   return ElementArray[row*columns+column];
 }

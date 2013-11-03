@@ -1,14 +1,6 @@
 #include "Compute.hh"
 
 
-/*
-ComplexDouble IntegrandValue(double x, ComplexDouble k1, ComplexDouble k2)
-{
-  return myPotential->Evaluate(x) * exp(ComplexDouble(0,1)*(k1-k2));
-}
-*/
-
-
 ComplexDouble ExpOfInnerProduct(ComplexDouble k1, ComplexDouble k2)
 {
   return k1 + k2;
@@ -40,6 +32,7 @@ int main(int argc, char *argv[])
   double kMid = atof(myInterpreter->ReadFlaggedCommandStrict("kMid").front().c_str());
   double kDepth = atof(myInterpreter->ReadFlaggedCommandStrict("kDepth").front().c_str());
   unsigned int kValues = atof(myInterpreter->ReadFlaggedCommandStrict("kValues").front().c_str());
+  string dataFile = myInterpreter->ReadFlaggedCommandStrict("dataFile").front().c_str();
 
   VerbosePrinter * myPrinter = new VerbosePrinter(verbosityLevel);
 
@@ -66,15 +59,21 @@ int main(int argc, char *argv[])
   CMatrix HamiltonianMatrix(kPMax,kPMax);
   HamiltonianMatrix.InitializeAll(0.);
 
+  vector<ComplexDouble> kValuesOnCurve;
+  for(unsigned int i = 0; i<kPMax; ++i)
+	{
+	  kValuesOnCurve.push_back(kCurve.Evaluate(myLegendreRule[i].first));
+	}
+
 
   myPrinter->Print(1,"Constructing Hamiltonian matrix.\n");
   for(unsigned int i = 0; i<kPMax; ++i)
 	{
-	  ComplexDouble ki = kCurve.Evaluate(myLegendreRule[i].first);
+	  ComplexDouble ki = kValuesOnCurve[i];
 	  double wi = myLegendreRule[i].second;
 	  for(unsigned int j = 0; j<kPMax; ++j)
 		{
-		  ComplexDouble kj = kCurve.Evaluate(myLegendreRule[j].first);
+		  ComplexDouble kj = kValuesOnCurve[j];
 		  double wj = myLegendreRule[j].second;
 
 		  HamiltonianMatrix.Element(i, j) += sqrt(wi*wj)*
@@ -94,11 +93,70 @@ int main(int argc, char *argv[])
 
   EigenInformation myInfo = EigenvalueSolver::Solve(&HamiltonianMatrix);
 
+  /*
+  for(vector<ComplexDouble>::const_iterator it = myInfo.Eigenvalues.begin(); it!=myInfo.Eigenvalues.end(); ++it)
+	{
+	  cout << *it << endl;
+	}
+  */
+
+  PrintDataToFile(dataFile, myInfo, kValuesOnCurve, myPotential.GetPotentialPoints());
+
 
   myPrinter->Print(2, "Cleaning up.\n");
   delete myPrinter;
 
   return 0;
+}
+
+void PrintDataToFile(const string fileName, const EigenInformation & data, const vector<ComplexDouble> & kValuesOnCurve, const list<Interval> & potentialIntervals)
+{
+  FILE * fout = fopen(fileName.c_str(), "w");
+  fprintf(fout, "#This file was created by 'Compute', a computation program, for plotting stuff related to Rikard Lundmark's Master thesis.\n");
+
+  ///Print a couple of datasets, to be able to visualize with GNUPLOT
+
+
+  fprintf(fout, "\"k-values in basis\"\n");
+  for(vector<ComplexDouble>::const_iterator it = kValuesOnCurve.begin(); it!=kValuesOnCurve.end(); ++it)
+	{
+	  if(real(*it)>= 0)
+		fprintf(fout, "%13.6e %13.6e\n",real(*it),imag(*it));
+	}
+  fprintf(fout, "\n\n\n");
+
+
+
+  fprintf(fout, "\"Potential\"\n");
+
+  double lastPoint = -10;
+  for(list<Interval>::const_iterator it = potentialIntervals.begin(); it!=potentialIntervals.end(); ++it)
+	{
+	  if(!DBL_EQUAL(it->x1,lastPoint))
+		{
+		  fprintf(fout, "%13.6e %13.6e\n", lastPoint+EPS, 0.);
+		  fprintf(fout, "%13.6e %13.6e\n", it->x1-EPS,0.);
+		}
+	  fprintf(fout, "%13.6e %13.6e\n", it->x1, it->y);
+	  fprintf(fout, "%13.6e %13.6e\n", it->x2, it->y);
+	  lastPoint = it->x2;
+	}
+  fprintf(fout, "%13.6e %13.6e\n", potentialIntervals.back().x2, 0.);
+  fprintf(fout, "%13.6e %13.6e\n", 10., 0.);
+
+
+  fprintf(fout, "\n\n\n");
+  
+  fprintf(fout, "\"k-values\"\n");
+  for(vector<ComplexDouble>::const_iterator it = data.Eigenvalues.begin(); it!=data.Eigenvalues.end(); ++it)
+	{
+	  ComplexDouble kToPrint = sqrt((*it)*(double)2.*(double)MASS);
+	  fprintf(fout, "%13.6e, %13.6e\n", real(*it), imag(*it));
+	}
+  //  printf("%13.6e + %13.6ei    %13.6e + %13.6ei    %13.6e + %13.6ei\n",real(sqrt(ComplexDouble(-1,0))),imag(sqrt(ComplexDouble(-1,0))), real(sqrt(ComplexDouble(0,1))), imag(sqrt(ComplexDouble(0,1))), real(sqrt(ComplexDouble(0,-1))), imag(sqrt(ComplexDouble(0,-1))));
+
+
+  fclose(fout);
 }
 
 
@@ -119,8 +177,15 @@ CommandLineInterpreter * InitInterpreter()
   myInterpreter->AddCommandLineArgument(CommandLineArgument("kMid", 1, false, "Midpoint of dent in k-plane curve.", kMidDescription, kMidDefault));
 
   TMP_LIST_STR(kDepthDescription, "double");
-  TMP_LIST_STR(kDepthDefault, "3");
+  TMP_LIST_STR(kDepthDefault, "0.2");
   myInterpreter->AddCommandLineArgument(CommandLineArgument("kDepth", 1, false, "Depth of dent in k-plane curve.", kDepthDescription, kDepthDefault));
+
+  TMP_LIST_STR(dataFileDescription, "file name");
+  TMP_LIST_STR(dataFileDefault,"compute_output.dat");
+  myInterpreter->AddCommandLineArgument(CommandLineArgument("dataFile", 1, false, "Data file containing output data.", dataFileDescription, dataFileDefault));
+
+
+
 
   TMP_LIST_STR(verboseDefault,"0");
   TMP_LIST_STR(verboseDescription,"positive integer");

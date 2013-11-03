@@ -7,7 +7,6 @@
 
 #include "Potential.hh"
 
-#include "KPoints.hh"
 #include <iostream>
 #include "Globals.hpp"
 #include "Matrix.hpp"
@@ -25,12 +24,26 @@
 
 #define TMP_LIST_STR(n, s) list<string> n; n.push_back(s);
 
+#ifdef EPS
+#undef EPS
+#endif
+
+#define EPS 1E-9
+
+#define DBL_EQUAL(a, b) (abs(b-a) < EPS)
+
 using namespace std;
 
 
-ComplexDouble ExpOfInnerProduct(ComplexDouble k1, ComplexDouble k2);
+ComplexDouble ExpOfInnerProduct(ComplexDouble k1, 
+								ComplexDouble k2
+								);
 
-ComplexDouble IntegrandValue(double x, ComplexDouble k1, ComplexDouble k2);
+void PrintDataToFile(const string fileName, 
+					 const EigenInformation & data, 
+					 const vector<ComplexDouble> & kValuesOnCurve,
+					 const list<Interval> & potentialIntervals
+					 );
 
 int main(int argc, char *argv[]);
 

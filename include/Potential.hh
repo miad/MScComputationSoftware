@@ -15,7 +15,9 @@
 using namespace std;
 
 /** 
-	Stepwise potential
+	Stepwise potential.
+	Todo: implement arbitrary function between the points in the potential.
+	Will be needed later on.
  */
 class Potential
 {
@@ -38,6 +40,7 @@ public:
   double GetMinX() const; ///Returns the minimum x value for which the potential is nonzero.
   double GetMaxX() const; ///Returns the maximum x value for which the potential is nonzero.
   unsigned int GetNumberOfValues() const;
+  list<Interval> GetPotentialPoints() const;
 private:
   void InitializeDefault(); ///Todo: replace with reading from file etc.
   list<Interval> PotentialPoints;
