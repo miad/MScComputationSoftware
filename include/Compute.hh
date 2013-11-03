@@ -49,6 +49,8 @@ void PrintDataToFile(const string fileName,
 					 const list<Interval> & potentialIntervals
 					 );
 
+bool invertInnerProduct;
+
 int main(int argc, char *argv[]);
 
 

@@ -34,5 +34,6 @@ class ParametrizedCurveTest : public GenericUnitTest
   bool TestCase4() const; /// Test case.
   bool TestCase5() const; /// Test case.
   int TestCase6() const; /// Test case. Returns an error code indicating pos of failure, if fail. Returns 0 if success.
+  int TestCase7() const; ///Test case.
 };
 #endif

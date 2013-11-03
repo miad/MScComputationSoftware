@@ -4,6 +4,8 @@
 #include "RLException.hh"
 #include "Globals.hpp"
 #include <stdio.h>
+#include <sstream>
+#include <iomanip>
 
 #define T_EPS 1E-5
 
@@ -41,8 +43,12 @@ public:
 
   inline bool IsSymmetric(bool verbose = false ///If set to true, this will print info on the first found cells where symmetricity is violated, if any.
 				   ) const; ///Checks if the matrix is symmetric, or not. Returns true if symmetric.
+
   inline bool IsHermitian(bool verbose = false ///If set to true, this will print info on the first found cells where hermiticity is violated, if any.
 						  ) const; ///Checks if the matrix is Hermitian or not. Returns true if Hermitian.
+
+
+  inline string ToString() const;
 
   void MultiplyBy(T value); ///Multiply each cell in the matrix by this number.
   
@@ -114,6 +120,24 @@ template<class T>
 Matrix<T>::~Matrix()
 {
   delete ElementArray;
+}
+
+template<class T>
+string Matrix<T>::ToString() const
+{
+  stringstream ss;
+  for(unsigned int n = 0; n<rows; ++n)
+	{
+	  for(unsigned int m = 0; m < columns; ++m)
+		{
+		  ss << setw(23) << Element(n, m);
+		  if(m < columns - 1)
+			ss << " ";
+		  else
+			ss << endl;
+		}
+	}
+  return ss.str();
 }
 
 template<class T>

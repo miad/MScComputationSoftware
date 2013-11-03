@@ -29,6 +29,35 @@ int PotentialTest::TestCase1() const
   return 0;
 }
 
+int PotentialTest::TestCase2() const
+{
+  Potential myPotential("testsample/potentialtest1.tsv");
+  list<Interval> myIs = myPotential.GetPotentialPoints();
+  int ptr = 0;
+  for(list<Interval>::iterator it = myIs.begin(); it!=myIs.end(); ++it)
+	{
+	  switch(ptr)
+		{
+		case 0:
+		  if(!DBL_EQUAL(it->x1,1) || !DBL_EQUAL(it->x2,3) || !DBL_EQUAL(it->y,5))
+			return 1;
+		  break;
+		case 1:
+		  if(!DBL_EQUAL(it->x1,5) || !DBL_EQUAL(it->x2,6) || !DBL_EQUAL(it->y,2))
+			return 2;
+		  break;
+		case 2:
+		  if(!DBL_EQUAL(it->x1,-1) || !DBL_EQUAL(it->x2,1) || !DBL_EQUAL(it->y,0.5))
+			return 3;
+		  break;
+		default:
+		  return 4;
+		}
+	  ++ptr;
+	}
+  return 0;
+}
+
 int PotentialTest::runUnitTests() const
 {
   cout << "Running unit tests on Potential...";
@@ -36,6 +65,9 @@ int PotentialTest::runUnitTests() const
   int code1 = TestCase1();
   if(code1)
     return code1;
+  code1 = TestCase2();
+  if(code1)
+	return 10+code1;
   cout << "done" << endl;
   return 0;
 }

@@ -34,6 +34,7 @@ class PotentialTest : public GenericUnitTest
   int runUnitTests() const; ///Main function.
  protected:
   int TestCase1() const; /// Test case.
+  int TestCase2() const; /// Test case.
 
 };
 #endif

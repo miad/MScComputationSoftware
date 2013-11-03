@@ -6,6 +6,40 @@ Potential::Potential()
 
 }
 
+Potential::Potential(string filename)
+{
+  FILE * inputFile = fopen(filename.c_str(), "r");
+  char * line = NULL; ///stores line data when read from file.
+  size_t len = 0; ///is ignored. 
+  ssize_t numberOfReadCharacters; ///length of read text
+
+  if(inputFile == NULL)
+	throw RLException("Could not open potential input file '%s'.", filename.c_str());
+
+  while ((numberOfReadCharacters = getline(&line, &len, inputFile)) != -1) 
+	{
+	  ///check if we should ignore the line.
+	  int ptr = 0;
+	  while(ptr < numberOfReadCharacters && line[ptr] == ' ')
+		++ptr;
+	  if(ptr == numberOfReadCharacters || line[ptr] == '#' || line[ptr] == '\n')
+		continue;
+
+	  double x1, x2, y;
+	  if(sscanf(line, "%lf %lf %lf",&x1, &x2, &y) == EOF)
+		{
+		  throw RLException("Suspicious line in potential file '%s': '%s'", filename.c_str(), line);
+		}
+	  AddValue(x1, x2, y);
+	}
+
+  if (line)
+	free(line);
+  fclose(inputFile);
+  if(PotentialPoints.empty())
+	throw RLException("The specified potential file '%s' does not contain any potential data.", filename.c_str());
+}
+
 Potential::~Potential()
 {
 

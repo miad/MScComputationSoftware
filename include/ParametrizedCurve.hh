@@ -1,7 +1,7 @@
 #ifndef ParametrizedCurve_hh
 #define ParametrizedCurve_hh 1
 
-#include <list>
+#include <vector>
 #include <set>
 #include <algorithm>
 #include <utility>
@@ -36,14 +36,23 @@ public:
   ComplexDouble Evaluate(double parameterValue
 						 ) const; ///Evaluate the curve at a specific position, given by parameterValue. Complexity O(log(n)), where n is the number of points on the curve.
 
-  ComplexDouble GetStart() const; ///Returns the start value of the parameter for the curve.
-  ComplexDouble GetStop() const; ///Returns the stop value of the parameter for the curve.
+  ComplexDouble SegmentEvaluate(unsigned int segment, 
+								double parameterValue
+								) const; ///Evaluate the specified segment for the specified parameterValue. O(1). Note that parameterValue goes from start to stop over the segment.
+
+  double GetStart() const; ///Returns the start value of the parameter for the curve.
+  double GetStop() const; ///Returns the stop value of the parameter for the curve.
   unsigned int GetNumberOfValues() const; ///Returns the number of values added to the curve.
+  unsigned int GetNumberOfSegments() const; ///Returns the number of segments (the number of values minus one).
+
+  ComplexDouble GetSegmentDerivative(unsigned int segment ///Choose which segment vector to return.
+								  ) const; ///Returns the difference between the endpoints of the curve, divided by (stop-start) to normalize. The derivative (which is constant) of the segment line.
+  
   double GetLength() const; ///Returns the curve length.
   void ComputeParameterValues(); ///Returns the length of the curve. Guaranteed not to be negative. Complexity O(n), where n is the number of parameters added to the curve. Can probably be improved to O(1) using some cleaverness.
 
 private:
-  list<pair<double, ComplexDouble> > ParametrizedCurvePoints; ///The points on the curve, together with the parameter value to which the points correspond. The parameter value is rescaled every time a value is added.
+  vector<pair<double, ComplexDouble> > ParametrizedCurvePoints; ///The points on the curve, together with the parameter value to which the points correspond. The parameter value is rescaled every time a value is added.
 
   static bool ComparePairs(const pair<double, ComplexDouble> & p1, ///First pair
 						   const pair<double, ComplexDouble> & p2 ///Second pair

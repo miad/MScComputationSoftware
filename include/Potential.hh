@@ -3,6 +3,8 @@
 
 #include <list>
 #include <set>
+#include <stdio.h>
+#include <stdlib.h>
 #include "Interval.hh"
 #include "RLException.hh"
 #include "Globals.hpp"
@@ -23,6 +25,8 @@ class Potential
 {
 public:
   Potential(); ///Constructor. \todo Implement reading potential from file.
+  Potential(string filename ///name of file.
+			); ///Construct a potential from a space-separated file. The file must consist of lines with 3 rows and one double precision number in each of these. Lines starting with # are ignored.
   ~Potential(); ///Destructor.
   void AddValue(double x1, ///The x1 value to add.
 				double x2, ///The x2 value to add.

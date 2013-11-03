@@ -3,9 +3,11 @@
 
 ComplexDouble ExpOfInnerProduct(ComplexDouble k1, ComplexDouble k2)
 {
+  if(invertInnerProduct)
+	return (k1 - k2);
+
   return (k1 + k2);
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -33,9 +35,11 @@ int main(int argc, char *argv[])
   double kDepth = atof(myInterpreter->ReadFlaggedCommandStrict("kDepth").front().c_str());
   unsigned int kValues = atof(myInterpreter->ReadFlaggedCommandStrict("kValues").front().c_str());
   string dataFile = myInterpreter->ReadFlaggedCommandStrict("dataFile").front().c_str();
+  string potentialFile = myInterpreter->ReadFlaggedCommandStrict("potentialFile").front().c_str();
+
+  invertInnerProduct = !myInterpreter->ReadFlaggedCommand("flipInner").empty();
 
   VerbosePrinter * myPrinter = new VerbosePrinter(verbosityLevel);
-
 
   myPrinter->Print(3, "Initializing k-curve.\n");
   ///Create the standard Berggren curve.
@@ -47,15 +51,12 @@ int main(int argc, char *argv[])
   kCurve.AddValue(2*kMid);
   kCurve.AddValue(kCutoff);
 
-  Potential myPotential;
-  myPotential.AddValue(-1.0, -0.5, 2);
-  myPotential.AddValue(-0.5, 0.5, -50);
-  myPotential.AddValue(0.5, 1.5, 10);
+  Potential myPotential(potentialFile);
 
-  double kPMax = 2*kValues + 1;
+  unsigned int kPMax = kValues*kCurve.GetNumberOfSegments();
 
   myPrinter->Print(2, "Computing Legendre rule.\n");
-  vector<pair<double, double> > myLegendreRule = LegendreRule::GetRule(kPMax);
+  vector<pair<double, double> > myLegendreRule = LegendreRule::GetRule(kValues);
 
 
 
@@ -63,9 +64,12 @@ int main(int argc, char *argv[])
   HamiltonianMatrix.InitializeAll(0.);
 
   vector<ComplexDouble> kValuesOnCurve;
-  for(unsigned int i = 0; i<kPMax; ++i)
+  for(unsigned int j = 0; j<kCurve.GetNumberOfSegments(); ++j)
 	{
-	  kValuesOnCurve.push_back(kCurve.Evaluate(myLegendreRule[i].first));
+	  for(unsigned int i = 0; i<kValues; ++i)
+		{
+		  kValuesOnCurve.push_back(kCurve.SegmentEvaluate(j, myLegendreRule[i].first));
+		}
 	}
 
 
@@ -73,27 +77,40 @@ int main(int argc, char *argv[])
   for(unsigned int i = 0; i<kPMax; ++i)
 	{
 	  ComplexDouble ki = kValuesOnCurve[i];
-	  double wi = myLegendreRule[i].second;
+	  double wi = myLegendreRule[i%kValues].second;
 	  for(unsigned int j = 0; j<kPMax; ++j)
 		{
 		  ComplexDouble kj = kValuesOnCurve[j];
-		  double wj = myLegendreRule[j].second;
+		  double wj = myLegendreRule[j%kValues].second;
 
 		  HamiltonianMatrix.Element(i, j) += ComplexDouble(1./(2.*PI*HBAR),0)*
-			sqrt(wi*wj)*
+			sqrt(wi*wj)*sqrt(kCurve.GetSegmentDerivative(i/kValues)*
+								 kCurve.GetSegmentDerivative(j/kValues))*
 			myPotential.FastExpIntegrate(ExpOfInnerProduct(kj, ki)/ComplexDouble(HBAR,0));
 		}
 	  HamiltonianMatrix.Element(i,i) += 1./(2.*MASS) * ki*ki;
 	}
 
-  myPrinter->Print(1, "Validating symmetricity of matrix.\n");
-
-  /*  
-  if ( ! HamiltonianMatrix.IsSymmetric(true) )
+  if(verbosityLevel > 10)
 	{
-	  throw RLException("The matrix was found to be non-symmetric.");
+	  myPrinter->Print(12, "Hamiltonian matrix: \n");
+	  myPrinter->Print(12,HamiltonianMatrix.ToString().c_str());
 	}
-  */
+
+
+  if(!invertInnerProduct)
+	{
+	  myPrinter->Print(1, "Validating symmetricity of matrix.\n");
+	  if ( ! HamiltonianMatrix.IsSymmetric(true) )
+		{
+		  throw RLException("The matrix was found to be non-symmetric.");
+		}
+	}
+  else
+	{
+	  myPrinter->Print(1, "Inner product inverted: not performing symmetry check.\n");
+	}
+  
   myPrinter->Print(1, "Solving for eigenvalues and eigenvectors of the Hamiltonian.\n");
 
   EigenInformation myInfo = EigenvalueSolver::Solve(&HamiltonianMatrix);
@@ -125,7 +142,7 @@ void PrintDataToFile(const string fileName, const EigenInformation & data, const
   fprintf(fout, "\"k-values in basis\"\n");
   for(vector<ComplexDouble>::const_iterator it = kValuesOnCurve.begin(); it!=kValuesOnCurve.end(); ++it)
 	{
-	  if(real(*it)>= 0)
+	  //if(real(*it)>= 0)
 		fprintf(fout, "%13.6e %13.6e\n",real(*it),imag(*it));
 	}
   fprintf(fout, "\n\n\n");
@@ -179,8 +196,8 @@ CommandLineInterpreter * InitInterpreter()
   myInterpreter->AddCommandLineArgument(CommandLineArgument("kCutoff", 1, false, "Cutoff for the k-values.", kCutoffDescription, defaultCutoff));
 
   TMP_LIST_STR(kValuesDescription, "double");
-  TMP_LIST_STR(kValuesDefault, "100");
-  myInterpreter->AddCommandLineArgument(CommandLineArgument("kValues", 1, false, "Number of k-values to use.", kValuesDescription, kValuesDefault));
+  TMP_LIST_STR(kValuesDefault, "50");
+  myInterpreter->AddCommandLineArgument(CommandLineArgument("kValues", 1, false, "Number of k-values per segment to use.", kValuesDescription, kValuesDefault));
 
   TMP_LIST_STR(kMidDescription, "double");
   TMP_LIST_STR(kMidDefault, "5");
@@ -194,12 +211,19 @@ CommandLineInterpreter * InitInterpreter()
   TMP_LIST_STR(dataFileDefault,"compute_output.dat");
   myInterpreter->AddCommandLineArgument(CommandLineArgument("dataFile", 1, false, "Data file containing output data.", dataFileDescription, dataFileDefault));
 
+  TMP_LIST_STR(potentialFileDescription, "file name");
+  TMP_LIST_STR(potentialFileDefault,"potential.dat");
+  myInterpreter->AddCommandLineArgument(CommandLineArgument("potentialFile", 1, false, "Input file specifying the (piecewise) potential.", potentialFileDescription, potentialFileDefault));
 
+
+  myInterpreter->AddCommandLineArgument(CommandLineArgument("flipInner", 0, false, "Use to flip sign of k2 in inner product (will cause non-symmetric matrix)."));
 
 
   TMP_LIST_STR(verboseDefault,"0");
   TMP_LIST_STR(verboseDescription,"positive integer");
   myInterpreter->AddCommandLineArgument(CommandLineArgument("verbose", 1, false, "How verbose the program should be during the execution process.", verboseDescription, verboseDefault));
+
+
 
   TMP_LIST_STR(threadsDefault,"5");
   TMP_LIST_STR(threadsDescription,"positive integer");
