@@ -84,8 +84,8 @@ int main(int argc, char *argv[])
 		  double wj = myLegendreRule[j%kValues].second;
 
 		  HamiltonianMatrix.Element(i, j) += ComplexDouble(1./(2.*PI*HBAR),0)*
-			sqrt(wi*wj)*sqrt(kCurve.GetSegmentDerivative(i/kValues)*
-								 kCurve.GetSegmentDerivative(j/kValues))*
+			sqrt(wi*wj)*
+			sqrt(kCurve.GetSegmentDerivative(i/kValues)*kCurve.GetSegmentDerivative(j/kValues))*
 			myPotential.FastExpIntegrate(ExpOfInnerProduct(kj, ki)/ComplexDouble(HBAR,0));
 		}
 	  HamiltonianMatrix.Element(i,i) += 1./(2.*MASS) * ki*ki;
