@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 			//wi*si
 			*myPotential.FastExpIntegrate(ExpOfInnerProduct(kj, ki)/ComplexDouble(HBAR,0));
 		}
-	  HamiltonianMatrix.Element(i,i) += pow(HBAR, 2)/(2.*MASS) * pow(ki, 2);
+	  HamiltonianMatrix.Element(i,i) += pow(1, 2)/(2.*MASS) * pow(ki, 2);
 	}
 
   if(verbosityLevel > 10)
