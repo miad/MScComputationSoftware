@@ -133,6 +133,72 @@ int GaussLegendreIntegrationTest::TestCase2() const
 }
 
 
+int GaussLegendreIntegrationTest::TestCase3() const
+{
+
+  double kCutoff = 100;
+  double kMid = 10;
+  double kDepth = 5;
+  unsigned int kValuesClose = 10;
+  unsigned int kValuesFar = 20;
+  ///Using the Cauchy theorem.
+  vector<pair<double, double> > myVec = LegendreRule::GetRule(40);
+  ParametrizedCurve kCurve;
+
+  kCurve.AddValue(-kCutoff); 
+  kCurve.AddValue(-2*kMid);
+  kCurve.AddValue(-kMid + (kDepth*ComplexDouble(0, 1)));
+  kCurve.AddValue(0.);
+  /*
+  kCurve.AddValue(0.);
+  kCurve.AddValue(kMid  - (kDepth*ComplexDouble(0,1)));
+  kCurve.AddValue(2*kMid);
+  kCurve.AddValue(kCutoff);
+  */
+  vector<unsigned int> numberOfPointsOnCurve; 
+
+  NPPUSH(kValuesClose); 
+  NPPUSH(kValuesClose); 
+  NPPUSH(kValuesFar);
+
+  unsigned int kPMax = 0;
+  vector<vector<pair<double, double> > > myLegendreRules;
+  for(vector<unsigned int>::const_iterator it = numberOfPointsOnCurve.begin(); it!=numberOfPointsOnCurve.end(); ++it)
+	{
+	  kPMax += *it;
+	  myLegendreRules.push_back(LegendreRule::GetRule(*it));
+	}
+
+  vector<ComplexDouble> kValuesOnCurve;
+  vector<double> weightsOnCurve;
+  vector<ComplexDouble> segmentDerivative;
+  for(unsigned int j = 0; j<kCurve.GetNumberOfSegments(); ++j)
+	{
+	  for(unsigned int i = 0; i<numberOfPointsOnCurve[j]; ++i)
+		{
+		  kValuesOnCurve.push_back(kCurve.SegmentEvaluate(j, myLegendreRules[j][i].first));
+		  weightsOnCurve.push_back(myLegendreRules[j][i].second);
+		  segmentDerivative.push_back(kCurve.GetSegmentDerivative(j));
+		}
+	}
+
+  myLegendreRules.clear(); ///Free up some memory.
+
+  ComplexDouble integralValue = 0.;
+  for(int i = 0; i<kPMax; ++i)
+	{
+	  integralValue += pow(kValuesOnCurve[i],1)*weightsOnCurve[i]*segmentDerivative[i];
+	}
+
+  if(!DBL_EQUAL(integralValue, -5000.))
+	return 1;
+  return 0;
+}
+
+
+
+
+
 int GaussLegendreIntegrationTest::runUnitTests() const
 {
   cout << "Running integration tests on Gauss-Legendre Integration algorithm...";
@@ -143,6 +209,9 @@ int GaussLegendreIntegrationTest::runUnitTests() const
   retcode = TestCase2();
   if(retcode)
 	return 100 + retcode;
+  retcode = TestCase3();
+  if(retcode)
+	return 200 + retcode;
 
   cout << "done" << endl;
   return 0;

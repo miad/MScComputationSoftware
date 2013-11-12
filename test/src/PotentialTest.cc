@@ -58,6 +58,37 @@ int PotentialTest::TestCase2() const
   return 0;
 }
 
+
+int PotentialTest::TestCase3() const
+{
+  Potential myPotential;
+  myPotential.AddValue(-1,0,1);
+  myPotential.AddValue(2,3,3);
+  
+  if(!DBL_EQUAL(myPotential.FastCosIntegrate(0, 0),4.))
+	return 1;
+  if(!DBL_EQUAL(myPotential.FastSinIntegrate(0, 0),0.))
+	return 2;
+  if(!DBL_EQUAL(myPotential.FastCosIntegrate(1., 2.),-0.36224364268112103165))
+	return 3;
+  if(!DBL_EQUAL(myPotential.FastCosIntegrate(1.4, -2.12),-0.6069969616186261))
+	return 4;
+  if(!DBL_EQUAL(myPotential.FastCosIntegrate(1, 1),2.5853646045381722078))
+	return 5;
+  if(!DBL_EQUAL(myPotential.FastSinIntegrate(1.4, -2.12),-.8558303084692681))
+	return 6;
+  if(!DBL_EQUAL(myPotential.FastSinIntegrate(1,1),1.4146353954618277922))
+	return 7;
+  if(!DBL_EQUAL(myPotential.FastCosIntegrate(1.5, -1.5),2.369286993063653))
+	return 8;
+  if(!DBL_EQUAL(myPotential.FastSinIntegrate(1.4,-1.4),-1.144181287850408))
+	return 9;
+
+
+  return 0;
+}
+
+
 int PotentialTest::runUnitTests() const
 {
   cout << "Running unit tests on Potential...";
@@ -68,6 +99,11 @@ int PotentialTest::runUnitTests() const
   code1 = TestCase2();
   if(code1)
 	return 10+code1;
+  code1 = TestCase3();
+  if(code1)
+	return 100 + code1;
+
+
   cout << "done" << endl;
   return 0;
 }

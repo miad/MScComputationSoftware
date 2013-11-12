@@ -254,6 +254,24 @@ int ParametrizedCurveTest::TestCase7() const
   return 0;
 }
 
+int ParametrizedCurveTest::TestCase8() const
+{
+  ParametrizedCurve myCurve;
+  ComplexDouble p1(2,3);
+  ComplexDouble p0(1.5,2135);
+  myCurve.AddValue(p0);
+  myCurve.AddValue(p1);
+  if(! DBL_EQUAL(myCurve.GetSegmentDerivative(0), (p1 - p0) / 2.))
+	return 1;
+  for(double t = -1; t <= 1; t += 0.0123)
+	{
+	  if( ! DBL_EQUAL(myCurve.SegmentEvaluate(0,t), p0*(1.-t)/2. + p1*(1.+t)/2.))
+		return 2;
+	}
+
+  return 0;
+}
+
 
 
 
@@ -279,6 +297,10 @@ int ParametrizedCurveTest::runUnitTests() const
   retCode = TestCase7();
   if(retCode)
 	return 100 + retCode;
+
+  retCode = TestCase8();
+  if(retCode)
+	return 200 + retCode;
 
   cout << "done" << endl;
   return 0;

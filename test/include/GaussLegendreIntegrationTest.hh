@@ -24,6 +24,10 @@
 #define DBL_EQUAL(d1, d2) (abs((d1)-(d2)) < EPSILON)
 #define PI 3.141592653589793238462643
 
+
+#define NPPUSH(v) numberOfPointsOnCurve.push_back(v)
+
+
 using namespace std;
 
 class GaussLegendreIntegrationTest : public GenericUnitTest
@@ -33,6 +37,6 @@ class GaussLegendreIntegrationTest : public GenericUnitTest
  protected:
   int TestCase1() const; /// Test case.
   int TestCase2() const;
-
+  int TestCase3() const;
 };
 #endif

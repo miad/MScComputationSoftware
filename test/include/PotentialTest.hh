@@ -24,7 +24,9 @@
 #define PI 3.141592653589793238462643
 #endif
 
+#ifndef DBL_EQUAL
 #define DBL_EQUAL(d1, d2) (abs((d1)-(d2)) < EPSILON)
+#endif
 
 using namespace std;
 
@@ -35,6 +37,7 @@ class PotentialTest : public GenericUnitTest
  protected:
   int TestCase1() const; /// Test case.
   int TestCase2() const; /// Test case.
+  int TestCase3() const; /// Test case.
 
 };
 #endif

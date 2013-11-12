@@ -45,7 +45,7 @@ Potential::~Potential()
 
 }
 
-ComplexDouble Potential::FastExpIntegrate(ComplexDouble exponentVal)
+ComplexDouble Potential::FastExpIntegrate(ComplexDouble exponentVal) const
 {
   ComplexDouble value = 0;
   if(abs(exponentVal) < EPS) ///If the exponent is zero, the integrand is computed differently.
@@ -66,6 +66,70 @@ ComplexDouble Potential::FastExpIntegrate(ComplexDouble exponentVal)
 
   return value;
 }
+
+ComplexDouble Potential::FastCosIntegrate(ComplexDouble k1, ComplexDouble k2) const
+{  
+  ComplexDouble value = 0;
+  for(list<Interval>::const_iterator it = PotentialPoints.begin(); it!=PotentialPoints.end(); ++it)
+	{
+	  if( DBL_EQUAL(k1, k2) && DBL_EQUAL(k1, 0.)) ///If the exponent is zero, the integrand is computed differently.
+		{
+		  value += it->y*(it->x2 - it->x1);
+		}
+	  else if( DBL_EQUAL(k1, k2) || DBL_EQUAL(k1, -k2) )
+		{
+		  value += it->y * ( (it->x2 - it->x1)*0.5 +
+								   (sin(2.*k1*it->x2)-sin(2.*k1*it->x1)) /(4.*k1)
+								  );
+		}
+	  else
+		{
+		  value += it->y * 0.5*(
+								(sin((k1-k2)*it->x2)-sin((k1-k2)*it->x1))/(k1-k2) +
+								(sin((k1+k2)*it->x2)-sin((k1+k2)*it->x1))/(k1+k2)
+								);
+		}
+	}
+  return value;
+}
+
+ComplexDouble Potential::FastSinIntegrate(ComplexDouble k1, ComplexDouble k2) const
+{
+
+  ComplexDouble value = 0;
+  for(list<Interval>::const_iterator it = PotentialPoints.begin(); it!=PotentialPoints.end(); ++it)
+	{	  
+	  if( DBL_EQUAL(k1, k2) && DBL_EQUAL(k1, 0.)) ///If the exponent is zero, the integrand is computed differently.
+		{
+		  value = 0.;
+		  return value;
+		}
+	  else if( DBL_EQUAL(k1, k2))
+		{
+
+		  value += it->y * ( (it->x2 - it->x1)*0.5 -
+								   (sin(2.*k1*it->x2)-sin(2.*k1*it->x1)) /(4.*k1)
+								  );
+		}
+	  else if( DBL_EQUAL(k1, -k2))
+		{
+
+		  value += -1.*it->y * ( (it->x2 - it->x1)*0.5 -
+								   (sin(2.*k1*it->x2)-sin(2.*k1*it->x1)) /(4.*k1)
+								  );
+		}
+	  else
+		{
+
+		  value += it->y * 0.5*(
+								(sin((k1-k2)*it->x2)-sin((k1-k2)*it->x1))/(k1-k2) -
+								(sin((k1+k2)*it->x2)-sin((k1+k2)*it->x1))/(k1+k2)
+								);
+		}
+	}
+  return value;
+}
+
 
 void Potential::AddValue(Interval toAdd)
 {

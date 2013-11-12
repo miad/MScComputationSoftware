@@ -13,6 +13,9 @@
 #define EPS (1E-9)
 #endif
 
+#ifndef DBL_EQUAL
+#define DBL_EQUAL(d1, d2) (abs((d1)-(d2)) < EPS)
+#endif
 
 using namespace std;
 
@@ -34,7 +37,15 @@ public:
 				); ///Adds a value to the stepwise potential.
 
   ComplexDouble FastExpIntegrate(ComplexDouble exponentVal ///The exponent in the fast integration.
-								 ); ///Fast integration of e^{i*exponentVal*x} over the potential. Returns the integral over the entire potential.
+								 ) const; ///Fast integration of e^{i*exponentVal*x} over the potential. Returns the integral over the entire potential.
+
+  ComplexDouble FastCosIntegrate(ComplexDouble k1, ///Coefficient 1
+								 ComplexDouble k2 ///Coefficient 2
+								 ) const;///Computes the integral \int V(x) cos(k1*x) cos(k2*x)
+
+  ComplexDouble FastSinIntegrate(ComplexDouble k1, ///Coefficient 1
+								 ComplexDouble k2 ///Coefficient 2
+								 ) const; ///Computes the integral \int V(x) sin(k1*x)sin(k2*x)
 
   void AddValue(Interval toAdd
 				); ///Adds a value.

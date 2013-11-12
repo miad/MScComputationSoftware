@@ -20,6 +20,7 @@
 #include "VerbosePrinterEventEnabled.hh"
 #include "ParametrizedCurve.hh"
 #include "LegendreRule.hh"
+#include <unistd.h>
 
 
 #define TMP_LIST_STR(n, s) list<string> n; n.push_back(s);
@@ -34,6 +35,8 @@
 #define PI 3.141592653589793238462643
 #endif
 
+#define NPPUSH(v) numberOfPointsOnCurve.push_back(v)
+
 #define DBL_EQUAL(a, b) (abs(b-a) < EPS)
 
 using namespace std;
@@ -43,7 +46,8 @@ ComplexDouble ExpOfInnerProduct(ComplexDouble k1,
 								ComplexDouble k2
 								);
 
-void PrintDataToFile(const string fileName, 
+void PrintDataToFile(VerbosePrinter * myPrinter,
+					 const string fileName, 
 					 const EigenInformation & data, 
 					 const vector<ComplexDouble> & kValuesOnCurve,
 					 const list<Interval> & potentialIntervals
@@ -52,7 +56,6 @@ void PrintDataToFile(const string fileName,
 bool invertInnerProduct;
 
 int main(int argc, char *argv[]);
-
 
 CommandLineInterpreter * InitInterpreter();///Returns a command line interpreter with defined commands.
 

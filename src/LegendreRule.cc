@@ -21,7 +21,8 @@ vector<pair<double, double> > LegendreRule::GetRule(unsigned int numberOfPoints,
 
 ///The rest of this file contains functions imported from legendre_rule_fast.cpp
 ///They are authored by the people mentioned.
-///The validity of these algorithms has, this far, not been verified.
+///The validity of these algorithms has, this far, not been verified rigorously.
+/// /Rikard 2013-11-01
 
 
 void LegendreRule::legendre_compute_glr ( int n, double x[], double w[] )
