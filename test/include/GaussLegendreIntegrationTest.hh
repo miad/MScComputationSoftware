@@ -17,14 +17,6 @@
 
 #include <iostream>
 
-#ifndef EPSILON
-#define EPSILON 1E-9
-#endif
-
-#define DBL_EQUAL(d1, d2) (abs((d1)-(d2)) < EPSILON)
-#define PI 3.141592653589793238462643
-
-
 #define NPPUSH(v) numberOfPointsOnCurve.push_back(v)
 
 

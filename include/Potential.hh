@@ -9,13 +9,6 @@
 #include "RLException.hh"
 #include "Globals.hpp"
 
-#ifndef EPS
-#define EPS (1E-9)
-#endif
-
-#ifndef DBL_EQUAL
-#define DBL_EQUAL(d1, d2) (abs((d1)-(d2)) < EPS)
-#endif
 
 using namespace std;
 

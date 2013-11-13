@@ -185,7 +185,7 @@ int GaussLegendreIntegrationTest::TestCase3() const
   myLegendreRules.clear(); ///Free up some memory.
 
   ComplexDouble integralValue = 0.;
-  for(int i = 0; i<kPMax; ++i)
+  for(unsigned int i = 0; i<kPMax; ++i)
 	{
 	  integralValue += pow(kValuesOnCurve[i],1)*weightsOnCurve[i]*segmentDerivative[i];
 	}

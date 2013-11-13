@@ -16,18 +16,6 @@
 
 #include <algorithm>
 
-#ifndef EPSILON
-#define EPSILON 1E-9
-#endif
-
-#ifndef PI
-#define PI 3.141592653589793238462643
-#endif
-
-#ifndef DBL_EQUAL
-#define DBL_EQUAL(d1, d2) (abs((d1)-(d2)) < EPSILON)
-#endif
-
 using namespace std;
 
 class PotentialTest : public GenericUnitTest

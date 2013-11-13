@@ -15,12 +15,6 @@
 
 #include <iostream>
 
-#ifndef EPSILON
-#define EPSILON 1E-9
-#endif
-
-#define DBL_EQUAL(d1, d2) (abs((d1)-(d2)) < EPSILON)
-
 using namespace std;
 
 class ParametrizedCurveTest : public GenericUnitTest

@@ -25,19 +25,7 @@
 
 #define TMP_LIST_STR(n, s) list<string> n; n.push_back(s);
 
-#ifdef EPS
-#undef EPS
-#endif
-
-#define EPS 1E-9
-
-#ifndef PI
-#define PI 3.141592653589793238462643
-#endif
-
 #define NPPUSH(v) numberOfPointsOnCurve.push_back(v)
-
-#define DBL_EQUAL(a, b) (abs(b-a) < EPS)
 
 using namespace std;
 
