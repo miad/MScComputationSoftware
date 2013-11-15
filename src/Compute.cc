@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	  cerr << e.what() << endl;
 	  return 1;
 	}
-
+  
   ///Read out parameters from the command line interpreter (or default ones, if they were not specified.
   int verbosityLevel = atoi((myInterpreter->ReadFlaggedCommandStrict("verbose").front()).c_str());
   unsigned int threads = atoi(myInterpreter->ReadFlaggedCommandStrict("threads").front().c_str());
@@ -37,17 +37,17 @@ int main(int argc, char *argv[])
   unsigned int kValuesClose = atof(myInterpreter->ReadFlaggedCommandStrict("kValuesClose").front().c_str());
   string dataFile = myInterpreter->ReadFlaggedCommandStrict("dataFile").front().c_str();
   string potentialFile = myInterpreter->ReadFlaggedCommandStrict("potentialFile").front().c_str();
-
+  
   invertInnerProduct = !myInterpreter->ReadFlaggedCommand("flipInner").empty();
-
+  
   VerbosePrinter * myPrinter = new VerbosePrinter(verbosityLevel);
-
+  
   myPrinter->Print(3, "Initializing k-curve.\n");
   ///Create the standard Berggren curve.
   ParametrizedCurve kCurve;
   vector<unsigned int> numberOfPointsOnCurve; 
-
-
+  
+  
   kCurve.AddValue(-kCutoff); 
   kCurve.AddValue(-2*kMid);
   kCurve.AddValue(-kMid + (kDepth*ComplexDouble(0, 1)));
@@ -103,12 +103,12 @@ int main(int argc, char *argv[])
 		  double wj = weightsOnCurve[j];
 		  ComplexDouble sj = segmentDerivative[j];
 
-		  HamiltonianMatrix.Element(i, j) += ComplexDouble(1./(2.*PI*HBAR),0)*
+		  HamiltonianMatrix.Element(i, j) += ComplexDouble(1./(2.*PI),0)*
 			sqrt(wj*wi)*sqrt(si*sj)
 			//wi*si
-			*myPotential.FastExpIntegrate(ExpOfInnerProduct(kj, ki)/ComplexDouble(HBAR,0));
+			*myPotential.FastExpIntegrate(ExpOfInnerProduct(ki, kj));
 		}
-	  HamiltonianMatrix.Element(i,i) += 1./(2.*MASS) * pow(ki, 2);
+	  HamiltonianMatrix.Element(i,i) += pow(HBARC,2)/(2.*MASSOVERC2) * pow(ki, 2);
 	}
 
   if(verbosityLevel > 10)
@@ -192,7 +192,7 @@ void PrintDataToFile(VerbosePrinter * myPrinter, const string fileName, const Ei
   fprintf(fout, "\"k-values\"\n");
   for(vector<ComplexDouble>::const_iterator it = data.Eigenvalues.begin(); it!=data.Eigenvalues.end(); ++it)
 	{
-	  ComplexDouble kToPrint = sqrt((*it)*(double)2.*(double)MASS);
+	  ComplexDouble kToPrint = sqrt((*it)*(double)2.*(double)MASSOVERC2)/HBARC;
 	  ///Transform to uhp if numerical stability screwed us over...
 	  if( (abs(imag(kToPrint)) > 1E1*abs(real(kToPrint))  && imag(kToPrint) < 0))
 		{

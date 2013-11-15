@@ -19,8 +19,8 @@ typedef Matrix<ComplexDouble> CMatrix;
 #include "RLMacros.hpp"
 
 
-#define HBAR (19.7326971897)
-#define MASS 1E3
+#define HBARC (197.326971812) ///hbar * c in MeV * fm
+#define MASSOVERC2 938 ///mass in MeV/c^2
 
 #define XMIN (-20.)
 #define XMAX (20.)
