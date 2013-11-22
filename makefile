@@ -13,7 +13,7 @@ CCFLAGS:=  -pthread -Wall -fPIC -g -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP
 
 TEST:= test/RunTests
 
-LIBCONFIG:= libconfig-1.4.9/lib/libconfig++.la
+LIBCONFIG:= libconfig-1.4.9/lib/libconfig++.a
 
 CC:= g++
 
@@ -22,7 +22,9 @@ CC:= g++
 all: bin RLlib/libRLlib.a $(OBJ) $(MAINS) $(TEST) $(LIBCONFIG)
 
 $(LIBCONFIG):
-	make -C libconfig-1.4.9
+	@echo Making libconfig...
+	@(cd libconfig-1.4.9 && ./configure --prefix=$$(pwd) )
+	@$(MAKE) -C libconfig-1.4.9
 
 bin: 
 	mkdir -p bin

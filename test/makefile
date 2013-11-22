@@ -1,6 +1,6 @@
-INCLUDE:= -Iinclude -I../include -I../RLlib/include
+INCLUDE:= -Iinclude -I../include -I../RLlib/include -I../libconfig-1.4.9/lib
 
-LIBS:=  -lblas -lm -llapack -llapacke -L../RLlib -lRLlib
+LIBS:=  -lblas -lm -llapack -llapacke -L../RLlib -lRLlib -L../libconfig-1.4.9/lib -Wl,-Bstatic -lconfig++ -Wl,-Bdynamic
 
 SRC:= $(wildcard src/*.cc)
 OBJ:= $(SRC:src/%.cc=bin/%.o)
