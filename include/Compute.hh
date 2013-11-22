@@ -20,6 +20,7 @@
 #include "VerbosePrinterEventEnabled.hh"
 #include "ParametrizedCurve.hh"
 #include "LegendreRule.hh"
+#include "ComputeConfig.hh"
 #include <unistd.h>
 
 
@@ -46,6 +47,8 @@ bool invertInnerProduct;
 int main(int argc, char *argv[]);
 
 CommandLineInterpreter * InitInterpreter();///Returns a command line interpreter with defined commands.
+
+
 
 
 #endif

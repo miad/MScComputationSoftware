@@ -1,8 +1,8 @@
 SRC:= $(wildcard src/*.cc)
 OBJ:= $(SRC:src/%.cc=bin/%.o)
 
-INCLUDE:= -Iinclude -IRLlib/include
-LIBS:= -lblas -lm -llapack -llapacke -LRLlib -lRLlib
+INCLUDE:= -Iinclude -IRLlib/include -Ilibconfig-1.4.9/lib
+LIBS:= -lblas -lm -llapack -llapacke -LRLlib -lRLlib -Llibconfig-1.4.9/lib -lconfig++
 
 MAINS := Compute
 MAINSOBJ:= $(MAINS:%=bin/%.o)
@@ -13,11 +13,18 @@ CCFLAGS:=  -pthread -Wall -fPIC -g -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP
 
 TEST:= test/RunTests
 
+LIBCONFIG:= libconfig-1.4.9
+
 CC:= g++
 
 .PHONY: clean doc all
 
-all: bin RLlib/libRLlib.a $(OBJ) $(MAINS) $(TEST)
+all: bin RLlib/libRLlib.a $(OBJ) $(MAINS) $(TEST) $(LIBCONFIG)
+
+$(LIBCONFIG):
+	@echo Making libconfig...
+	@$(cd libconfig-1.4.9; ./configure 
+	@make -C libconfig-1.4.9
 
 bin: 
 	mkdir -p bin

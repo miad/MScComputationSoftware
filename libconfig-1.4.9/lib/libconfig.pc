@@ -1,4 +1,4 @@
-prefix=/usr/local
+prefix=/net/home/riklund/Dropbox/MastersProject_Drafts/BasisExpand3/libconfig-1.4.9
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

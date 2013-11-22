@@ -714,6 +714,10 @@ int libconfig_yyget_lineno (yyscan_t yyscanner );
 
 void libconfig_yyset_lineno (int line_number ,yyscan_t yyscanner );
 
+int libconfig_yyget_column  (yyscan_t yyscanner );
+
+void libconfig_yyset_column (int column_no ,yyscan_t yyscanner );
+
 YYSTYPE * libconfig_yyget_lval (yyscan_t yyscanner );
 
 void libconfig_yyset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
@@ -865,7 +869,7 @@ YY_DECL
 #line 100 "scanner.l"
 
 
-#line 869 "scanner.c"
+#line 873 "scanner.c"
 
     yylval = yylval_param;
 
@@ -1228,7 +1232,7 @@ YY_RULE_SETUP
 #line 192 "scanner.l"
 ECHO;
 	YY_BREAK
-#line 1232 "scanner.c"
+#line 1236 "scanner.c"
 
 	case YY_END_OF_BUFFER:
 		{

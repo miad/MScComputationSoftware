@@ -11,6 +11,12 @@ ComplexDouble ExpOfInnerProduct(ComplexDouble k1, ComplexDouble k2)
 
 int main(int argc, char *argv[])
 {
+
+  //  ComputeConfig config;
+  //config.WriteFile("test.config");
+
+
+
   CommandLineInterpreter * myInterpreter = InitInterpreter(); 
   try
 	{
