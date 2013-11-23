@@ -17,6 +17,16 @@ using namespace libconfig;
 #define MAX_FILENAME_SIZE 1000
 
 
+  enum ExpectedMatrixType
+	{
+	  GeneralMatrix = 0,
+	  SymmetricMatrix = 1,
+	  HermitianMatrix = 2
+	};
+
+
+
+
 /* Configuration for the program.
    All options are \emph{guaranteed} to be valid.
  */
@@ -39,6 +49,8 @@ public:
   ///Getters
   double GetVersion() const;
 
+  unsigned int GetVerbosityLevel() const;
+
   bool GetAutoPlotPotential() const;
   bool GetAutoPlotKCurve() const;
   
@@ -50,8 +62,9 @@ public:
 
   ParametrizedCurve * GetKCurve() const;
 
-  list<BasisFunction> GetBasisFunctions() const;
+  const vector<BasisFunction> & GetBasisFunctions() const;
 
+  ExpectedMatrixType GetExpectedMatrixType() const;
 
   ///Setters
 
@@ -65,9 +78,16 @@ public:
   void SetPotential(Potential * value);
   void SetKCurve(ParametrizedCurve * value);
   
-  void SetBasisFunctions(list<BasisFunction> value);
+  void SetBasisFunctions(vector<BasisFunction> value);
+
+
+
+
   
-  
+  void SetVerbosityLevel(unsigned int value);
+
+  void SetExpectedMatrixType(ExpectedMatrixType val);
+
 
 private:
 
@@ -79,9 +99,12 @@ private:
   char kCurveFile[MAX_FILENAME_SIZE]; ///Output file for the basis state curve. Default: KCurve.dat
   char kFoundFile[MAX_FILENAME_SIZE]; ///Output file for found k-values. Default: KFound.dat
   char potentialFile[MAX_FILENAME_SIZE]; ///Output file for potential. Default: Potential.dat
+
   Potential * potential; ///Potential function. Default: a piecewise potential with 3 nonzero regions.
   ParametrizedCurve * kCurve; ///KCurve. Default: a somewhat standard Berggren curve.
-  list<BasisFunction> basisFunctions; ///Basis functions. Default: two functions, "expi+" and "expi-"
+  vector<BasisFunction> basisFunctions; ///Basis functions. Default: two functions, "expi+" and "expi-"
+
+  ExpectedMatrixType matrixType;
 
 
   /*

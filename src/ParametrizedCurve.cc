@@ -15,6 +15,29 @@ ParametrizedCurve::~ParametrizedCurve()
 
 }
 
+unsigned int ParametrizedCurve::GetTotalNumberOfGLPoints()
+{
+  return totalNumberOfGLPoints;
+}
+
+unsigned int ParametrizedCurve::SegmentIndexFromGLNumber(unsigned int val)
+{
+  if(val >= totalNumberOfGLPoints)
+	{
+	  throw RLException("Invalid GL number to get segment index from.");
+	}
+  unsigned int sum = 0;
+  for(unsigned int i = 0; i<numberOfGLPoints.size(); ++i)
+	{
+	  sum += numberOfGLPoints[i];
+	  if(sum > val)
+		{
+		  return i;
+		}
+	}
+  throw RLException("Could not identify index from GL number. This is an internal inconsistency.");
+}
+
 void ParametrizedCurve::AddValue(ComplexDouble val, unsigned int pos)
 {
   length = -1;
@@ -46,11 +69,12 @@ void ParametrizedCurve::ComputeGaussLegendre()
   int segment = 0;
   for(vector<unsigned int>::const_iterator it = numberOfGLPoints.begin(); it!=numberOfGLPoints.end(); ++it)
 	{
-	  gaussLegendreValues.push_back(vector<pair<ComplexDouble, double> >());
+	  gaussLegendreValues.push_back(vector<pair<ComplexDouble, ComplexDouble> >());
 	  vector<pair<double, double> > rule = LegendreRule::GetRule(*it, start, stop);
 	  for(vector<pair<double, double> >::const_iterator ip = rule.begin(); ip != rule.end(); ++ip)
 		{
-		  gaussLegendreValues.back().push_back(make_pair(SegmentEvaluate(segment, ip->first), ip->second));
+		  gaussLegendreValues.back().push_back(make_pair(SegmentEvaluate(segment, ip->first),
+														 ip->second*GetSegmentDerivative(segment)));
 		}
 	  ++segment;
 	}
@@ -140,13 +164,36 @@ ComplexDouble ParametrizedCurve::GetSegmentDerivative(unsigned int segment) cons
   return (ParametrizedCurvePoints[segment+1].second - ParametrizedCurvePoints[segment].second)/(ComplexDouble(stop-start,0));
 }
 
-vector<pair<ComplexDouble, double> > ParametrizedCurve::GetSegmentRule(unsigned int segment) const
+const vector<pair<ComplexDouble, ComplexDouble> > * ParametrizedCurve::GetSegmentRule(unsigned int segment) const
 {
   if(segment >= gaussLegendreValues.size())
 	{
 	  throw RLException("Asked for GL rule for segment %d, but there are only %d rules computed. Did you forget a call to ComputeGaussLegendre() ?\n", segment, gaussLegendreValues.size());
 	}
-  return gaussLegendreValues[segment];
+  return &gaussLegendreValues[segment];
+}
+
+const pair<ComplexDouble, ComplexDouble> * ParametrizedCurve::GetRulePoint(unsigned int segment, unsigned int GLpoint) const
+{
+  if( segment > GetNumberOfSegments() )
+	{
+	  throw RLException("Invalid segment number.");
+	}
+  if( GLpoint >= gaussLegendreValues[segment].size() )
+	{
+	  throw RLException("Invalid GL point number.");
+	}
+  return &gaussLegendreValues[segment][GLpoint];
+}
+
+ComplexDouble ParametrizedCurve::GetRuleValue(unsigned int segment, unsigned int GLpoint) const
+{
+  return GetRulePoint(segment, GLpoint)->first;
+}
+
+ComplexDouble ParametrizedCurve::GetRuleWeight(unsigned int segment, unsigned int GLpoint) const
+{
+  return GetRulePoint(segment, GLpoint)->second;
 }
 
 double ParametrizedCurve::GetStart() const

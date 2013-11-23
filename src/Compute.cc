@@ -1,6 +1,6 @@
 #include "Compute.hh"
 
-
+/*
 ComplexDouble ExpOfInnerProduct(ComplexDouble k1, ComplexDouble k2)
 {
   if(invertInnerProduct)
@@ -8,11 +8,11 @@ ComplexDouble ExpOfInnerProduct(ComplexDouble k1, ComplexDouble k2)
 
   return (k1 + k2);
 }
+*/
 
 int main(int argc, char *argv[])
 {
-
-  
+ 
   CommandLineInterpreter * myInterpreter = InitInterpreter(); 
   try
 	{
@@ -28,108 +28,70 @@ int main(int argc, char *argv[])
 	  cerr << e.what() << endl;
 	  return 1;
 	}
-  
-  ComputeConfig config;
-  config.WriteFile("test.config");
-  config.ReadFile("test.config");
 
-  return 0;
-  
-
-
-
-  ///Read out parameters from the command line interpreter (or default ones, if they were not specified.
-  int verbosityLevel = atoi((myInterpreter->ReadFlaggedCommandStrict("verbose").front()).c_str());
-  unsigned int threads = atoi(myInterpreter->ReadFlaggedCommandStrict("threads").front().c_str());
-  double kCutoff = atof(myInterpreter->ReadFlaggedCommandStrict("kCutoff").front().c_str());
-  double kMid = atof(myInterpreter->ReadFlaggedCommandStrict("kMid").front().c_str());
-  double kDepth = atof(myInterpreter->ReadFlaggedCommandStrict("kDepth").front().c_str());
-  unsigned int kValuesFar = atof(myInterpreter->ReadFlaggedCommandStrict("kValuesFar").front().c_str());
-  unsigned int kValuesClose = atof(myInterpreter->ReadFlaggedCommandStrict("kValuesClose").front().c_str());
-  string dataFile = myInterpreter->ReadFlaggedCommandStrict("dataFile").front().c_str();
-  string potentialFile = myInterpreter->ReadFlaggedCommandStrict("potentialFile").front().c_str();
-  
-  invertInnerProduct = !myInterpreter->ReadFlaggedCommand("flipInner").empty();
-  
-  VerbosePrinter * myPrinter = new VerbosePrinter(verbosityLevel);
-  
-  myPrinter->Print(3, "Initializing k-curve.\n");
-  ///Create the standard Berggren curve.
-  ParametrizedCurve kCurve;
-  vector<unsigned int> numberOfPointsOnCurve; 
-  
-  
-  kCurve.AddValue(-kCutoff); 
-  kCurve.AddValue(-2*kMid);
-  kCurve.AddValue(-kMid + (kDepth*ComplexDouble(0, 1)));
-  kCurve.AddValue(0.);
-  kCurve.AddValue(kMid  - (kDepth*ComplexDouble(0,1)));
-  kCurve.AddValue(2*kMid);
-  kCurve.AddValue(kCutoff);
-  NPPUSH(kValuesFar);
-  NPPUSH(kValuesClose); 
-  NPPUSH(kValuesClose); 
-  NPPUSH(kValuesClose); 
-  NPPUSH(kValuesClose); 
-  NPPUSH(kValuesFar);
-
-  Potential myPotential(potentialFile);
-
-  myPrinter->Print(2, "Computing Legendre rule.\n");
-  unsigned int kPMax = 0;
-  vector<vector<pair<double, double> > > myLegendreRules;
-  for(vector<unsigned int>::const_iterator it = numberOfPointsOnCurve.begin(); it!=numberOfPointsOnCurve.end(); ++it)
+  string configFile = myInterpreter->ReadFlaggedCommandStrict("configFile").front().c_str();
+  ComputeConfig myConfiguration;
+  if( access(configFile.c_str(), F_OK) == -1 )
 	{
-	  kPMax += *it;
-	  myLegendreRules.push_back(LegendreRule::GetRule(*it));
+	  myConfiguration.WriteFile(configFile.c_str());
 	}
+  else
+	{
+	  myConfiguration.ReadFile(configFile.c_str());
+	}
+  
+  VerbosePrinter * myPrinter = new VerbosePrinter(myConfiguration.GetVerbosityLevel());
+  
+  myPrinter->Print(3, "Initializing\n");
+
+  vector<BasisFunction> myBasisFunctions = myConfiguration.GetBasisFunctions();
+
+  unsigned int numberOfGLPoints = myConfiguration.GetKCurve()->GetTotalNumberOfGLPoints();
+  unsigned int numberOfBasisFunctions =  myBasisFunctions.size();
+  unsigned int MatrixSize = numberOfGLPoints * numberOfBasisFunctions;
 
 
-  CMatrix HamiltonianMatrix(kPMax,kPMax);
+
+  CMatrix HamiltonianMatrix(MatrixSize, MatrixSize);
   HamiltonianMatrix.InitializeAll(0.);
 
-  vector<ComplexDouble> kValuesOnCurve;
-  vector<double> weightsOnCurve;
-  vector<ComplexDouble> segmentDerivative;
-  for(unsigned int j = 0; j<kCurve.GetNumberOfSegments(); ++j)
-	{
-	  for(unsigned int i = 0; i<numberOfPointsOnCurve[j]; ++i)
-		{
-		  kValuesOnCurve.push_back(kCurve.SegmentEvaluate(j, myLegendreRules[j][i].first));
-		  weightsOnCurve.push_back(myLegendreRules[j][i].second);
-		  segmentDerivative.push_back(kCurve.GetSegmentDerivative(j));
-		}
-	}
-  myLegendreRules.clear(); ///Free up some memory.
-
   myPrinter->Print(1,"Constructing Hamiltonian matrix.\n");
-  for(unsigned int i = 0; i<kPMax; ++i)
+
+  unsigned int hFactor = MAX(numberOfBasisFunctions, numberOfGLPoints);
+
+  ParametrizedCurve * myCurve = myConfiguration.GetKCurve();
+  Potential * myPotential = myConfiguration.GetPotential();
+
+  for(unsigned int i = 0; i<MatrixSize; ++i)
 	{
-	  ComplexDouble ki = kValuesOnCurve[i];
-	  double wi = weightsOnCurve[i];
-	  ComplexDouble si = segmentDerivative[i];
-	  for(unsigned int j = 0; j<kPMax; ++j)
+	  unsigned int curvePointerA = i % hFactor;
+	  unsigned int basisPointerA = i / hFactor;
+	  unsigned int curveSegmentA = myCurve->SegmentIndexFromGLNumber(curvePointerA);
+
+	  ComplexDouble kA = myCurve->GetRuleValue(curveSegmentA, curvePointerA);
+	  ComplexDouble wA = myCurve->GetRuleWeight(curveSegmentA, curvePointerA);
+		
+	  for(unsigned int j = 0; j<MatrixSize; ++j)
 		{
-		  ComplexDouble kj = kValuesOnCurve[j];
-		  double wj = weightsOnCurve[j];
-		  ComplexDouble sj = segmentDerivative[j];
-
+		  unsigned int curvePointerB = j % hFactor;
+		  unsigned int basisPointerB = j / hFactor;
+		  unsigned int curveSegmentB = myCurve->SegmentIndexFromGLNumber(curvePointerB);
+		  
+		  ComplexDouble kB = myCurve->GetRuleValue(curveSegmentB, curvePointerB);
+		  ComplexDouble wB = myCurve->GetRuleWeight(curveSegmentB, curvePointerB);
+		  
 		  HamiltonianMatrix.Element(i, j) += ComplexDouble(1./(2.*PI),0)*
-			sqrt(wj*wi)*sqrt(si*sj)
-			//wi*si
-			*myPotential.FastExpIntegrate(ExpOfInnerProduct(ki, kj));
+			sqrt(wA*wB)
+			*myPotential->BasisIntegrate(myBasisFunctions
 		}
-	  HamiltonianMatrix.Element(i,i) += pow(HBARC,2)/(2.*MASSOVERC2) * pow(ki, 2);
-	}
-
-  if(verbosityLevel > 10)
-	{
-	  myPrinter->Print(12, "Hamiltonian matrix: \n");
-	  myPrinter->Print(12,HamiltonianMatrix.ToString().c_str());
+	  HamiltonianMatrix.Element(i,i) += pow(HBARC,2)/(2.*MASSOVERC2) * pow(kA, 2);
 	}
 
 
-  if(!invertInnerProduct && false)
+  //myPrinter->Print(12,HamiltonianMatrix.ToString().c_str());
+
+
+  if(myConfiguration.GetExpectedMatrixType() == SymmetricMatrix)
 	{
 	  myPrinter->Print(1, "Validating symmetricity of matrix.\n");
 	  if ( ! HamiltonianMatrix.IsSymmetric(true) )
@@ -137,10 +99,15 @@ int main(int argc, char *argv[])
 		  throw RLException("The matrix was found to be non-symmetric.");
 		}
 	}
-  else
+  if(myConfiguration.GetExpectedMatrixType() == HermitianMatrix)
 	{
-	  myPrinter->Print(1, "Inner product inverted: not performing symmetry check.\n");
+	  myPrinter->Print(1, "Validating hermiticity of matrix.\n");
+	  if( ! HamiltonianMatrix.IsHermitian(true))
+		{
+		  throw RLException("The matrix was found to be non-hermitian.");
+		}
 	}
+
   
   myPrinter->Print(1, "Solving for eigenvalues and eigenvectors of the Hamiltonian.\n");
 
@@ -153,7 +120,7 @@ int main(int argc, char *argv[])
 	}
   */
 
-  PrintDataToFile(myPrinter, dataFile, myInfo, kValuesOnCurve, myPotential.GetPotentialPoints());
+  PrintDataToFile(myPrinter, dataFile, myInfo, kValuesOnCurve, myConfiguration.GetPotential().GetPotentialPoints());
 
 
   myPrinter->Print(2, "Cleaning up.\n");
@@ -228,48 +195,10 @@ void PrintDataToFile(VerbosePrinter * myPrinter, const string fileName, const Ei
 CommandLineInterpreter * InitInterpreter()
 {
   CommandLineInterpreter * myInterpreter = new CommandLineInterpreter();
-  TMP_LIST_STR(kCutoffDescription,"double");
-  TMP_LIST_STR(defaultCutoff, "50");
-  myInterpreter->AddCommandLineArgument(CommandLineArgument("kCutoff", 1, false, "Cutoff for the k-values.", kCutoffDescription, defaultCutoff));
 
-  TMP_LIST_STR(kValuesFarDescription, "double");
-  TMP_LIST_STR(kValuesFarDefault, "50");
-  myInterpreter->AddCommandLineArgument(CommandLineArgument("kValuesFar", 1, false, "Number of k-values per segment to use.", kValuesFarDescription, kValuesFarDefault));
-
-  TMP_LIST_STR(kValuesCloseDescription, "double");
-  TMP_LIST_STR(kValuesCloseDefault, "20");
-  myInterpreter->AddCommandLineArgument(CommandLineArgument("kValuesClose", 1, false, "Number of k-values per segment to use.", kValuesCloseDescription, kValuesCloseDefault));
-
-
-  TMP_LIST_STR(kMidDescription, "double");
-  TMP_LIST_STR(kMidDefault, "5");
-  myInterpreter->AddCommandLineArgument(CommandLineArgument("kMid", 1, false, "Midpoint of dent in k-plane curve.", kMidDescription, kMidDefault));
-
-  TMP_LIST_STR(kDepthDescription, "double");
-  TMP_LIST_STR(kDepthDefault, "0.2");
-  myInterpreter->AddCommandLineArgument(CommandLineArgument("kDepth", 1, false, "Depth of dent in k-plane curve.", kDepthDescription, kDepthDefault));
-
-  TMP_LIST_STR(dataFileDescription, "file name");
-  TMP_LIST_STR(dataFileDefault,"compute_output.dat");
-  myInterpreter->AddCommandLineArgument(CommandLineArgument("dataFile", 1, false, "Data file containing output data.", dataFileDescription, dataFileDefault));
-
-  TMP_LIST_STR(potentialFileDescription, "file name");
-  TMP_LIST_STR(potentialFileDefault,"potential.dat");
-  myInterpreter->AddCommandLineArgument(CommandLineArgument("potentialFile", 1, false, "Input file specifying the (piecewise) potential.", potentialFileDescription, potentialFileDefault));
-
-
-  myInterpreter->AddCommandLineArgument(CommandLineArgument("flipInner", 0, false, "Use to flip sign of k2 in inner product (will cause non-symmetric matrix)."));
-
-
-  TMP_LIST_STR(verboseDefault,"0");
-  TMP_LIST_STR(verboseDescription,"positive integer");
-  myInterpreter->AddCommandLineArgument(CommandLineArgument("verbose", 1, false, "How verbose the program should be during the execution process.", verboseDescription, verboseDefault));
-
-
-
-  TMP_LIST_STR(threadsDefault,"5");
-  TMP_LIST_STR(threadsDescription,"positive integer");
-  myInterpreter->AddCommandLineArgument(CommandLineArgument("threads", 1, false, "How many threads to use in multi-threaded sections of the program.", threadsDescription, threadsDefault));
+  TMP_LIST_STR(confDefault,"config.conf");
+  TMP_LIST_STR(confDescription,"Configuration file");
+  myInterpreter->AddCommandLineArgument(CommandLineArgument("configFile", 1, false, "Location of program config file. If the file does not exist, it is created with a default configuration.", confDescription, confDefault));
 
   myInterpreter->AddCommandLineArgument(CommandLineArgument("help",0,false, "Displays a help message and quits."));
 

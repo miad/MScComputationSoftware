@@ -190,3 +190,9 @@ void Potential::Clear()
   minX = 1E99;
   maxX = -1E99;
 }
+
+
+void Potential::BasisIntegrate(BasisFunction & b1, BasisFunction & b2, ComplexDouble & k1, ComplexDouble & k2)
+{
+  
+}

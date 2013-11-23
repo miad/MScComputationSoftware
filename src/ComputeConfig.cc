@@ -147,6 +147,34 @@ void ComputeConfig::ReadFile(const char * fileName)
 	}
 
   Setting & computation = root["Computation"];
+
+
+  
+  if( ! computation.lookupValue("ExpectedMatrixType", temp) )
+	{
+	  throw RLException("Expected matrix type not set properly.");
+	}
+  bool found = false;
+  if(strcmp(temp.c_str(), "General") == 0) 
+	{
+	  matrixType = GeneralMatrix;
+	  found = true;
+	}
+  if(strcmp(temp.c_str(), "Symmetric") == 0)
+	{
+	  matrixType = SymmetricMatrix;
+	  found = true;
+	}
+  if(strcmp(temp.c_str(), "Hermitian") == 0 )
+	{
+	  matrixType = HermitianMatrix;
+	  found = true;
+	}
+  if(!found)
+	throw RLException("Invalid option for ExpectedMatrixType.");
+
+
+
   if( !computation.exists("BasisFunctions") || !computation["BasisFunctions"].isArray())
 	{
 	  throw RLException("Basis functions not properly defined.");
@@ -256,7 +284,15 @@ void ComputeConfig::ReadFile(const char * fileName)
   // Read the file. If there is an error, report it and exit.
 }
 
+unsigned int ComputeConfig::GetVerbosityLevel() const
+{
+  return verbosityLevel;
+}
 
+void ComputeConfig::SetVerbosityLevel(unsigned int value) 
+{
+  verbosityLevel = value;
+}
 
 void ComputeConfig::WriteFile(const char * fileName) const
 {
@@ -280,8 +316,16 @@ void ComputeConfig::WriteFile(const char * fileName) const
   
   root.add("Computation", Setting::TypeGroup);
 
+  string matType = "General";
+  if(matrixType == HermitianMatrix)
+	matType = "Hermitian";
+  if(matrixType == SymmetricMatrix)
+	matType = "Symmetric";
+  root["Computation"].add("ExpectedMatrixType", Setting::TypeString) = matType;
+	
+
   Setting & basFun = root["Computation"].add("BasisFunctions", Setting::TypeArray);
-  for(list<BasisFunction>::const_iterator it = basisFunctions.begin(); it!=basisFunctions.end(); ++it)
+  for(vector<BasisFunction>::const_iterator it = basisFunctions.begin(); it!=basisFunctions.end(); ++it)
 	{
 	  basFun.add(Setting::TypeString) = it->GetName();
 	}
@@ -419,4 +463,14 @@ void ComputeConfig::SetKCurve(ParametrizedCurve * value)
   if(kCurve != NULL)
 	delete kCurve;
   kCurve = value;
+}
+
+const vector<BasisFunction> & ComputeConfig::GetBasisFunctions() const
+{
+  return basisFunctions;
+}
+
+void ComputeConfig::SetBasisFunctions(vector<BasisFunction> value)
+{
+  basisFunctions = value;
 }

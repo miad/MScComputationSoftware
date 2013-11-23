@@ -30,10 +30,11 @@
 
 using namespace std;
 
-
+/*
 ComplexDouble ExpOfInnerProduct(ComplexDouble k1, 
 								ComplexDouble k2
 								);
+*/
 
 void PrintDataToFile(VerbosePrinter * myPrinter,
 					 const string fileName, 
@@ -41,8 +42,6 @@ void PrintDataToFile(VerbosePrinter * myPrinter,
 					 const vector<ComplexDouble> & kValuesOnCurve,
 					 const list<Interval> & potentialIntervals
 					 );
-
-bool invertInnerProduct;
 
 int main(int argc, char *argv[]);
 

@@ -55,22 +55,42 @@ public:
   void ComputeParameterValues(); ///Returns the length of the curve. Guaranteed not to be negative. Complexity O(n), where n is the number of parameters added to the curve. Can probably be improved to O(1) using some cleaverness.
 
 
-  vector<pair<ComplexDouble, double> > GetSegmentRule(unsigned int segment ///Segment number.
+  const vector<pair<ComplexDouble, ComplexDouble> > * GetSegmentRule(unsigned int segment ///Segment number.
 													  ) const; ///Returns the GL rule for a specific segment. Implicitly calls ComputeGaussLegendre if this has never been done before.
 
   void ComputeGaussLegendre(); ///Computes GL rules for all segments. Throws an exception if all segments has not been associated with a rule number.
 
   void Clear(); ///Clears the object of all information.
 
+  unsigned int GetTotalNumberOfGLPoints(); ///Returns the total number of GL points.
+
+  unsigned int SegmentIndexFromGLNumber(unsigned int val
+										); ///Returns the segment index from a GL number.
+
+
+  const pair<ComplexDouble, ComplexDouble> * GetRulePoint(unsigned int segment, 
+											 unsigned int GLpoint
+											 ) const;
+
+  ComplexDouble GetRuleValue(unsigned int segment, 
+							 unsigned int GLpoint
+							 ) const;
+
+  ComplexDouble GetRuleWeight(unsigned int segment, 
+					   unsigned int GLpoint
+					   ) const;
+
+
+
 private:
 
-  int totalNumberOfGLPoints;
+  unsigned int totalNumberOfGLPoints;
 
   vector<pair<double, ComplexDouble> > ParametrizedCurvePoints; ///The points on the curve, together with the parameter value to which the points correspond. The parameter value is rescaled every time a value is added.
 
   vector<unsigned int> numberOfGLPoints; ///Number of Gauss-Legendre points, used when constructing the GL rules.
 
-  vector< vector<pair<ComplexDouble, double > > > gaussLegendreValues; ///The outer vector contains a vector for each segment. Each segment vector contains a number of Gauss-Legendre quadrature points (the value on the curve as well as the weight), that is, the curve value on these points.
+  vector< vector<pair<ComplexDouble, ComplexDouble > > > gaussLegendreValues; ///The outer vector contains a vector for each segment. Each segment vector contains a number of Gauss-Legendre quadrature points (the value on the curve as well as the weight), that is, the curve value on these points.
 
 
   static bool ComparePairs(const pair<double, ComplexDouble> & p1, ///First pair
