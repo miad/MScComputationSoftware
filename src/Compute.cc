@@ -12,11 +12,7 @@ ComplexDouble ExpOfInnerProduct(ComplexDouble k1, ComplexDouble k2)
 int main(int argc, char *argv[])
 {
 
-  //  ComputeConfig config;
-  //config.WriteFile("test.config");
-
-
-
+  
   CommandLineInterpreter * myInterpreter = InitInterpreter(); 
   try
 	{
@@ -33,6 +29,15 @@ int main(int argc, char *argv[])
 	  return 1;
 	}
   
+  ComputeConfig config;
+  config.WriteFile("test.config");
+  config.ReadFile("test.config");
+
+  return 0;
+  
+
+
+
   ///Read out parameters from the command line interpreter (or default ones, if they were not specified.
   int verbosityLevel = atoi((myInterpreter->ReadFlaggedCommandStrict("verbose").front()).c_str());
   unsigned int threads = atoi(myInterpreter->ReadFlaggedCommandStrict("threads").front().c_str());

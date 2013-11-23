@@ -7,6 +7,7 @@ ParametrizedCurve::ParametrizedCurve(double _start, double _stop)
 	swap(start, stop);
   if(stop == start)
 	throw RLException("Interval can not have zero length.");
+  totalNumberOfGLPoints = 0;
 }
 
 ParametrizedCurve::~ParametrizedCurve()
@@ -20,7 +21,48 @@ void ParametrizedCurve::AddValue(ComplexDouble val, unsigned int pos)
   vector<pair<double, ComplexDouble> >::iterator posToInsert = ParametrizedCurvePoints.begin(); 
   advance(posToInsert, pos);
   ParametrizedCurvePoints.insert(posToInsert, make_pair(0.0, val));
+
   ComputeParameterValues();
+}
+
+void ParametrizedCurve::AddGLPoints(unsigned int numberOfPoints)
+{
+  if(numberOfGLPoints.size() > GetNumberOfSegments())
+	{
+	  throw RLException("Tried to add more GL points than there are segments.");
+	}
+
+  numberOfGLPoints.push_back(numberOfPoints);
+  totalNumberOfGLPoints += numberOfPoints;
+}
+
+void ParametrizedCurve::ComputeGaussLegendre()
+{
+  if(numberOfGLPoints.size() != GetNumberOfSegments())
+	{
+	  throw RLException("Cannot compute Gauss-Legendre points: number of GL points added does not correspond to the number of segments added. %d segments but %d values.", GetNumberOfSegments(),  numberOfGLPoints.size());
+	}
+  gaussLegendreValues.clear();
+  int segment = 0;
+  for(vector<unsigned int>::const_iterator it = numberOfGLPoints.begin(); it!=numberOfGLPoints.end(); ++it)
+	{
+	  gaussLegendreValues.push_back(vector<pair<ComplexDouble, double> >());
+	  vector<pair<double, double> > rule = LegendreRule::GetRule(*it, start, stop);
+	  for(vector<pair<double, double> >::const_iterator ip = rule.begin(); ip != rule.end(); ++ip)
+		{
+		  gaussLegendreValues.back().push_back(make_pair(SegmentEvaluate(segment, ip->first), ip->second));
+		}
+	  ++segment;
+	}
+}
+
+void ParametrizedCurve::Clear()
+{
+  totalNumberOfGLPoints = 0;
+  ParametrizedCurvePoints.clear();
+  numberOfGLPoints.clear();
+  gaussLegendreValues.clear();
+  length = -1;
 }
 
 void ParametrizedCurve::AddValue(ComplexDouble val)
@@ -51,7 +93,6 @@ void ParametrizedCurve::ComputeParameterValues()
 	{
 	  it->first = it->first/length*(stop-start) + start;
 	}
-
 }
 
 double ParametrizedCurve::GetLength() const
@@ -97,6 +138,15 @@ ComplexDouble ParametrizedCurve::GetSegmentDerivative(unsigned int segment) cons
   if( segment + 1 >= ParametrizedCurvePoints.size() )
 	throw RLException("Cannot get segment vector for segment %d: out of bounds.", segment);
   return (ParametrizedCurvePoints[segment+1].second - ParametrizedCurvePoints[segment].second)/(ComplexDouble(stop-start,0));
+}
+
+vector<pair<ComplexDouble, double> > ParametrizedCurve::GetSegmentRule(unsigned int segment) const
+{
+  if(segment >= gaussLegendreValues.size())
+	{
+	  throw RLException("Asked for GL rule for segment %d, but there are only %d rules computed. Did you forget a call to ComputeGaussLegendre() ?\n", segment, gaussLegendreValues.size());
+	}
+  return gaussLegendreValues[segment];
 }
 
 double ParametrizedCurve::GetStart() const

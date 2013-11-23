@@ -182,3 +182,11 @@ unsigned int Potential::GetNumberOfValues() const
 {
   return PotentialPoints.size();
 }
+
+
+void Potential::Clear() 
+{
+  PotentialPoints.clear();
+  minX = 1E99;
+  maxX = -1E99;
+}

@@ -49,19 +49,14 @@ public:
   double GetMaxX() const; ///Returns the maximum x value for which the potential is nonzero.
   unsigned int GetNumberOfValues() const;
   list<Interval> GetPotentialPoints() const;
+  
+  void Clear(); 
+
 private:
   void InitializeDefault(); ///Todo: replace with reading from file etc.
   list<Interval> PotentialPoints;
   double minX, maxX;
 };
-
-double PotentialValue(double x);
-
-void InitializePotential();
-
-void ClearPotential();
-
-void SetPoint(int n, float x1, float x2, float y);
 
 
 

@@ -2,7 +2,7 @@ SRC:= $(wildcard src/*.cc)
 OBJ:= $(SRC:src/%.cc=bin/%.o)
 
 INCLUDE:= -Iinclude -IRLlib/include -Ilibconfig-1.4.9/lib
-LIBS:= -lblas -lm -llapack -llapacke -LRLlib -lRLlib -Llibconfig-1.4.9/lib -lconfig++
+LIBS:= -lblas -lm -llapack -llapacke -LRLlib -lRLlib -Llibconfig-1.4.9/lib -Wl,-Bstatic -lconfig++ -Wl,-Bdynamic
 
 MAINS := Compute
 MAINSOBJ:= $(MAINS:%=bin/%.o)
@@ -14,17 +14,25 @@ CCFLAGS:=  -pthread -Wall -fPIC -g -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP
 TEST:= test/RunTests
 
 LIBCONFIG:= libconfig-1.4.9/lib/libconfig++.a
+LIBCONFDIR:= libconfig-1.4.9
+
+RLLIB:= RLlib/libRLlib.a
 
 CC:= g++
 
 .PHONY: clean doc all
 
-all: bin RLlib/libRLlib.a $(OBJ) $(MAINS) $(TEST) $(LIBCONFIG)
+all: bin $(RLLIB) $(LIBCONFIG) $(OBJ) $(MAINS) $(TEST)
 
-$(LIBCONFIG):
+$(LIBCONFIG): $(LIBCONFDIR)
 	@echo Making libconfig...
 	@(cd libconfig-1.4.9 && ./configure --prefix=$$(pwd) )
 	@$(MAKE) -C libconfig-1.4.9
+	@$(MAKE) -C libconfig-1.4.9 install
+
+$(LIBCONFDIR): $(LIBCONFDIR).tar.gz
+	@echo Unpacking libconfig...
+	@tar -xzvf $<
 
 bin: 
 	mkdir -p bin
@@ -49,5 +57,5 @@ clean:
 	@$(MAKE) -C RLlib clean
 	@$(MAKE) -C test clean
 
-RLlib/libRLlib.a:
+$(RLLIB):
 	$(MAKE) -C RLlib
