@@ -1,5 +1,5 @@
-#ifndef PotentialTest_hh
-#define PotentialTest_hh 1
+#ifndef PiecewiseConstantPotentialTest_hh
+#define PiecewiseConstantPotentialTest_hh 1
 
 #include <iostream>
 #include <assert.h>
@@ -12,13 +12,13 @@
 #include "Globals.hpp"
 #include "GenericUnitTest.hh"
 #include "Matrix.hpp"
-#include "Potential.hh"
+#include "PiecewiseConstantPotential.hh"
 
 #include <algorithm>
 
 using namespace std;
 
-class PotentialTest : public GenericUnitTest
+class PiecewiseConstantPotentialTest : public GenericUnitTest
 {
  public:
   int runUnitTests() const; ///Main function.
