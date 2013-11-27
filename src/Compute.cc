@@ -78,6 +78,8 @@ int main(int argc, char *argv[])
 
 	  ComplexDouble kA = myCurve->GetRuleValue(curveSegmentA, curvePointerA);
 	  ComplexDouble wA = myCurve->GetRuleWeight(curveSegmentA, curvePointerA);
+
+	  double preFactorA = myBasisFunctions[basisPointerA].GetPreFactor();
 		
 	  for(unsigned int j = 0; j<MatrixSize; ++j)
 		{
@@ -87,10 +89,12 @@ int main(int argc, char *argv[])
 		  
 		  ComplexDouble kB = myCurve->GetRuleValue(curveSegmentB, curvePointerB);
 		  ComplexDouble wB = myCurve->GetRuleWeight(curveSegmentB, curvePointerB);
+
+		  double preFactorB = myBasisFunctions[basisPointerB].GetPreFactor();
 		  
 		  HamiltonianMatrix.Element(i, j) += ComplexDouble(1./(2.*PI),0)*
 			sqrt(wA*wB)
-			*myPotential->BasisIntegrate(myBasisFunctions[basisPointerA], myBasisFunctions[basisPointerB], kA, kB);
+			*myPotential->BasisIntegrate(myBasisFunctions[basisPointerA], myBasisFunctions[basisPointerB], kA, kB) * sqrt(preFactorA*preFactorB);
 		}
 	  HamiltonianMatrix.Element(i,i) += pow(HBARC,2)/(2.*MASSOVERC2) * pow(kA, 2);
 	}

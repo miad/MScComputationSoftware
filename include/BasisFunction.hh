@@ -28,6 +28,8 @@ public:
 				);///Constructor.
   ComplexDouble Eval(ComplexDouble x);
   const char * GetName() const;
+
+  double GetPreFactor() const;
   
 
 

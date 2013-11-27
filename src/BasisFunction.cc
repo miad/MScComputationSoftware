@@ -68,3 +68,18 @@ const char * BasisFunction::GetName() const
 {
   return name;
 }
+
+double BasisFunction::GetPreFactor() const
+{
+  switch(type)
+	{
+	case 0:
+	  return 1;
+	case 1:
+	  return 2;
+	case 2:
+	  return 2;
+	default:
+	  throw RLException("Invalid type. This is an internal inconsistency in the code for BasisFunction.");
+	}
+}
