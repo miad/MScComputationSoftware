@@ -163,6 +163,16 @@ double PiecewiseConstantPotential::Evaluate(double x) const
   return 0;
 }
 
+void PiecewiseConstantPotential::RecomputeLegendreRules()
+{
+  legendreRules.clear();
+  for(list<Interval>::const_iterator it = PotentialPoints.begin(); it!= PotentialPoints.end(); ++it)
+	{
+	  unsigned int pointsOnCurve = 1 + (int)(precision*((it->x2-it->x1)/(maxX-minX)));
+	  legendreRules.push_back(LegendreRule::GetRule(pointsOnCurve, it->x1, it->x2));
+	}
+}
+
 list<Interval> PiecewiseConstantPotential::GetPotentialPoints() const
 {
   return PotentialPoints;
@@ -192,7 +202,76 @@ void PiecewiseConstantPotential::Clear()
 }
 
 
-ComplexDouble PiecewiseConstantPotential::BasisIntegrate(BasisFunction & b1, BasisFunction & b2, ComplexDouble & k1, ComplexDouble & k2)
+ComplexDouble PiecewiseConstantPotential::BasisIntegrate(BasisFunction & b1, BasisFunction & b2, ComplexDouble & k1, ComplexDouble & k2) const
 {
-  
+  if(legendreRules.size() != PotentialPoints.size() )
+	{
+	  throw RLException("The legendre rules for the piecewise potential were not computed. Call RecomputeLegendreRules before trying to evaluate.");
+	}
+
+  ///Plain ol' Gauss-Legendre integration.
+  list<Interval>::const_iterator iPot = PotentialPoints.begin();
+  list<vector<pair<double, double> > >::const_iterator iLeg = legendreRules.begin();
+  ComplexDouble value = ComplexDouble(0.0,0.0);
+  while(iPot != PotentialPoints.end())
+  {
+	for(vector<pair<double, double> >::const_iterator it = iLeg->begin(); it != iLeg->end(); ++it)
+	  {
+		value += it->second * iPot->y * b1.Eval(k1 * it->first) * b2.Eval(k2 * it->first);
+	  }
+	++iPot; ++iLeg;
+  }
+  return value;
 }
+
+
+void PiecewiseConstantPotential::SetPrecision(unsigned long value)
+{
+  precision = value;
+}
+
+
+unsigned long PiecewiseConstantPotential::GetPrecision() const
+{
+  return precision;
+}
+
+vector<pair<double, double> > PiecewiseConstantPotential::GetPlottingPoints() const
+{
+  vector<pair<double, double> > toReturn;
+
+  list<Interval> localIntervals = PotentialPoints; ///We may not modify inside a const function, so copy.
+  localIntervals.sort();
+  
+  toReturn.push_back(make_pair(localIntervals.front().x1, 0.0));
+
+  for(list<Interval>::const_iterator it = localIntervals.begin(); it!=localIntervals.end(); ++it)
+	{
+	  ///The small offset EPS is to make the function injective.
+	  toReturn.push_back(make_pair(it->x1 + EPS, it->y));
+	  toReturn.push_back(make_pair(it->x2 - EPS,it->y));
+	}
+  toReturn.push_back(make_pair(localIntervals.back().x2, 0.0));
+
+  return toReturn;
+}
+
+
+vector<pair<double, double> > PiecewiseConstantPotential::GetPrecisionPoints() const
+{
+  vector<pair<double, double> > toReturn;
+  list<Interval>::const_iterator iPtr = PotentialPoints.begin();
+  for(list<vector<pair<double, double> > >::const_iterator it = legendreRules.begin(); it!=legendreRules.end(); ++it)
+	{
+	  for(vector<pair<double, double> >::const_iterator ip = it->begin(); ip != it->end(); ++ip)
+		{
+		  toReturn.push_back(make_pair(ip->first, iPtr->y));
+		}
+	  ++iPtr;
+	}
+  return toReturn;
+
+  return toReturn;
+}
+
+

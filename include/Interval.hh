@@ -13,6 +13,20 @@ public:
   ~Interval();
   bool Overlaps(const Interval & toCheck) const;
   double x1, x2, y;
+
+  ///Comparision operators: used for sorting.
+  const bool operator<(const Interval &other
+					   ) const;
+  const bool operator==(const Interval &other
+						) const;
+  const bool operator>(const Interval &other
+					   ) const;
+  const bool operator<=(const Interval &other
+						) const;
+  const bool operator>=(const Interval &other
+						) const;
+  const bool operator!=(const Interval &other
+						) const;
 };
 
 #endif

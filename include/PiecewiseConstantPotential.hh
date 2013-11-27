@@ -5,10 +5,12 @@
 #include <set>
 #include <stdio.h>
 #include <stdlib.h>
+#include <algorithm>
 #include "Interval.hh"
 #include "RLException.hh"
 #include "Globals.hpp"
 #include "Potential.hh"
+#include "LegendreRule.hh"
 
 using namespace std;
 
@@ -48,7 +50,9 @@ public:
 				  ) const; ///Evaluate a specific point in this potential.
   double GetMinX() const; ///Returns the minimum x value for which the potential is nonzero.
   double GetMaxX() const; ///Returns the maximum x value for which the potential is nonzero.
+
   unsigned int GetNumberOfValues() const;
+
   list<Interval> GetPotentialPoints() const;
 
   ComplexDouble BasisIntegrate(BasisFunction & b1, ///First basis function.
@@ -60,16 +64,25 @@ public:
   
   void Clear(); ///Clear the points in the potential.
   
-  unsigned long GetPrecision(); ///Returns the precision.
+  unsigned long GetPrecision() const; ///Returns the precision.
 
   void SetPrecision(unsigned long value ///The value of the new precision.
 					); ///Set the precision to the value given by 'value'.
 
+  vector<pair<double, double> > GetPlottingPoints() const; ///Returns suitable points for plotting.
+
+  vector<pair<double, double> > GetPrecisionPoints() const; ///Returns points suitable for plotting together with the potential, indicating precision.
+
+  void RecomputeLegendreRules(); ///Call this after adding any points, but before calling BasisIntegrate. If not, an exception will be thrown.
+
+
 private:
-  void InitializeDefault(); ///Todo: replace with reading from file etc.
-  list<Interval> PotentialPoints;
-  double minX, maxX;
-  unsigned long precision;
+
+
+  list<Interval> PotentialPoints; ///The potential points in use for this PCP.
+  list<vector<pair<double, double> > > legendreRules; ///Legendre rules for the computations.
+  double minX, maxX; ///Minimum and maximum x-value.
+  unsigned long precision; ///Precision. Here: number of GL points on each curve.
 };
 
 

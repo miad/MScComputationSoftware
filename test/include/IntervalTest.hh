@@ -12,7 +12,7 @@
 #include "Globals.hpp"
 #include "GenericUnitTest.hh"
 #include "Matrix.hpp"
-#include "Potential.hh"
+#include "Interval.hh"
 
 #include <algorithm>
 
@@ -24,6 +24,7 @@ class IntervalTest : public GenericUnitTest
   int runUnitTests() const; ///Main function.
  protected:
   int TestCase1() const; /// Test case.
+  int TestCase2() const;
 
 };
 #endif

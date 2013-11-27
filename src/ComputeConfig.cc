@@ -6,14 +6,19 @@ ComputeConfig::ComputeConfig()
   strcpy(kCurveFile, "KCurve.dat");
   strcpy(kFoundFile, "KFound.dat");
   strcpy(potentialFile,"Potential.dat");
-  potential = new Potential();
-  potential->AddValue(-3, -1, 10);
-  potential->AddValue(-1, 1, -225);
-  potential->AddValue(1, 3, 10);
+  strcpy(potentialPrecisionFile,"PotentialPrecision.dat");
+  PiecewiseConstantPotential * stdPotential = new PiecewiseConstantPotential();
+  stdPotential->AddValue(-3, -1, 10);
+  stdPotential->AddValue(-1, 1, -225);
+  stdPotential->AddValue(1, 3, 10);
+  stdPotential->RecomputeLegendreRules();
+
+  potential = stdPotential;
+
 
   kCurve = new ParametrizedCurve(-1,1);
   kCurve->AddValue(0.0);
-  kCurve->AddValue(ComplexDouble(3., 0.2));
+  kCurve->AddValue(ComplexDouble(3., -0.2));
   kCurve->AddValue(ComplexDouble(8.,0.));
   kCurve->AddValue(ComplexDouble(30.,0.));
   kCurve->AddGLPoints(25);
@@ -57,8 +62,11 @@ void ComputeConfig::ReadFile(const char * fileName)
   cfg.readFile(fileName);
   Setting & root = cfg.getRoot();
 
-  potential->Clear();
+  delete potential;
+  potential = NULL;
+
   kCurve->Clear();
+  basisFunctions.clear();
 
 
   ///Validate version.
@@ -141,6 +149,16 @@ void ComputeConfig::ReadFile(const char * fileName)
 	  throw RLException("The value 'Potential' was not set appropriately.");
 	}
 
+  if( output.lookupValue("PotentialPrecision", temp) )
+	{
+	  strcpy(potentialPrecisionFile, temp.c_str());
+	}
+  else
+	{
+	  throw RLException("The value 'Potential' was not set appropriately.");
+	}
+
+
   if( !root.exists("Computation") || !root["Computation"].isGroup())
 	{
 	  throw RLException("'Computation' was not appropriately defined as a group.");
@@ -201,11 +219,28 @@ void ComputeConfig::ReadFile(const char * fileName)
 	{
 	  throw RLException("Unsupported potential type: %s\n", temp.c_str());
 	}
+  else
+	{
+	  potential = new PiecewiseConstantPotential();
+	}
+
+  
+  int potPrec;
+  if( ! poten.lookupValue("Precision", potPrec))
+	{
+	  throw RLException("Could not find precision setting in settings file.");
+	}
+
+  potential->SetPrecision(potPrec);
+  
   
   if( !poten.exists("Values") || ! poten["Values"].isList())
 	{
 	  throw RLException("Could not find 'Values'.");
 	}
+
+  PiecewiseConstantPotential * locPot = dynamic_cast<PiecewiseConstantPotential*>(potential);
+
   
   Setting & vval = poten["Values"];
   for(int i = 0; i<vval.getLength(); ++i)
@@ -222,8 +257,16 @@ void ComputeConfig::ReadFile(const char * fileName)
 		{
 		  throw RLException("Potential value in interval #%d was not set correctly.", i);
 		}
-	  potential->AddValue(x1, x2, y);
+	  if(locPot)
+		{
+		  locPot->AddValue(x1, x2, y);
+		}
 	}
+  if(locPot)
+	{
+	  locPot->RecomputeLegendreRules();
+	}
+
   
   if(! computation.exists("KCurve") || !computation["KCurve"].isGroup())
 	{
@@ -313,6 +356,7 @@ void ComputeConfig::WriteFile(const char * fileName) const
   output.add("KCurve", Setting::TypeString) = kCurveFile;
   output.add("KFound", Setting::TypeString) = kFoundFile;
   output.add("Potential", Setting::TypeString) = potentialFile;
+  output.add("PotentialPrecision", Setting::TypeString) = potentialPrecisionFile;
   
   root.add("Computation", Setting::TypeGroup);
 
@@ -331,19 +375,22 @@ void ComputeConfig::WriteFile(const char * fileName) const
 	}
 
   Setting & poten = root["Computation"].add("Potential", Setting::TypeGroup);
-  poten.add("Type", Setting::TypeString) = "PiecewiseConstant";
-  Setting & values = poten.add("Values", Setting::TypeList);
-
-  list<Interval> points = potential->GetPotentialPoints();
-  for(list<Interval>::const_iterator it = points.begin(); it!= points.end(); ++it)
+  if(PiecewiseConstantPotential * locPot = dynamic_cast<PiecewiseConstantPotential*>(potential))
 	{
-	  Setting & p0 = values.add(Setting::TypeGroup);
-	  Setting & r0 = p0.add("Interval", Setting::TypeArray);
-	  r0.add(Setting::TypeFloat) = it->x1;
-	  r0.add(Setting::TypeFloat) = it->x2;
-	  p0.add("Value",Setting::TypeFloat) = it->y;
+	  poten.add("Type", Setting::TypeString) = "PiecewiseConstant";
+	  poten.add("Precision", Setting::TypeInt) = 100;
+	  Setting & values = poten.add("Values", Setting::TypeList);
+	  
+	  list<Interval> points = locPot->GetPotentialPoints();
+	  for(list<Interval>::const_iterator it = points.begin(); it!= points.end(); ++it)
+		{
+		  Setting & p0 = values.add(Setting::TypeGroup);
+		  Setting & r0 = p0.add("Interval", Setting::TypeArray);
+		  r0.add(Setting::TypeFloat) = it->x1;
+		  r0.add(Setting::TypeFloat) = it->x2;
+		  p0.add("Value",Setting::TypeFloat) = it->y;
+		}
 	}
-
 
   Setting & kcurve = root["Computation"].add("KCurve", Setting::TypeGroup);
   Setting & kval = kcurve.add("Values", Setting::TypeList);
@@ -438,6 +485,18 @@ void ComputeConfig::SetPotentialFile(const char * value)
   strcpy(potentialFile, value);
 }
 
+const char * ComputeConfig::GetPotentialPrecisionFile() const
+{
+  return potentialPrecisionFile;
+}
+
+void ComputeConfig::SetPotentialPrecisionFile(const char * value)
+{
+  if(strlen(value) > MAX_FILENAME_SIZE)
+	throw RLException("Too long filename.");
+  strcpy(potentialPrecisionFile, value);
+}
+
 
 Potential * ComputeConfig::GetPotential() const
 {
@@ -473,4 +532,15 @@ const vector<BasisFunction> & ComputeConfig::GetBasisFunctions() const
 void ComputeConfig::SetBasisFunctions(vector<BasisFunction> value)
 {
   basisFunctions = value;
+}
+
+ExpectedMatrixType ComputeConfig::GetExpectedMatrixType() const
+{
+  return matrixType;
+}
+
+
+void ComputeConfig::SetExpectedMatrixType(ExpectedMatrixType value)
+{
+  matrixType = value;
 }

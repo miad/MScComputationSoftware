@@ -56,7 +56,7 @@ public:
 
 
   const vector<pair<ComplexDouble, ComplexDouble> > * GetSegmentRule(unsigned int segment ///Segment number.
-													  ) const; ///Returns the GL rule for a specific segment. Implicitly calls ComputeGaussLegendre if this has never been done before.
+													  ) const; ///Returns the GL rule for a specific segment. 
 
   void ComputeGaussLegendre(); ///Computes GL rules for all segments. Throws an exception if all segments has not been associated with a rule number.
 
@@ -89,6 +89,8 @@ private:
   vector<pair<double, ComplexDouble> > ParametrizedCurvePoints; ///The points on the curve, together with the parameter value to which the points correspond. The parameter value is rescaled every time a value is added.
 
   vector<unsigned int> numberOfGLPoints; ///Number of Gauss-Legendre points, used when constructing the GL rules.
+
+  vector<unsigned int> cumNumberOfGLPoints; ///Cumulative number of GL points.
 
   vector< vector<pair<ComplexDouble, ComplexDouble > > > gaussLegendreValues; ///The outer vector contains a vector for each segment. Each segment vector contains a number of Gauss-Legendre quadrature points (the value on the curve as well as the weight), that is, the curve value on these points.
 

@@ -1,18 +1,10 @@
 #include "Compute.hh"
 
-/*
-ComplexDouble ExpOfInnerProduct(ComplexDouble k1, ComplexDouble k2)
-{
-  if(invertInnerProduct)
-	return (k1 - k2);
-
-  return (k1 + k2);
-}
-*/
-
 int main(int argc, char *argv[])
 {
- 
+  
+  ///Initialization: read command line and act based on that.
+  
   CommandLineInterpreter * myInterpreter = InitInterpreter(); 
   try
 	{
@@ -29,43 +21,59 @@ int main(int argc, char *argv[])
 	  return 1;
 	}
 
+  ///Read configuration file and act based on that.
+
   string configFile = myInterpreter->ReadFlaggedCommandStrict("configFile").front().c_str();
   ComputeConfig myConfiguration;
+  
+  ///If there is no config file, write it and exit. Otherwise, use it.
   if( access(configFile.c_str(), F_OK) == -1 )
 	{
+	  printf("Config file '%s' not found, creating it and quitting.\n", configFile.c_str());
 	  myConfiguration.WriteFile(configFile.c_str());
+	  return 0;
 	}
   else
 	{
 	  myConfiguration.ReadFile(configFile.c_str());
 	}
+
+
+  ///Initialize stuff.
   
-  VerbosePrinter * myPrinter = new VerbosePrinter(myConfiguration.GetVerbosityLevel());
-  
-  myPrinter->Print(3, "Initializing\n");
+  VerbosePrinter myPrinter(myConfiguration.GetVerbosityLevel());
+  myPrinter.Print(3, "Initializing...\n");
 
   vector<BasisFunction> myBasisFunctions = myConfiguration.GetBasisFunctions();
+  myPrinter.Print(5, "Using %d basis functions:", myBasisFunctions.size());
+  for(vector<BasisFunction>::const_iterator it = myBasisFunctions.begin(); it!=myBasisFunctions.end(); ++it)
+	{
+	  myPrinter.Print(5, "%s %s", ((it==myBasisFunctions.begin())?"":","),it->GetName());
+	}
+  myPrinter.Print(5, ".\n");
 
   unsigned int numberOfGLPoints = myConfiguration.GetKCurve()->GetTotalNumberOfGLPoints();
   unsigned int numberOfBasisFunctions =  myBasisFunctions.size();
   unsigned int MatrixSize = numberOfGLPoints * numberOfBasisFunctions;
-
+  myPrinter.Print(5, "Total number of GL points in k-space: %d, Matrix size: %d.\n", numberOfGLPoints, MatrixSize);
 
 
   CMatrix HamiltonianMatrix(MatrixSize, MatrixSize);
   HamiltonianMatrix.InitializeAll(0.);
 
-  myPrinter->Print(1,"Constructing Hamiltonian matrix.\n");
 
-  unsigned int hFactor = MAX(numberOfBasisFunctions, numberOfGLPoints);
+  ///The main stuff: construct the Hamiltoninan matrix.
+
+  myPrinter.Print(1,"Constructing Hamiltonian matrix.\n");
+  
 
   ParametrizedCurve * myCurve = myConfiguration.GetKCurve();
   Potential * myPotential = myConfiguration.GetPotential();
 
   for(unsigned int i = 0; i<MatrixSize; ++i)
 	{
-	  unsigned int curvePointerA = i % hFactor;
-	  unsigned int basisPointerA = i / hFactor;
+	  unsigned int curvePointerA = i % numberOfGLPoints;
+	  unsigned int basisPointerA = i / numberOfGLPoints;
 	  unsigned int curveSegmentA = myCurve->SegmentIndexFromGLNumber(curvePointerA);
 
 	  ComplexDouble kA = myCurve->GetRuleValue(curveSegmentA, curvePointerA);
@@ -73,8 +81,8 @@ int main(int argc, char *argv[])
 		
 	  for(unsigned int j = 0; j<MatrixSize; ++j)
 		{
-		  unsigned int curvePointerB = j % hFactor;
-		  unsigned int basisPointerB = j / hFactor;
+		  unsigned int curvePointerB = j % numberOfGLPoints;
+		  unsigned int basisPointerB = j / numberOfGLPoints;
 		  unsigned int curveSegmentB = myCurve->SegmentIndexFromGLNumber(curvePointerB);
 		  
 		  ComplexDouble kB = myCurve->GetRuleValue(curveSegmentB, curvePointerB);
@@ -82,18 +90,16 @@ int main(int argc, char *argv[])
 		  
 		  HamiltonianMatrix.Element(i, j) += ComplexDouble(1./(2.*PI),0)*
 			sqrt(wA*wB)
-			*myPotential->BasisIntegrate(myBasisFunctions
+			*myPotential->BasisIntegrate(myBasisFunctions[basisPointerA], myBasisFunctions[basisPointerB], kA, kB);
 		}
 	  HamiltonianMatrix.Element(i,i) += pow(HBARC,2)/(2.*MASSOVERC2) * pow(kA, 2);
 	}
 
 
-  //myPrinter->Print(12,HamiltonianMatrix.ToString().c_str());
-
-
+  ///Validate some basic properties of the Hamilton matrix, if they are expected.
   if(myConfiguration.GetExpectedMatrixType() == SymmetricMatrix)
 	{
-	  myPrinter->Print(1, "Validating symmetricity of matrix.\n");
+	  myPrinter.Print(1, "Validating symmetricity of matrix.\n");
 	  if ( ! HamiltonianMatrix.IsSymmetric(true) )
 		{
 		  throw RLException("The matrix was found to be non-symmetric.");
@@ -101,95 +107,129 @@ int main(int argc, char *argv[])
 	}
   if(myConfiguration.GetExpectedMatrixType() == HermitianMatrix)
 	{
-	  myPrinter->Print(1, "Validating hermiticity of matrix.\n");
+	  myPrinter.Print(1, "Validating hermiticity of matrix.\n");
 	  if( ! HamiltonianMatrix.IsHermitian(true))
 		{
 		  throw RLException("The matrix was found to be non-hermitian.");
 		}
 	}
 
-  
-  myPrinter->Print(1, "Solving for eigenvalues and eigenvectors of the Hamiltonian.\n");
-
+  myPrinter.Print(1, "Solving for eigenvalues and eigenvectors of the Hamiltonian.\n");
   EigenInformation myInfo = EigenvalueSolver::Solve(&HamiltonianMatrix);
+  
+  
+  myPrinter.Print(2, "Saving results to files.\n");
 
-  /*
-  for(vector<ComplexDouble>::const_iterator it = myInfo.Eigenvalues.begin(); it!=myInfo.Eigenvalues.end(); ++it)
+  PrintPotentialToFile(myConfiguration.GetPotentialFile(), myConfiguration.GetPotential());
+  PrintPotentialPrecisionToFile(myConfiguration.GetPotentialPrecisionFile(), myConfiguration.GetPotential());
+  PrintParametrizedCurveToFile(myConfiguration.GetKCurveFile(), myConfiguration.GetKCurve());
+  PrintKFoundToFile(myConfiguration.GetKFoundFile(), &myInfo);
+
+
+
+  myPrinter.Print(2, "Launching plotters.\n");
+  if(myConfiguration.GetAutoPlotPotential())
 	{
-	  cout << *it << endl;
+	  char buffer[4000];
+	  sprintf(buffer, "gnuplot/./PotentialPlot.sh \"%s\" \"%s\"", myConfiguration.GetPotentialFile(), myConfiguration.GetPotentialPrecisionFile());
+	  system(buffer);
 	}
-  */
+  if(myConfiguration.GetAutoPlotKCurve())
+	{
+	  char buffer[4000];
+	  sprintf(buffer, "gnuplot/./KPlot.sh \"%s\" \"%s\"", myConfiguration.GetKCurveFile(), myConfiguration.GetKFoundFile());
+	  system(buffer);
+	}
 
-  PrintDataToFile(myPrinter, dataFile, myInfo, kValuesOnCurve, myConfiguration.GetPotential().GetPotentialPoints());
 
-
-  myPrinter->Print(2, "Cleaning up.\n");
-  delete myPrinter;
-
+  myPrinter.Print(2, "Done, exiting.\n");
   return 0;
 }
 
-void PrintDataToFile(VerbosePrinter * myPrinter, const string fileName, const EigenInformation & data, const vector<ComplexDouble> & kValuesOnCurve, const list<Interval> & potentialIntervals)
+
+void PrintPotentialToFile(const char * fileName, const Potential * potential)
 {
-  FILE * fout = fopen(fileName.c_str(), "w");
-  fprintf(fout, "#This file was created by 'Compute', a computation program, for plotting stuff related to Rikard Lundmark's Master thesis.\n");
+  FILE * fout = fopen(fileName, "w");
 
-  ///Print a couple of datasets, to be able to visualize with GNUPLOT
-
-
-  fprintf(fout, "\"k-values in basis\"\n");
-  for(vector<ComplexDouble>::const_iterator it = kValuesOnCurve.begin(); it!=kValuesOnCurve.end(); ++it)
-	{
-	  //if(real(*it)>= 0)
-		fprintf(fout, "%13.6e %13.6e\n",real(*it),imag(*it));
-	}
-  fprintf(fout, "\n\n\n");
-
-
-
-  fprintf(fout, "\"Potential\"\n");
-
-  double lastPoint = -10;
-  for(list<Interval>::const_iterator it = potentialIntervals.begin(); it!=potentialIntervals.end(); ++it)
-	{
-	  if(!DBL_EQUAL(it->x1,lastPoint))
-		{
-		  fprintf(fout, "%13.6e %13.6e\n", lastPoint+EPS, 0.);
-		  fprintf(fout, "%13.6e %13.6e\n", it->x1-EPS,0.);
-		}
-	  fprintf(fout, "%13.6e %13.6e\n", it->x1, it->y);
-	  fprintf(fout, "%13.6e %13.6e\n", it->x2, it->y);
-	  lastPoint = it->x2;
-	}
-  fprintf(fout, "%13.6e %13.6e\n", potentialIntervals.back().x2, 0.);
-  fprintf(fout, "%13.6e %13.6e\n", 10., 0.);
-
-
-  fprintf(fout, "\n\n\n");
+  double potentialLength = potential->GetMaxX() - potential->GetMinX();
+  if(potentialLength < 0)
+	throw RLException("The potential length was calculated to be < 0. Something is wrong.");
   
-  fprintf(fout, "\"k-values\"\n");
-  for(vector<ComplexDouble>::const_iterator it = data.Eigenvalues.begin(); it!=data.Eigenvalues.end(); ++it)
+  double scaleFactor = 0.2; ///How much zero spacing to add at the end of the potential.
+
+  vector<pair<double, double> >  plottingPoints = potential->GetPlottingPoints();
+
+  fprintf(fout, "#Potential function\n");
+  fprintf(fout, "%+13.10e %+13.10e\n", potential->GetMinX() - scaleFactor*potentialLength, 0.);
+  for(vector<pair<double, double> >::const_iterator it = plottingPoints.begin(); it!=plottingPoints.end(); ++it)
 	{
-	  ComplexDouble kToPrint = sqrt((*it)*(double)2.*(double)MASSOVERC2)/HBARC;
-	  ///Transform to uhp if numerical stability screwed us over...
-	  if( (abs(imag(kToPrint)) > 1E1*abs(real(kToPrint))  && imag(kToPrint) < 0))
-		{
-		  if(myPrinter != NULL)
-			{
-			  myPrinter->Print(2,"Artificial rotation of a point to uhp.\n");
-			}
-		  kToPrint *= ComplexDouble(-1,0);
-		}
-
-
-	  fprintf(fout, "%13.6e, %13.6e\n", real(kToPrint), imag(kToPrint));
+	  fprintf(fout, "%+13.10e %+13.10e\n", it->first, it->second);
 	}
-  //  printf("%13.6e + %13.6ei    %13.6e + %13.6ei    %13.6e + %13.6ei\n",real(sqrt(ComplexDouble(-1,0))),imag(sqrt(ComplexDouble(-1,0))), real(sqrt(ComplexDouble(0,1))), imag(sqrt(ComplexDouble(0,1))), real(sqrt(ComplexDouble(0,-1))), imag(sqrt(ComplexDouble(0,-1))));
-
-
+  fprintf(fout, "%+13.10e %+13.10e\n", potential->GetMaxX() + scaleFactor*potentialLength,0.0);
+ 
   fclose(fout);
+  fout = NULL; 
 }
 
+void PrintPotentialPrecisionToFile(const char * fileName, const Potential * potential)
+{
+  FILE * fout = fopen(fileName, "w");
+
+  vector<pair<double, double> >  plottingPoints = potential->GetPrecisionPoints();
+  fprintf(fout, "#Potential precision\n");
+  for(vector<pair<double, double> >::const_iterator it = plottingPoints.begin(); it!=plottingPoints.end(); ++it)
+	{
+	  fprintf(fout, "%+13.10e %+13.10e\n", it->first, it->second);
+	}
+ 
+  fclose(fout);
+  fout = NULL; 
+}
+
+void PrintParametrizedCurveToFile(const char * fileName, const ParametrizedCurve * toPrint)
+{
+  vector<ComplexDouble> printVector;
+  for(unsigned int i = 0; i<toPrint->GetNumberOfSegments(); ++i)
+	{
+	  const vector<pair<ComplexDouble, ComplexDouble> > * rule = toPrint->GetSegmentRule(i);
+	  for(vector<pair<ComplexDouble, ComplexDouble> >::const_iterator it = rule->begin(); it != rule->end(); ++it)
+		{
+		  printVector.push_back(it->first);
+		}
+	}
+  PrintKCurveToFile(fileName, printVector);
+}
+
+void PrintKFoundToFile(const char * fileName, const EigenInformation * toPrint)
+{
+  vector<ComplexDouble> printVector;
+  for(vector<ComplexDouble>::const_iterator it = toPrint->Eigenvalues.begin(); it!=toPrint->Eigenvalues.end(); ++it)
+	{
+	  ComplexDouble kToPrint = sqrt((*it)*(double)2.*(double)MASSOVERC2)/HBARC;
+
+	  ///If numerical stability is mean to us, then rotate.
+	  if( (abs(imag(kToPrint)) > 1E1*abs(real(kToPrint))  && imag(kToPrint) < 0))
+		{
+		  kToPrint *= -1.0;
+		}
+
+	  printVector.push_back(kToPrint);
+	}
+  
+  PrintKCurveToFile(fileName, printVector);
+}
+
+void PrintKCurveToFile(const char * fileName, const vector<ComplexDouble> & toPrint)
+{
+  FILE * fout = fopen(fileName, "w");
+  fprintf(fout, "#KCurve\n");
+  for(vector<ComplexDouble>::const_iterator it = toPrint.begin(); it!=toPrint.end(); ++it)
+	{
+	  fprintf(fout, "%+13.10e %+13.10e\n", real(*it), imag(*it));
+	}
+  fclose(fout);
+  fout = NULL;
+}
 
 
 CommandLineInterpreter * InitInterpreter()

@@ -26,11 +26,10 @@ unsigned int ParametrizedCurve::SegmentIndexFromGLNumber(unsigned int val)
 	{
 	  throw RLException("Invalid GL number to get segment index from.");
 	}
-  unsigned int sum = 0;
+
   for(unsigned int i = 0; i<numberOfGLPoints.size(); ++i)
 	{
-	  sum += numberOfGLPoints[i];
-	  if(sum > val)
+	  if(cumNumberOfGLPoints[i] > val)
 		{
 		  return i;
 		}
@@ -57,6 +56,7 @@ void ParametrizedCurve::AddGLPoints(unsigned int numberOfPoints)
 
   numberOfGLPoints.push_back(numberOfPoints);
   totalNumberOfGLPoints += numberOfPoints;
+  cumNumberOfGLPoints.push_back(totalNumberOfGLPoints);
 }
 
 void ParametrizedCurve::ComputeGaussLegendre()
@@ -85,6 +85,7 @@ void ParametrizedCurve::Clear()
   totalNumberOfGLPoints = 0;
   ParametrizedCurvePoints.clear();
   numberOfGLPoints.clear();
+  cumNumberOfGLPoints.clear();
   gaussLegendreValues.clear();
   length = -1;
 }
@@ -175,15 +176,21 @@ const vector<pair<ComplexDouble, ComplexDouble> > * ParametrizedCurve::GetSegmen
 
 const pair<ComplexDouble, ComplexDouble> * ParametrizedCurve::GetRulePoint(unsigned int segment, unsigned int GLpoint) const
 {
+  unsigned int offset = (segment > 0)?cumNumberOfGLPoints[segment-1]:0;
+  if(offset > GLpoint)
+	{
+	  throw RLException("Internal inconsistency: offset > GLPoint.");
+	}
   if( segment > GetNumberOfSegments() )
 	{
-	  throw RLException("Invalid segment number.");
+	  throw RLException("Invalid segment number: requested %d but there are %d segments.", segment, GetNumberOfSegments());
 	}
-  if( GLpoint >= gaussLegendreValues[segment].size() )
+  if( GLpoint - offset >= gaussLegendreValues[segment].size() )
 	{
-	  throw RLException("Invalid GL point number.");
+	  throw RLException("Invalid GL point number on segment %d: requested %d but max is %d.", segment, GLpoint, gaussLegendreValues[segment].size());
 	}
-  return &gaussLegendreValues[segment][GLpoint];
+
+  return &gaussLegendreValues[segment][GLpoint-offset];
 }
 
 ComplexDouble ParametrizedCurve::GetRuleValue(unsigned int segment, unsigned int GLpoint) const

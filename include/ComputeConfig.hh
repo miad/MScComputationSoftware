@@ -1,14 +1,19 @@
 #ifndef ComputeConfig_hh
 #define ComputeConfig_hh 1
 
+#include <list>
+#include <vector>
+
+
 #include "libconfig.hh"
 #include "RLException.hh"
 #include "Globals.hpp"
 #include "Potential.hh"
 #include "ParametrizedCurve.hh"
 #include "BasisFunction.hh"
-#include <list>
 #include "RLMacros.hpp"
+#include "PiecewiseConstantPotential.hh"
+
 
 using namespace std;
 using namespace libconfig;
@@ -57,6 +62,7 @@ public:
   const char * GetKCurveFile() const;
   const char * GetKFoundFile() const;
   const char * GetPotentialFile() const;
+  const char * GetPotentialPrecisionFile() const;
 
   Potential * GetPotential() const;
 
@@ -74,6 +80,7 @@ public:
   void SetKCurveFile(const char * value);
   void SetKFoundFile(const char * value);
   void SetPotentialFile(const char * value);
+  void SetPotentialPrecisionFile(const char * value);
   
   void SetPotential(Potential * value);
   void SetKCurve(ParametrizedCurve * value);
@@ -99,31 +106,13 @@ private:
   char kCurveFile[MAX_FILENAME_SIZE]; ///Output file for the basis state curve. Default: KCurve.dat
   char kFoundFile[MAX_FILENAME_SIZE]; ///Output file for found k-values. Default: KFound.dat
   char potentialFile[MAX_FILENAME_SIZE]; ///Output file for potential. Default: Potential.dat
+  char potentialPrecisionFile[MAX_FILENAME_SIZE]; ///Output file for potential precision points. Default: PotentialPrec.dat
 
   Potential * potential; ///Potential function. Default: a piecewise potential with 3 nonzero regions.
   ParametrizedCurve * kCurve; ///KCurve. Default: a somewhat standard Berggren curve.
   vector<BasisFunction> basisFunctions; ///Basis functions. Default: two functions, "expi+" and "expi-"
 
   ExpectedMatrixType matrixType;
-
-
-  /*
-  ///Read out parameters from the command line interpreter (or default ones, if they were not specified.
-  int verbosityLevel = atoi((myInterpreter->ReadFlaggedCommandStrict("verbose").front()).c_str());
-  unsigned int threads = atoi(myInterpreter->ReadFlaggedCommandStrict("threads").front().c_str());
-  double kCutoff = atof(myInterpreter->ReadFlaggedCommandStrict("kCutoff").front().c_str());
-  double kMid = atof(myInterpreter->ReadFlaggedCommandStrict("kMid").front().c_str());
-  double kDepth = atof(myInterpreter->ReadFlaggedCommandStrict("kDepth").front().c_str());
-  unsigned int kValuesFar = atof(myInterpreter->ReadFlaggedCommandStrict("kValuesFar").front().c_str());
-  unsigned int kValuesClose = atof(myInterpreter->ReadFlaggedCommandStrict("kValuesClose").front().c_str());
-  string dataFile = myInterpreter->ReadFlaggedCommandStrict("dataFile").front().c_str();
-  string potentialFile = myInterpreter->ReadFlaggedCommandStrict("potentialFile").front().c_str();
-
-
-  */
-
 };
-
-
 
 #endif

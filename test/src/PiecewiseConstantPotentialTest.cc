@@ -32,7 +32,7 @@ int PiecewiseConstantPotentialTest::TestCase1() const
 int PiecewiseConstantPotentialTest::TestCase2() const
 {
   PiecewiseConstantPotential myPiecewiseConstantPotential("testsample/potentialtest1.tsv");
-  list<Interval> myIs = myPiecewiseConstantPotential.GetPiecewiseConstantPotentialPoints();
+  list<Interval> myIs = myPiecewiseConstantPotential.GetPotentialPoints();
   int ptr = 0;
   for(list<Interval>::iterator it = myIs.begin(); it!=myIs.end(); ++it)
 	{

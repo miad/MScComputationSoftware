@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
+#include <iostream>
+#include <math.h>
+#include <unistd.h>
 
 #include "Potential.hh"
-
-#include <iostream>
 #include "Globals.hpp"
 #include "Matrix.hpp"
-#include <math.h>
 #include "EigenvalueSolver.hh"
 #include "RLException.hh"
 #include "CommandLineInterpreter.hh"
@@ -21,21 +21,20 @@
 #include "ParametrizedCurve.hh"
 #include "LegendreRule.hh"
 #include "ComputeConfig.hh"
-#include <unistd.h>
+
+
+using namespace std;
 
 
 #define TMP_LIST_STR(n, s) list<string> n; n.push_back(s);
 
-#define NPPUSH(v) numberOfPointsOnCurve.push_back(v)
 
-using namespace std;
 
-/*
-ComplexDouble ExpOfInnerProduct(ComplexDouble k1, 
-								ComplexDouble k2
-								);
-*/
+int main(int argc, char *argv[]);
 
+CommandLineInterpreter * InitInterpreter();///Returns a command line interpreter with defined commands.
+
+///TODO: Fix this function. 
 void PrintDataToFile(VerbosePrinter * myPrinter,
 					 const string fileName, 
 					 const EigenInformation & data, 
@@ -43,11 +42,24 @@ void PrintDataToFile(VerbosePrinter * myPrinter,
 					 const list<Interval> & potentialIntervals
 					 );
 
-int main(int argc, char *argv[]);
+void PrintPotentialToFile(const char * fileName, 
+						  const Potential * potential
+						  );
 
-CommandLineInterpreter * InitInterpreter();///Returns a command line interpreter with defined commands.
+void PrintPotentialPrecisionToFile(const char * fileName, 
+						  const Potential * potential
+						  );
 
+void PrintParametrizedCurveToFile(const char * fileName, 
+								  const ParametrizedCurve * toPrint
+								  );
 
+void PrintKCurveToFile(const char * fileName, 
+					   const vector<ComplexDouble> & toPrint
+					   );
 
+void PrintKFoundToFile(const char * fileName, 
+					   const EigenInformation * toPrint
+					   );
 
 #endif

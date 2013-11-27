@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <cstring>
+#include <map>
 
 using namespace std;
 
@@ -27,6 +28,8 @@ public:
 				);///Constructor.
   ComplexDouble Eval(ComplexDouble x);
   const char * GetName() const;
+  
+
 
 private:
   ComplexDouble factor; ///Indicates sign and possibly a factor I.
