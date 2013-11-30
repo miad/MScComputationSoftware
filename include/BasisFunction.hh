@@ -3,10 +3,12 @@
 
 #include "Globals.hpp"
 #include "RLException.hh"
+#include "fparser.hh"
 #include <stdio.h>
 #include <ctype.h>
 #include <cstring>
 #include <map>
+#include <iostream>
 
 using namespace std;
 
@@ -15,28 +17,25 @@ using namespace std;
 class BasisFunction
 {
 public:
-  BasisFunction(const char * name ///Name of the basis function. May be one of the following:
-				/*    "sin"
-				 *    "cos"
-				      "exp"
-					  
-					  also, the fourth and fifth characters may be a plus sign (implicit by omission), a minus sign and/or an i.
-					  Normal choices: 
-					  expi+ expi-
-					  sin cos
-				 */
+  BasisFunction(string _name ///Name of the basis function. May be arbitrary function.
 				);///Constructor.
-  ComplexDouble Eval(ComplexDouble x);
+  ComplexDouble Eval(const ComplexDouble & x, 
+					 const ComplexDouble & k = 1.0
+					 );
   const char * GetName() const;
+  
+  void ForceDeepCopy(); ///Forces a deep copy for the underlying FunctionParser object.
 
-  double GetPreFactor() const;
+  //ComplexDouble GetPreFactor() const;
   
 
 
 private:
-  ComplexDouble factor; ///Indicates sign and possibly a factor I.
+  FunctionParser_cd fp;
+  //ComplexDouble factor; ///Indicates sign and possibly a factor I.
+  //ComplexDouble preFactor; ///A factor in front of the basis element. 
   short type; ///Indicates the type (sin, cos, exp, ...)
-  char name[6]; ///Used when returning name.
+  string name;
 };
 
 #endif

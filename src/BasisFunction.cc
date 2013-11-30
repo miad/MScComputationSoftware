@@ -1,9 +1,18 @@
 #include "BasisFunction.hh"
 
-BasisFunction::BasisFunction(const char * _name)
-  :type(-1)
+BasisFunction::BasisFunction(string _name)
+  :type(-1), name(_name)
 {
-  factor = ComplexDouble(1, 0);
+
+  fp.Parse(name, "x,k");
+  fp.Optimize();
+  
+  //factor = ComplexDouble(1, 0);
+  
+  // First make some meaningful parsing of _name.
+  
+  
+  /*  
   unsigned short len = strlen(_name);
   if(len < 3 || len > 5)
 	throw RLException("Invalid name length: %d, name: '%s'", len, _name);
@@ -46,10 +55,25 @@ BasisFunction::BasisFunction(const char * _name)
 		  throw RLException("Unknown stuff in the name string sent to BasisFunction constructor.");
 		}
 	}
+  */
 }
 
-ComplexDouble BasisFunction::Eval(ComplexDouble x)
+void BasisFunction::ForceDeepCopy()
 {
+  fp.ForceDeepCopy();
+}
+
+ComplexDouble BasisFunction::Eval(const ComplexDouble & x, const ComplexDouble & k)
+{
+  ComplexDouble toEval[2]; toEval[0] = x; toEval[1] = k;
+  ComplexDouble toReturn = fp.Eval(&toEval[0]);
+  int err = fp.EvalError();
+  if(err)
+	{
+	  throw RLException("Function evaluation error: %d\n", err);
+	}
+  return toReturn;
+  /*
   x *= factor;
   switch(type)
 	{
@@ -62,24 +86,27 @@ ComplexDouble BasisFunction::Eval(ComplexDouble x)
 	default:
 	  throw RLException("Invalid type. This is an internal inconsistency in the code for BasisFunction.");
 	}
+  */
 }
 
 const char * BasisFunction::GetName() const
 {
-  return name;
+  return name.c_str();
 }
 
-double BasisFunction::GetPreFactor() const
+/*
+ComplexDouble BasisFunction::GetPreFactor() const
 {
   switch(type)
 	{
 	case 0:
-	  return 1;
+	  return 1.0;
 	case 1:
-	  return 2;
+	  return 2.0;
 	case 2:
-	  return 2;
+	  return 2.0;
 	default:
 	  throw RLException("Invalid type. This is an internal inconsistency in the code for BasisFunction.");
 	}
 }
+*/

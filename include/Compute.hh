@@ -13,6 +13,7 @@
 #include "Matrix.hpp"
 #include "EigenvalueSolver.hh"
 #include "RLException.hh"
+#include "MultiTasker.hpp"
 #include "CommandLineInterpreter.hh"
 #include "CommandLineArgument.hh"
 #include "CommandLineException.hh"
@@ -30,9 +31,47 @@ using namespace std;
 
 
 
+class WorkerData
+{
+public:
+  WorkerData(CMatrix * _HamiltonianMatrix,
+			 ParametrizedCurve * _myCurve,
+			 Potential * _myPotential,
+			 vector<BasisFunction> _myBasisFunctions,
+			 unsigned int _numberOfGLPoints,
+			 unsigned int _m1, unsigned int _m2,
+			 unsigned int _n1, unsigned int _n2)
+	:HamiltonianMatrix(_HamiltonianMatrix),
+	 myCurve(_myCurve),
+	 myPotential(_myPotential),
+	 myBasisFunctions(_myBasisFunctions),
+	 numberOfGLPoints(_numberOfGLPoints),
+	 m1(_m1),m2(_m2),n1(_n1),n2(_n2)
+  { 
+	for(vector<BasisFunction>::iterator it = myBasisFunctions.begin(); it!=myBasisFunctions.end(); ++it)
+	  {
+		it->ForceDeepCopy();
+	  }
+	
+}
+
+  CMatrix * HamiltonianMatrix;
+  ParametrizedCurve * myCurve; 
+  Potential * myPotential;
+  vector<BasisFunction> myBasisFunctions;
+  unsigned int numberOfGLPoints; 
+  unsigned int m1, m2, n1, n2;
+};
+
+
+
+
 int main(int argc, char *argv[]);
 
 CommandLineInterpreter * InitInterpreter();///Returns a command line interpreter with defined commands.
+
+
+void * EvaluateSubMatrix(WorkerData w);
 
 ///TODO: Fix this function. 
 void PrintDataToFile(VerbosePrinter * myPrinter,
@@ -61,5 +100,7 @@ void PrintKCurveToFile(const char * fileName,
 void PrintKFoundToFile(const char * fileName, 
 					   const EigenInformation * toPrint
 					   );
+
+
 
 #endif

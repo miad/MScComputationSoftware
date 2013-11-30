@@ -217,7 +217,7 @@ ComplexDouble PiecewiseConstantPotential::BasisIntegrate(BasisFunction & b1, Bas
   {
 	for(vector<pair<double, double> >::const_iterator it = iLeg->begin(); it != iLeg->end(); ++it)
 	  {
-		value += it->second * iPot->y * b1.Eval(k1 * it->first) * b2.Eval(k2 * it->first);
+		value += it->second * iPot->y * b1.Eval(it->first, k1) * b2.Eval(it->first, k2);
 	  }
 	++iPot; ++iLeg;
   }

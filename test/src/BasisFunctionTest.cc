@@ -2,47 +2,39 @@
 
 int BasisFunctionTest::TestCase1() const
 {
-  BasisFunction Fsin("sin");
-  BasisFunction Fsinp("sin+");
-  BasisFunction Fsinip("sini+");
-  BasisFunction Fcos("cos");
-  BasisFunction Fcosp("cos+");
-  BasisFunction Fcosip("cosi+");
-  BasisFunction Fexp("exp");
-  BasisFunction Fexpp("exp+");
-  BasisFunction Fexpm("exp-");
-  BasisFunction Fexpip("expi+");
-  BasisFunction Fexpim("expi-");
+  BasisFunction Fsin("sin(k*x)");
+  BasisFunction Fsinp("sin(1*k*x)");
+  BasisFunction Fsinip("sin(1i*k*x)");
+  BasisFunction Fcos("cos(k*x)");
+  BasisFunction Fcosp("cos(k*x)");
+  BasisFunction Fcosip("cos(1i*k*x)");
+  BasisFunction Fexp("exp(x)");
+  BasisFunction Fexpp("exp(x)");
+  BasisFunction Fexpm("exp(-x)");
+  BasisFunction Fexpip("exp(1i*x)");
+  BasisFunction Fexpim("exp(-1i*x)");
   
-  try
-	{
-	  BasisFunction vask("kasta");
-	  return 1;
-	}
-  catch(RLException &ex)
-	{ }
-
-  if(strcmp(Fsin.GetName(), "sin") != 0)
+  if(strcmp(Fsin.GetName(), "sin(k*x)") != 0)
 	return 2;
-  if(strcmp(Fsinp.GetName(), "sin+") != 0)
+  if(strcmp(Fsinp.GetName(), "sin(1*k*x)") != 0)
 	return 3;
-  if(strcmp(Fsinip.GetName(), "sini+") != 0)
+  if(strcmp(Fsinip.GetName(), "sin(1i*k*x)") != 0)
 	return 4;
-  if(strcmp(Fcos.GetName(), "cos") != 0)
+  if(strcmp(Fcos.GetName(), "cos(k*x)") != 0)
 	return 5;
-  if(strcmp(Fcosp.GetName(), "cos+") != 0)
+  if(strcmp(Fcosp.GetName(), "cos(k*x)") != 0)
 	return 6;
-  if(strcmp(Fcosip.GetName(), "cosi+") != 0)
+  if(strcmp(Fcosip.GetName(), "cos(1i*k*x)") != 0)
 	return 7;
-  if(strcmp(Fexp.GetName(), "exp") != 0)
+  if(strcmp(Fexp.GetName(), "exp(x)") != 0)
 	return 8;
-  if(strcmp(Fexpp.GetName(), "exp+") != 0)
+  if(strcmp(Fexpp.GetName(), "exp(x)") != 0)
 	return 9;
-  if(strcmp(Fexpm.GetName(), "exp-") != 0)
+  if(strcmp(Fexpm.GetName(), "exp(-x)") != 0)
 	return 10;
-  if(strcmp(Fexpip.GetName(), "expi+") != 0)
+  if(strcmp(Fexpip.GetName(), "exp(1i*x)") != 0)
 	return 11;
-  if(strcmp(Fexpim.GetName(), "expi-") != 0)
+  if(strcmp(Fexpim.GetName(), "exp(-1i*x)") != 0)
 	return 12;
 
   if(!DBL_EQUAL(Fsin.Eval(1.42), sin(1.42)))

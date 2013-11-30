@@ -56,6 +56,8 @@ public:
 
   unsigned int GetVerbosityLevel() const;
 
+  unsigned int GetNumberOfThreads() const;
+
   bool GetAutoPlotPotential() const;
   bool GetAutoPlotKCurve() const;
   
@@ -92,6 +94,7 @@ public:
 
   
   void SetVerbosityLevel(unsigned int value);
+  void SetNumberOfThreads(unsigned int value);
 
   void SetExpectedMatrixType(ExpectedMatrixType val);
 
@@ -99,7 +102,8 @@ public:
 private:
 
   ///This stuff should typically be contained in the configuration file.
-
+  
+  unsigned int numberOfThreads; ///number of threads. Default: 1
   unsigned int verbosityLevel; ///The verbosity level. Default: 0
   bool autoPlotPotential; ///Auto plot potential. Default: false
   bool autoPlotKCurve; ///Auto plot K curve .Default: false

@@ -1,7 +1,7 @@
 #include "ComputeConfig.hh"
 
 ComputeConfig::ComputeConfig()
-  :verbosityLevel(0), autoPlotPotential(false), autoPlotKCurve(false)
+  :numberOfThreads(1), verbosityLevel(0), autoPlotPotential(false), autoPlotKCurve(false)
 {
   strcpy(kCurveFile, "KCurve.dat");
   strcpy(kFoundFile, "KFound.dat");
@@ -95,6 +95,11 @@ void ComputeConfig::ReadFile(const char * fileName)
   if(! program.lookupValue("VerbosityLevel", verbosityLevel))
 	{
 	  throw RLException("The value 'VerbosityLevel' was not defined.");
+	}
+
+  if(! program.lookupValue("NumberOfThreads", numberOfThreads))
+	{
+	  throw RLException("The value 'NumberOfThreads' was not defined.");
 	}
 
   Setting & autolaunch = program["AutoLaunch"];
@@ -346,6 +351,7 @@ void ComputeConfig::WriteFile(const char * fileName) const
   root.add("Program", Setting::TypeGroup);
 
   root["Program"].add("VerbosityLevel", Setting::TypeInt) = (int)verbosityLevel;
+  root["Program"].add("NumberOfThreads", Setting::TypeInt) = (int)numberOfThreads;
 
   Setting & autolaunch = root["Program"].add("AutoLaunch",Setting::TypeGroup);
   Setting & gnuplot = autolaunch.add("Gnuplot", Setting::TypeGroup);  
@@ -543,4 +549,15 @@ ExpectedMatrixType ComputeConfig::GetExpectedMatrixType() const
 void ComputeConfig::SetExpectedMatrixType(ExpectedMatrixType value)
 {
   matrixType = value;
+}
+
+
+unsigned int ComputeConfig::GetNumberOfThreads() const
+{
+  return numberOfThreads;
+}
+
+void ComputeConfig::SetNumberOfThreads(unsigned int value)
+{
+  numberOfThreads = value;
 }

@@ -70,6 +70,33 @@ int main(int argc, char *argv[])
   ParametrizedCurve * myCurve = myConfiguration.GetKCurve();
   Potential * myPotential = myConfiguration.GetPotential();
 
+  MultiTasker<WorkerData, void*> myMultiTasker(EvaluateSubMatrix, myConfiguration.GetNumberOfThreads());
+
+  myMultiTasker.RegisterListener(&myPrinter);
+
+
+  for(unsigned int i = 0; i<MatrixSize; ++i)
+	{
+	  myMultiTasker.AddInput(WorkerData(&HamiltonianMatrix,
+								   myCurve,
+								   myPotential,
+								   myBasisFunctions,
+								   numberOfGLPoints,
+								   i,
+								   i+1,
+								   0,
+								   MatrixSize)
+						);
+	}
+  myMultiTasker.LaunchThreads();
+
+  myMultiTasker.PauseUntilOutputIsGenerated();
+  
+
+
+
+  ///Main work takes place here: the Hamiltonian is constructed.
+  /*
   for(unsigned int i = 0; i<MatrixSize; ++i)
 	{
 	  unsigned int curvePointerA = i % numberOfGLPoints;
@@ -79,7 +106,7 @@ int main(int argc, char *argv[])
 	  ComplexDouble kA = myCurve->GetRuleValue(curveSegmentA, curvePointerA);
 	  ComplexDouble wA = myCurve->GetRuleWeight(curveSegmentA, curvePointerA);
 
-	  double preFactorA = myBasisFunctions[basisPointerA].GetPreFactor();
+	  //ComplexDouble preFactorA = myBasisFunctions[basisPointerA].GetPreFactor();
 		
 	  for(unsigned int j = 0; j<MatrixSize; ++j)
 		{
@@ -90,14 +117,19 @@ int main(int argc, char *argv[])
 		  ComplexDouble kB = myCurve->GetRuleValue(curveSegmentB, curvePointerB);
 		  ComplexDouble wB = myCurve->GetRuleWeight(curveSegmentB, curvePointerB);
 
-		  double preFactorB = myBasisFunctions[basisPointerB].GetPreFactor();
+		  //ComplexDouble preFactorB = myBasisFunctions[basisPointerB].GetPreFactor();
 		  
 		  HamiltonianMatrix.Element(i, j) += ComplexDouble(1./(2.*PI),0)*
-			sqrt(wA*wB)
-			*myPotential->BasisIntegrate(myBasisFunctions[basisPointerA], myBasisFunctions[basisPointerB], kA, kB) * sqrt(preFactorA*preFactorB);
+			sqrt(wA*wB)*
+			myPotential->BasisIntegrate(myBasisFunctions[basisPointerA], 
+										 myBasisFunctions[basisPointerB], 
+										kA, kB) ;
 		}
 	  HamiltonianMatrix.Element(i,i) += pow(HBARC,2)/(2.*MASSOVERC2) * pow(kA, 2);
 	}
+
+  */
+
 
 
   ///Validate some basic properties of the Hamilton matrix, if they are expected.
@@ -250,3 +282,46 @@ CommandLineInterpreter * InitInterpreter()
   return myInterpreter;
 }
 
+void * EvaluateSubMatrix(WorkerData w)
+{
+  CMatrix * HamiltonianMatrix = w.HamiltonianMatrix;
+  ParametrizedCurve * myCurve = w.myCurve;
+  Potential * myPotential = w.myPotential;
+  vector<BasisFunction> * myBasisFunctions = &w.myBasisFunctions;
+  unsigned int numberOfGLPoints = w.numberOfGLPoints;
+  unsigned int m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
+
+
+
+  for(unsigned int i = m1; i<m2; ++i)
+	{
+	  unsigned int curvePointerA = i % numberOfGLPoints;
+	  unsigned int basisPointerA = i / numberOfGLPoints;
+	  unsigned int curveSegmentA = myCurve->SegmentIndexFromGLNumber(curvePointerA);
+	  
+	  ComplexDouble kA = myCurve->GetRuleValue(curveSegmentA, curvePointerA);
+	  ComplexDouble wA = myCurve->GetRuleWeight(curveSegmentA, curvePointerA);
+	  
+	  //ComplexDouble preFactorA = myBasisFunctions[basisPointerA].GetPreFactor();
+	  
+	  for(unsigned int j = n1; j<n2; ++j)
+		{
+		  unsigned int curvePointerB = j % numberOfGLPoints;
+		  unsigned int basisPointerB = j / numberOfGLPoints;
+		  unsigned int curveSegmentB = myCurve->SegmentIndexFromGLNumber(curvePointerB);
+		  
+		  ComplexDouble kB = myCurve->GetRuleValue(curveSegmentB, curvePointerB);
+		  ComplexDouble wB = myCurve->GetRuleWeight(curveSegmentB, curvePointerB);
+		  
+		  //ComplexDouble preFactorB = myBasisFunctions[basisPointerB].GetPreFactor();
+		  
+		  HamiltonianMatrix->Element(i, j) += ComplexDouble(1./(2.*PI),0)*
+			sqrt(wA*wB)*
+			myPotential->BasisIntegrate((*myBasisFunctions)[basisPointerA], 
+										(*myBasisFunctions)[basisPointerB], 
+										kA, kB) ;
+		}
+	HamiltonianMatrix->Element(i,i) += pow(HBARC,2)/(2.*MASSOVERC2) * pow(kA, 2);
+   }
+   return NULL;
+}
