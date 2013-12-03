@@ -13,12 +13,13 @@
 #include "BasisFunction.hh"
 #include "RLMacros.hpp"
 #include "PiecewiseConstantPotential.hh"
+#include "ParametrizedPotential.hh"
 
 
 using namespace std;
 using namespace libconfig;
 
-#define CONFIG_FILE_VERSION 0.1
+#define CONFIG_FILE_VERSION 0.2
 #define MAX_FILENAME_SIZE 1000
 
 
@@ -65,6 +66,8 @@ public:
   const char * GetKFoundFile() const;
   const char * GetPotentialFile() const;
   const char * GetPotentialPrecisionFile() const;
+  const char * GetInterestingPointsFile() const;
+  const char * GetWavefunctionFile() const;
 
   Potential * GetPotential() const;
 
@@ -73,6 +76,13 @@ public:
   const vector<BasisFunction> & GetBasisFunctions() const;
 
   ExpectedMatrixType GetExpectedMatrixType() const;
+
+
+  double GetMinWavefunctionX() const;
+  double GetMaxWavefunctionX() const;
+  double GetWavefunctionStepsizeX() const;
+  
+
 
   ///Setters
 
@@ -83,13 +93,17 @@ public:
   void SetKFoundFile(const char * value);
   void SetPotentialFile(const char * value);
   void SetPotentialPrecisionFile(const char * value);
+  void SetInterestingPointsFile(const char * value);
+  void SetWavefunctionFile(const char * value);
   
   void SetPotential(Potential * value);
   void SetKCurve(ParametrizedCurve * value);
   
   void SetBasisFunctions(vector<BasisFunction> value);
 
-
+  void SetMinWavefunctionX(double value);
+  void SetMaxWavefunctionX(double value);
+  void SetWavefunctionStepsizeX(double value);
 
 
   
@@ -103,14 +117,27 @@ private:
 
   ///This stuff should typically be contained in the configuration file.
   
+
+
+
+
   unsigned int numberOfThreads; ///number of threads. Default: 1
   unsigned int verbosityLevel; ///The verbosity level. Default: 0
   bool autoPlotPotential; ///Auto plot potential. Default: false
   bool autoPlotKCurve; ///Auto plot K curve .Default: false
+
+  double minWavefunctionX;
+  double maxWavefunctionX;
+  double wavefunctionStepsizeX;
+
+
+
   char kCurveFile[MAX_FILENAME_SIZE]; ///Output file for the basis state curve. Default: KCurve.dat
   char kFoundFile[MAX_FILENAME_SIZE]; ///Output file for found k-values. Default: KFound.dat
   char potentialFile[MAX_FILENAME_SIZE]; ///Output file for potential. Default: Potential.dat
   char potentialPrecisionFile[MAX_FILENAME_SIZE]; ///Output file for potential precision points. Default: PotentialPrec.dat
+  char interestingPointsFile[MAX_FILENAME_SIZE]; ///Store interesting points (bound states, resonances) here.
+  char wavefunctionFile[MAX_FILENAME_SIZE]; ///Store wavefunction to interesting points here. First column is x-values, the other columns are wavefunctions for the eigenvalues, in order.
 
   Potential * potential; ///Potential function. Default: a piecewise potential with 3 nonzero regions.
   ParametrizedCurve * kCurve; ///KCurve. Default: a somewhat standard Berggren curve.

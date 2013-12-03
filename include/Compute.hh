@@ -30,43 +30,44 @@ using namespace std;
 #define TMP_LIST_STR(n, s) list<string> n; n.push_back(s);
 
 
-///Class containing the data used by each worker thread.
+/**
+Class containing the data used by each worker thread.
+Essential for the use in RLLib.
+*/
 class WorkerData
 {
 public:
-  WorkerData(CMatrix * _HamiltonianMatrix,
-			 ParametrizedCurve * _myCurve,
-			 Potential * _myPotential,
-			 vector<BasisFunction> _myBasisFunctions,
-			 unsigned int _numberOfGLPoints,
-			 unsigned int _m1, unsigned int _m2,
-			 unsigned int _n1, unsigned int _n2)
+  WorkerData(CMatrix * _HamiltonianMatrix, ///Pointer to the Hamilton matrix in use.
+			 ParametrizedCurve * _myCurve, ///Pointer to the ParametrizedCurve in use.
+			 Potential * _myPotential, ///Pointer to the potential in use. NOTE: may not be threadsafe, should be checked (due to underlying function evaluator class).
+			 vector<BasisFunction> _myBasisFunctions, ///Basis functions in use.
+			 unsigned int _numberOfGLPoints, ///Number of GL points in use.
+			 unsigned int _m1, /// Specifies the submatrix to use.
+			 unsigned int _m2, /// Specifies the submatrix to use.
+			 unsigned int _n1, /// Specifies the submatrix to use.
+			 unsigned int _n2 /// Specifies the submatrix to use.
+			 ) ///Constructor, basically initialize all values.
 	:HamiltonianMatrix(_HamiltonianMatrix),
 	 myCurve(_myCurve),
 	 myPotential(_myPotential),
 	 myBasisFunctions(_myBasisFunctions),
 	 numberOfGLPoints(_numberOfGLPoints),
 	 m1(_m1),m2(_m2),n1(_n1),n2(_n2)
-  { 
-	for(vector<BasisFunction>::iterator it = myBasisFunctions.begin(); it!=myBasisFunctions.end(); ++it)
-	  {
-		it->ForceDeepCopy();
-	  }
-	
-  }
+  { }
   
-  CMatrix * HamiltonianMatrix;
-  ParametrizedCurve * myCurve; 
-  Potential * myPotential;
+  CMatrix * HamiltonianMatrix; ///Pointer to the Hamilton matrix in use.
+  ParametrizedCurve * myCurve; ///Pointer to the ParametrizedCurve in use.
+  Potential * myPotential; ///Pointer to the potential in use. NOTE: may not be threadsafe, should be checked (due to underlying function evaluator class).
   vector<BasisFunction> myBasisFunctions;
-  unsigned int numberOfGLPoints; 
-  unsigned int m1, m2, n1, n2;
+  unsigned int numberOfGLPoints; ///Number of GL points in use.
+  unsigned int m1; /// Specifies the submatrix to use.
+  unsigned int m2; /// Specifies the submatrix to use.
+  unsigned int n1; /// Specifies the submatrix to use.
+  unsigned int n2; /// Specifies the submatrix to use.
 };
 
 
-void PrintInterestingKPoints(const EigenInformation * toPrint, 
-							 const ParametrizedCurve * filter
-							 );
+
 
 int main(int argc, char *argv[]);
 
@@ -103,6 +104,30 @@ void PrintKFoundToFile(const char * fileName,
 					   const EigenInformation * toPrint
 					   );
 
+
+void PrintInterestingKPointsVerbosely(VerbosePrinter * printer,
+									  const EigenInformation * toPrint, 
+									  const ParametrizedCurve * filter
+									  );
+
+void PrintInterestingKPointsToFile(const char * fileName, 
+								   const EigenInformation * toPrint, 
+								   const ParametrizedCurve * filter
+								   );
+
+vector<ComplexDouble> FindInterestingKPoints(const EigenInformation * found, 
+											 const ParametrizedCurve * filter
+											 ); ///Find the interesting k-points (bound states or resonant states) by applying a filter on all eigenvalues.
+
+void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer,
+										 const char * fileName,
+										 const EigenInformation * toPrint,
+										 const ParametrizedCurve * filter,
+										 const vector<BasisFunction> * myBasisFunctions,
+										 double minX,
+										 double maxX,
+										 double deltaX
+										 );
 
 
 #endif

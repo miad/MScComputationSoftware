@@ -59,7 +59,7 @@ public:
 							   BasisFunction & b2, ///Second basis function.
 							   ComplexDouble & k1, ///First k-value.
 							   ComplexDouble & k2 ///Second k-value.
-							   ) const; ///Integrate the basis functions over the potential to create V(k1, k2). 
+							   ); ///Integrate the basis functions over the potential to create V(k1, k2). 
   
   
   void Clear(); ///Clear the points in the potential.
@@ -74,6 +74,8 @@ public:
   vector<pair<double, double> > GetPrecisionPoints() const; ///Returns points suitable for plotting together with the potential, indicating precision.
 
   void RecomputeLegendreRules(); ///Call this after adding any points, but before calling BasisIntegrate. If not, an exception will be thrown.
+
+  PotentialType GetType() const;
 
 
 private:

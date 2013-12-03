@@ -1,12 +1,15 @@
 #include "ComputeConfig.hh"
 
 ComputeConfig::ComputeConfig()
-  :numberOfThreads(1), verbosityLevel(0), autoPlotPotential(false), autoPlotKCurve(false)
+  :numberOfThreads(1), verbosityLevel(0), autoPlotPotential(false), autoPlotKCurve(false),
+   minWavefunctionX(-10), maxWavefunctionX(10), wavefunctionStepsizeX(0.01)
 {
   strcpy(kCurveFile, "KCurve.dat");
   strcpy(kFoundFile, "KFound.dat");
   strcpy(potentialFile,"Potential.dat");
   strcpy(potentialPrecisionFile,"PotentialPrecision.dat");
+  strcpy(interestingPointsFile, "InterestingPoints.dat");
+  strcpy(wavefunctionFile, "Wavefunctions.dat");
   PiecewiseConstantPotential * stdPotential = new PiecewiseConstantPotential();
   stdPotential->AddValue(-3, -1, 10);
   stdPotential->AddValue(-1, 1, -225);
@@ -27,8 +30,8 @@ ComputeConfig::ComputeConfig()
   kCurve->ComputeGaussLegendre();
 
 
-  basisFunctions.push_back(BasisFunction("exp(1i*k*x)"));
-  basisFunctions.push_back(BasisFunction("exp(-1i*k*x)"));
+  basisFunctions.push_back(BasisFunction("sqrt(2)*sin(k*x)"));
+  basisFunctions.push_back(BasisFunction("sqrt(2)*cos(k*x)"));
 
 }
 
@@ -160,8 +163,46 @@ void ComputeConfig::ReadFile(const char * fileName)
 	}
   else
 	{
-	  throw RLException("The value 'Potential' was not set appropriately.");
+	  throw RLException("The value 'PotentialPrecision' was not set appropriately.");
 	}
+
+  if( output.lookupValue("InterestingPoints", temp) )
+	{
+	  strcpy(interestingPointsFile, temp.c_str());
+	}
+  else
+	{
+	  throw RLException("The value 'InterestingPoints' was not set appropriately.");
+	}
+
+  if( output.lookupValue("Wavefunctions", temp) )
+	{
+	  strcpy(wavefunctionFile, temp.c_str());
+	}
+  else
+	{
+	  throw RLException("The value 'Wavefunctions' was not set appropriately.");
+	}
+
+  if( !output.exists("WavefunctionProperties") || !output["WavefunctionProperties"].isGroup() )
+	{
+	  throw RLException("WavefunctionProperties not properly defined.");
+	}
+
+  Setting & wfProp = output["WavefunctionProperties"];
+  if( ! wfProp.lookupValue("MinX", minWavefunctionX))
+	{
+	  throw RLException("Could not find MinX in WavefunctionProperties.");
+	}
+  if( ! wfProp.lookupValue("MaxX", maxWavefunctionX))
+	{
+	  throw RLException("Could not find MaxX in WavefunctionProperties.");
+	}
+  if( ! wfProp.lookupValue("DeltaX", wavefunctionStepsizeX))
+	{
+	  throw RLException("Could not find DeltaX in WavefunctionProperties.");
+	}
+
 
 
   if( !root.exists("Computation") || !root["Computation"].isGroup())
@@ -220,57 +261,97 @@ void ComputeConfig::ReadFile(const char * fileName)
 	{
 	  throw RLException("Potential type not properly defined.");
 	}
-  if(strcmp(temp.c_str(), "PiecewiseConstant") != 0)
+
+
+
+  if(strcmp(temp.c_str(), "PiecewiseConstant") == 0)
 	{
-	  throw RLException("Unsupported potential type: %s\n", temp.c_str());
+	  PiecewiseConstantPotential * locPot = new PiecewiseConstantPotential();
+	  int potPrec;
+	  if( ! poten.lookupValue("Precision", potPrec))
+		{
+		  throw RLException("Could not find precision setting in settings file.");
+		}
+	  locPot->SetPrecision(potPrec);
+
+	  if( !poten.exists("Values") || ! poten["Values"].isList())
+		{
+		  throw RLException("Could not find 'Values'.");
+		}
+	  
+	  Setting & vval = poten["Values"];
+	  for(int i = 0; i<vval.getLength(); ++i)
+		{
+		  double x1, x2, y;
+		  if( ! vval[i].exists("Interval") || ! vval[i]["Interval"].isArray() || vval[i]["Interval"].getLength() != 2)
+			{
+			  throw RLException("Potential interval #%d was not set correctly.", i);
+			}
+		  x1 = vval[i]["Interval"][0];
+		  x2 = vval[i]["Interval"][1];
+		  
+		  if( !vval[i].lookupValue("Value", y))
+			{
+			  throw RLException("Potential value in interval #%d was not set correctly.", i);
+			}
+		  locPot->AddValue(x1, x2, y);
+		}
+	  locPot->RecomputeLegendreRules();
+	  potential = locPot;
+	}
+  else if(strcmp(temp.c_str(), "Parametrized") == 0)
+	{
+	  int potPrec;
+	  if( ! poten.lookupValue("Precision", potPrec))
+		{
+		  throw RLException("Could not find precision setting in settings file.");
+		}
+	  Setting & pparam = poten["Parameters"];
+
+	  vector<pair<string, double> > parameters;
+	  for(int i = 0; i<pparam.getLength(); ++i)
+		{
+		  string paraStr;
+		  double paraDbl;
+		  if(!pparam[i].lookupValue("Name", paraStr) || !pparam[i].lookupValue("Value", paraDbl))
+			{
+			  throw RLException("Potential parameter #%d was not properly specified.", i);
+			}
+		  parameters.push_back(make_pair(paraStr, paraDbl));
+		}
+	  
+	  string paraFunction;
+	  if(!poten.lookupValue("Function", paraFunction))
+		{
+		  throw RLException("Could not find the 'Function' property in the parametrized potential in the config file.");
+		}
+	  double minX, maxX;
+	  if(!poten.exists("Interval") || ! poten["Interval"].isArray() || poten["Interval"].getLength() != 2)
+		{
+		  throw RLException("Invalid interval specified for parametrized input potential.");
+		}
+	  minX = poten["Interval"][0];
+	  maxX = poten["Interval"][1];
+	  if(minX > maxX)
+		{
+		  throw RLException("Invalid interval specified in settings file: min is larger than max.");
+		}
+	  ParametrizedPotential * locPot = new ParametrizedPotential(paraFunction,
+																 parameters, 
+																 minX,
+																 maxX
+																 );
+	  locPot->SetPrecision(potPrec);
+	  potential = locPot;
 	}
   else
 	{
-	  potential = new PiecewiseConstantPotential();
+	  throw RLException("Unsupported potential type: '%s'", temp.c_str());
 	}
 
-  
-  int potPrec;
-  if( ! poten.lookupValue("Precision", potPrec))
-	{
-	  throw RLException("Could not find precision setting in settings file.");
-	}
 
-  potential->SetPrecision(potPrec);
-  
-  
-  if( !poten.exists("Values") || ! poten["Values"].isList())
-	{
-	  throw RLException("Could not find 'Values'.");
-	}
 
-  PiecewiseConstantPotential * locPot = dynamic_cast<PiecewiseConstantPotential*>(potential);
 
-  
-  Setting & vval = poten["Values"];
-  for(int i = 0; i<vval.getLength(); ++i)
-	{
-	  double x1, x2, y;
-	  if( ! vval[i].exists("Interval") || ! vval[i]["Interval"].isArray() || vval[i]["Interval"].getLength() != 2)
-		{
-		  throw RLException("Potential interval #%d was not set correctly.", i);
-		}
-	  x1 = vval[i]["Interval"][0];
-	  x2 = vval[i]["Interval"][1];
-	  
-	  if( !vval[i].lookupValue("Value", y))
-		{
-		  throw RLException("Potential value in interval #%d was not set correctly.", i);
-		}
-	  if(locPot)
-		{
-		  locPot->AddValue(x1, x2, y);
-		}
-	}
-  if(locPot)
-	{
-	  locPot->RecomputeLegendreRules();
-	}
 
   
   if(! computation.exists("KCurve") || !computation["KCurve"].isGroup())
@@ -363,6 +444,13 @@ void ComputeConfig::WriteFile(const char * fileName) const
   output.add("KFound", Setting::TypeString) = kFoundFile;
   output.add("Potential", Setting::TypeString) = potentialFile;
   output.add("PotentialPrecision", Setting::TypeString) = potentialPrecisionFile;
+  output.add("InterestingPoints", Setting::TypeString) = interestingPointsFile;
+  output.add("Wavefunctions", Setting::TypeString) = wavefunctionFile;
+  Setting & wavePrecision = output.add("WavefunctionProperties", Setting::TypeGroup);
+  wavePrecision.add("MinX", Setting::TypeFloat) = minWavefunctionX;
+  wavePrecision.add("MaxX", Setting::TypeFloat) = minWavefunctionX;
+  wavePrecision.add("DeltaX", Setting::TypeFloat) = minWavefunctionX;
+  
   
   root.add("Computation", Setting::TypeGroup);
 
@@ -503,6 +591,31 @@ void ComputeConfig::SetPotentialPrecisionFile(const char * value)
   strcpy(potentialPrecisionFile, value);
 }
 
+const char * ComputeConfig::GetInterestingPointsFile() const
+{
+  return interestingPointsFile;
+}
+
+void ComputeConfig::SetInterestingPointsFile(const char * value)
+{
+  if(strlen(value) > MAX_FILENAME_SIZE)
+	throw RLException("Too long filename.");
+  strcpy(interestingPointsFile, value);
+}
+
+const char * ComputeConfig::GetWavefunctionFile() const
+{
+  return wavefunctionFile;
+}
+
+void ComputeConfig::SetWavefunctionFile(const char * value)
+{
+  if(strlen(value) > MAX_FILENAME_SIZE)
+	throw RLException("Too long filename.");
+  strcpy(wavefunctionFile, value);
+}
+
+
 
 Potential * ComputeConfig::GetPotential() const
 {
@@ -560,4 +673,36 @@ unsigned int ComputeConfig::GetNumberOfThreads() const
 void ComputeConfig::SetNumberOfThreads(unsigned int value)
 {
   numberOfThreads = value;
+}
+
+
+void ComputeConfig::SetMinWavefunctionX(double value)
+{
+  minWavefunctionX = value;
+}
+
+void ComputeConfig::SetMaxWavefunctionX(double value)
+{
+  maxWavefunctionX = value;
+}
+
+void ComputeConfig::SetWavefunctionStepsizeX(double value)
+{
+  wavefunctionStepsizeX = value;
+}
+
+
+double ComputeConfig::GetMinWavefunctionX() const
+{
+  return minWavefunctionX;
+}
+
+double ComputeConfig::GetMaxWavefunctionX() const
+{
+  return maxWavefunctionX;
+}
+
+double ComputeConfig::GetWavefunctionStepsizeX() const
+{
+  return wavefunctionStepsizeX;
 }

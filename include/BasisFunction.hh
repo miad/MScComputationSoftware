@@ -19,23 +19,21 @@ class BasisFunction
 public:
   BasisFunction(string _name ///Name of the basis function. May be arbitrary function.
 				);///Constructor.
-  ComplexDouble Eval(const ComplexDouble & x, 
-					 const ComplexDouble & k = 1.0
-					 );
-  const char * GetName() const;
+
+  BasisFunction(const BasisFunction & other ///To copy from.
+				); ///Copy constructor.
+
+
+  ComplexDouble Eval(const ComplexDouble & x, ///The x-value for evaluation.
+					 const ComplexDouble & k = 1.0 ///The k-value for evaluation.
+					 ); ///Evaluate the function with the parameters x and k.
+
+  const char * GetName() const; ///Returns a string representing the function.
   
-  void ForceDeepCopy(); ///Forces a deep copy for the underlying FunctionParser object.
-
-  //ComplexDouble GetPreFactor() const;
-  
-
-
 private:
-  FunctionParser_cd fp;
-  //ComplexDouble factor; ///Indicates sign and possibly a factor I.
-  //ComplexDouble preFactor; ///A factor in front of the basis element. 
+  FunctionParser_cd fp; ///Function parser used to parse.
   short type; ///Indicates the type (sin, cos, exp, ...)
-  string name;
+  string name; ///Contains a string representing the type of basis function. This is the same as was sent to the constructor.
 };
 
 #endif

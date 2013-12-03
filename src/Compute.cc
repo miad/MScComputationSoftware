@@ -125,6 +125,19 @@ int main(int argc, char *argv[])
   PrintParametrizedCurveToFile(myConfiguration.GetKCurveFile(), myConfiguration.GetKCurve());
   PrintKFoundToFile(myConfiguration.GetKFoundFile(), &myInfo);
 
+  PrintInterestingKPointsToFile(myConfiguration.GetInterestingPointsFile(), &myInfo, myConfiguration.GetKCurve());
+  PrintInterestingWavefunctionsToFile(&myPrinter,
+									  myConfiguration.GetWavefunctionFile(), 
+									  &myInfo,
+									  myConfiguration.GetKCurve(),
+									  &myBasisFunctions,
+									  myConfiguration.GetMinWavefunctionX(),
+									  myConfiguration.GetMaxWavefunctionX(),
+									  myConfiguration.GetWavefunctionStepsizeX()
+									  );
+
+  PrintInterestingKPointsVerbosely(&myPrinter, &myInfo,myConfiguration.GetKCurve());
+
 
 
   myPrinter.Print(2, "Launching plotters.\n");
@@ -141,12 +154,18 @@ int main(int argc, char *argv[])
 	  system(buffer);
 	}
 
-  PrintInterestingKPoints(&myInfo,myConfiguration.GetKCurve());
 
 
   myPrinter.Print(2, "Done, exiting.\n");
   return 0;
 }
+
+
+
+
+
+
+
 
 
 void PrintPotentialToFile(const char * fileName, const Potential * potential)
@@ -172,6 +191,7 @@ void PrintPotentialToFile(const char * fileName, const Potential * potential)
   fclose(fout);
   fout = NULL; 
 }
+
 
 void PrintPotentialPrecisionToFile(const char * fileName, const Potential * potential)
 {
@@ -202,7 +222,8 @@ void PrintParametrizedCurveToFile(const char * fileName, const ParametrizedCurve
   PrintKCurveToFile(fileName, printVector);
 }
 
-void PrintInterestingKPoints(const EigenInformation * toPrint, const ParametrizedCurve * filter)
+
+vector<ComplexDouble> FindInterestingKPoints(const EigenInformation * found, const ParametrizedCurve * filter)
 {
   vector<ComplexDouble> filterVector;
   for(unsigned int i = 0; i<filter->GetNumberOfSegments(); ++i)
@@ -223,8 +244,8 @@ void PrintInterestingKPoints(const EigenInformation * toPrint, const Parametrize
 	  maxDistance = MAX(maxDistance, localDist);
 	}
 
-  vector<ComplexDouble> printVector;
-  for(vector<ComplexDouble>::const_iterator it = toPrint->Eigenvalues.begin(); it!=toPrint->Eigenvalues.end(); ++it)
+  vector<ComplexDouble> toReturn;
+  for(vector<ComplexDouble>::const_iterator it = found->Eigenvalues.begin(); it!=found->Eigenvalues.end(); ++it)
 	{
 	  ComplexDouble kToPrint = sqrt((*it)*(double)2.*(double)MASSOVERC2)/HBARC;
 
@@ -236,7 +257,7 @@ void PrintInterestingKPoints(const EigenInformation * toPrint, const Parametrize
 
 	  ///Now apply filter rule.
 	  if(imag(kToPrint) > minDistance )
-		printVector.push_back(kToPrint);
+		toReturn.push_back(kToPrint);
 	  else if(real(kToPrint) > minDistance)
 		{
 		  bool tooClose = false;
@@ -260,25 +281,170 @@ void PrintInterestingKPoints(const EigenInformation * toPrint, const Parametrize
 				}
 			}
 		  if(!tooClose)
-			printVector.push_back(kToPrint);
+			toReturn.push_back(kToPrint);
+		}
+	}
+  return toReturn;
+}
+
+void PrintInterestingKPointsToFile(const char * fileName, const EigenInformation * toPrint, const ParametrizedCurve * filter)
+{
+  vector<ComplexDouble> printVector = FindInterestingKPoints(toPrint, filter);
+  FILE * fout = fopen(fileName, "w");
+  if(!fout)
+	{
+	  throw RLException("Could not create output file '%s'.", fileName);
+	}
+  
+  for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
+	{
+	  fprintf(fout,"%+6.12lf%+6.12lfi\n", real(*it), imag(*it));
+	}
+  fclose(fout);
+  fout = NULL;
+}
+
+
+
+
+
+
+
+
+void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer, const char * fileName, const EigenInformation * toPrint, const ParametrizedCurve * filter, const vector<BasisFunction> * myBasisFunctions, double minX, double maxX, double deltaX)
+{
+  vector<ComplexDouble> interestingVector = FindInterestingKPoints(toPrint, filter);
+
+  FILE * fout = fopen(fileName, "w");
+  if(!fout)
+	{
+	  throw RLException("Unable to open output file '%s'.", fileName);
+	}
+
+  unsigned int numberOfGLPoints = toPrint->Eigenvalues.size() / myBasisFunctions->size();
+  if(toPrint->Eigenvalues.size() % myBasisFunctions->size() != 0)
+	{
+	  throw RLException("Eigenvalue number was not divisible by basis number size.");
+	}
+
+
+  vector<int> interestingIndexes;
+
+  for(vector<ComplexDouble>::const_iterator it = interestingVector.begin(); it!=interestingVector.end(); ++it)
+	{
+
+	  for(unsigned int i = 0; i<toPrint->Eigenvalues.size(); ++i)
+		{
+		  if(DBL_EQUAL(pow(*it*HBARC,2.0)/(2.*MASSOVERC2), toPrint->Eigenvalues[i]))
+			interestingIndexes.push_back(i);
 		}
 	}
 
+  if(interestingIndexes.size() != interestingVector.size() )
+	{
+	  throw RLException("Could not pinpoint the points in a good way.");
+	}
+
+  vector<vector<ComplexDouble> > wavefunctionValues;
+  
+  for(vector<int>::const_iterator it = interestingIndexes.begin(); it!=interestingIndexes.end(); ++it)
+	{
+	  wavefunctionValues.push_back(vector<ComplexDouble>());
+	  for(double x = minX; x <= maxX; x += deltaX)
+		{
+		  wavefunctionValues.back().push_back(ComplexDouble(0.0,0.0));
+		  for(unsigned int i = 0; i<numberOfGLPoints; ++i)
+			{
+			  unsigned int curvePointer = i % numberOfGLPoints;
+			  unsigned int basisPointer = i / numberOfGLPoints;
+			  unsigned int curveSegment = filter->SegmentIndexFromGLNumber(curvePointer);
+			  ComplexDouble kVal = filter->GetRuleValue(curveSegment, curvePointer);
+
+			  wavefunctionValues.back().back() += (toPrint->Eigenvectors[*it][i] * 
+												  const_cast<BasisFunction*>(&(*myBasisFunctions)[basisPointer])->Eval(x, kVal)
+												  );
+			}
+		}
+	}
+
+  {
+	unsigned int i = 0;
+	for(double x = minX; x<=maxX; x += deltaX)
+	  {
+		++i;
+		fprintf(fout, "%+13.10e", x);
+		for(unsigned int j = 0; j < wavefunctionValues.size(); ++j)
+		  {
+			fprintf(fout, " %+13.10e %+13.10e %+13.10e", real(wavefunctionValues[j][i]), imag(wavefunctionValues[j][i]), pow(abs(wavefunctionValues[j][i]),2)+real(pow(interestingVector[j]*HBARC,2.0)/(2.*MASSOVERC2)));
+		  }
+		fprintf(fout, "\n");
+	  }
+  }
+
+
+
+  int loopCounter = 0;
+
+  for(vector<int>::const_iterator it = interestingIndexes.begin(); it!=interestingIndexes.end(); ++it)
+	{
+	  vector<double> basisRatio;
+	  for(unsigned int i = 0; i<myBasisFunctions->size(); ++i)
+		{
+		  basisRatio.push_back(0);
+		}
+	  for(unsigned int i = 0; i<numberOfGLPoints; ++i)
+		{
+		  unsigned int basisPointer = i / numberOfGLPoints;
+		  basisRatio[basisPointer] += pow(abs(toPrint->Eigenvectors[*it][i]),2);
+		}
+	  double sum = 0;
+	  printer->Print(3, "Basis element decomposition for k = %+10.6lf%+10.6lfi:\n", real(interestingVector[loopCounter]), imag(interestingVector[loopCounter]));
+	  ++loopCounter;
+	  
+	  for(unsigned int i = 0; i<basisRatio.size(); ++i)
+		{
+		  sum += basisRatio[i];
+		  printer->Print(3, "\t%s : \t%3.2lf\n", (*myBasisFunctions)[i].GetName(), basisRatio[i]);
+		}
+	  printer->Print(3, "Element square sum: %+13.10e\n\n", sum);
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void PrintInterestingKPointsVerbosely(VerbosePrinter * printer, const EigenInformation * toPrint, const ParametrizedCurve * filter)
+{
+  vector<ComplexDouble> printVector = FindInterestingKPoints(toPrint, filter);
+
   for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
 	{
-	  if(imag(*it) > minDistance && abs(arg(*it)-PI/2) < 1E-2 )
+	  if(imag(*it) > 1E-5 && abs(arg(*it)-PI/2) < 1E-2 )
 		{
-		  printf("Bound state: %+6.10lfi\n", imag(*it));
+		  printer->Print(1,"Bound state: %+6.10lfi\n", imag(*it));
 		}
 	}
   for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
 	{
-	  if(!(imag(*it) > minDistance && abs(arg(*it)-PI/2) < 1E-2 ))
+	  if(!(imag(*it) > 1E-5 && abs(arg(*it)-PI/2) < 1E-2 ))
 		{
-		  printf("Resonant state: %+6.10lf %+6.10lfi\n", real(*it), imag(*it));
+		  printer->Print(1,"Resonant state: %+6.10lf %+6.10lfi\n", real(*it), imag(*it));
 		}
 	}
- 
 }
 
 void PrintKFoundToFile(const char * fileName, const EigenInformation * toPrint)

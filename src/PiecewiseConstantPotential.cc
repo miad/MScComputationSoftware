@@ -202,7 +202,7 @@ void PiecewiseConstantPotential::Clear()
 }
 
 
-ComplexDouble PiecewiseConstantPotential::BasisIntegrate(BasisFunction & b1, BasisFunction & b2, ComplexDouble & k1, ComplexDouble & k2) const
+ComplexDouble PiecewiseConstantPotential::BasisIntegrate(BasisFunction & b1, BasisFunction & b2, ComplexDouble & k1, ComplexDouble & k2)
 {
   if(legendreRules.size() != PotentialPoints.size() )
 	{
@@ -275,3 +275,8 @@ vector<pair<double, double> > PiecewiseConstantPotential::GetPrecisionPoints() c
 }
 
 
+
+PotentialType PiecewiseConstantPotential::GetType() const
+{
+  return TypePiecewiseConstant;
+}

@@ -65,7 +65,7 @@ public:
   unsigned int GetTotalNumberOfGLPoints(); ///Returns the total number of GL points.
 
   unsigned int SegmentIndexFromGLNumber(unsigned int val
-										); ///Returns the segment index from a GL number.
+										) const; ///Returns the segment index from a GL number.
 
 
   const pair<ComplexDouble, ComplexDouble> * GetRulePoint(unsigned int segment, 

@@ -23,9 +23,9 @@ class LegendreRule
 {
 public:
   static vector<pair<double, double> > GetRule(unsigned int numberOfPoints, ///Number of points in the rule.
-					  double a = -1, ///The lower bound for rescaling. Default: a=-1, no rescaling.
-					  double b = 1 ///Upper bound for rescaling. Default: b=1, no rescaling.
-					  ); ///Computes the legendre rule for n points, rescaled to an interval (standard interval is [-1, 1]). Returns a vector with pairs, where the first element of the pair is the position and the second element is the weight. The computations are kind of heavy, so this should ideally be used together with memoization if called frequently.
+											   double a = -1, ///The lower bound for rescaling. Default: a=-1, no rescaling.
+											   double b = 1 ///Upper bound for rescaling. Default: b=1, no rescaling.
+											   ); ///Computes the legendre rule for n points, rescaled to an interval (standard interval is [-1, 1]). Returns a vector with pairs, where the first element of the pair is the position and the second element is the weight. The computations are kind of heavy, so this should ideally be used together with memoization if called frequently.
 private:
   LegendreRule() {} ///Thou shall not instantiate this class.
 

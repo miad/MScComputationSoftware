@@ -20,11 +20,11 @@ unsigned int ParametrizedCurve::GetTotalNumberOfGLPoints()
   return totalNumberOfGLPoints;
 }
 
-unsigned int ParametrizedCurve::SegmentIndexFromGLNumber(unsigned int val)
+unsigned int ParametrizedCurve::SegmentIndexFromGLNumber(unsigned int val) const
 {
   if(val >= totalNumberOfGLPoints)
 	{
-	  throw RLException("Invalid GL number to get segment index from.");
+	  throw RLException("Invalid GL number to get segment index from: %d (max is %d)", val, totalNumberOfGLPoints);
 	}
 
   for(unsigned int i = 0; i<numberOfGLPoints.size(); ++i)

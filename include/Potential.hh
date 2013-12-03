@@ -7,6 +7,14 @@
 #include <vector>
 
 
+enum PotentialType
+  {
+	TypePiecewiseConstant = 1,
+	TypeParametrized = 0
+  };
+
+
+
 ///Abstract class describing any 1D potential.
 class Potential
 {
@@ -27,11 +35,13 @@ public:
 									   BasisFunction & b2, ///Second basis function.
 									   ComplexDouble & k1, ///First k-value.
 									   ComplexDouble & k2 ///Second k-value.
-									   ) const = 0; ///Integrate the basis functions over the potential to create V(k1, k2). NOTE: This is supposed to be a FAST implementation, and faster than a naive one based on Evaluate since the Potential class can optimize itself dependent on how it is implemented. 
+									   ) = 0; ///Integrate the basis functions over the potential to create V(k1, k2). NOTE: This is supposed to be a FAST implementation, and faster than a naive one based on Evaluate since the Potential class can optimize itself dependent on how it is implemented. 
 
   virtual vector<pair<double, double> > GetPlottingPoints() const = 0; ///Returns a vector with points (implemented as pairs) which may be used for plotting. The points should be such that if they are connected by lines in order, they will give a realistic picture of the potential.
 
   virtual vector<pair<double, double> > GetPrecisionPoints() const = 0; ///Returns points suitable for plotting indicating the precision.
+
+  virtual PotentialType GetType() const = 0;
 
 };
 
