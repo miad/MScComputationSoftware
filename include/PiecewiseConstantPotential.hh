@@ -56,11 +56,11 @@ public:
   list<Interval> GetPotentialPoints() const;
 
   ComplexDouble BasisIntegrate(BasisFunction & b1, ///First basis function.
-					  BasisFunction & b2, ///Second basis function.
-					  ComplexDouble & k1, ///First k-value.
-					  ComplexDouble & k2 ///Second k-value.
-					  ) const; ///Integrate the basis functions over the potential to create V(k1, k2). 
-
+							   BasisFunction & b2, ///Second basis function.
+							   ComplexDouble & k1, ///First k-value.
+							   ComplexDouble & k2 ///Second k-value.
+							   ) const; ///Integrate the basis functions over the potential to create V(k1, k2). 
+  
   
   void Clear(); ///Clear the points in the potential.
   
@@ -77,8 +77,7 @@ public:
 
 
 private:
-
-
+  
   list<Interval> PotentialPoints; ///The potential points in use for this PCP.
   list<vector<pair<double, double> > > legendreRules; ///Legendre rules for the computations.
   double minX, maxX; ///Minimum and maximum x-value.

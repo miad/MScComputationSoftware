@@ -27,8 +27,8 @@ ComputeConfig::ComputeConfig()
   kCurve->ComputeGaussLegendre();
 
 
-  basisFunctions.push_back(BasisFunction("expi+"));
-  basisFunctions.push_back(BasisFunction("expi-"));
+  basisFunctions.push_back(BasisFunction("exp(1i*k*x)"));
+  basisFunctions.push_back(BasisFunction("exp(-1i*k*x)"));
 
 }
 

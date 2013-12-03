@@ -70,10 +70,11 @@ int main(int argc, char *argv[])
   ParametrizedCurve * myCurve = myConfiguration.GetKCurve();
   Potential * myPotential = myConfiguration.GetPotential();
 
+
+  ///Generate the Hamiltonian in parallell!
   MultiTasker<WorkerData, void*> myMultiTasker(EvaluateSubMatrix, myConfiguration.GetNumberOfThreads());
 
   myMultiTasker.RegisterListener(&myPrinter);
-
 
   for(unsigned int i = 0; i<MatrixSize; ++i)
 	{
@@ -89,47 +90,10 @@ int main(int argc, char *argv[])
 						);
 	}
   myMultiTasker.LaunchThreads();
-
   myMultiTasker.PauseUntilOutputIsGenerated();
+  myMultiTasker.DestroyThreads();
   
-
-
-
-  ///Main work takes place here: the Hamiltonian is constructed.
-  /*
-  for(unsigned int i = 0; i<MatrixSize; ++i)
-	{
-	  unsigned int curvePointerA = i % numberOfGLPoints;
-	  unsigned int basisPointerA = i / numberOfGLPoints;
-	  unsigned int curveSegmentA = myCurve->SegmentIndexFromGLNumber(curvePointerA);
-
-	  ComplexDouble kA = myCurve->GetRuleValue(curveSegmentA, curvePointerA);
-	  ComplexDouble wA = myCurve->GetRuleWeight(curveSegmentA, curvePointerA);
-
-	  //ComplexDouble preFactorA = myBasisFunctions[basisPointerA].GetPreFactor();
-		
-	  for(unsigned int j = 0; j<MatrixSize; ++j)
-		{
-		  unsigned int curvePointerB = j % numberOfGLPoints;
-		  unsigned int basisPointerB = j / numberOfGLPoints;
-		  unsigned int curveSegmentB = myCurve->SegmentIndexFromGLNumber(curvePointerB);
-		  
-		  ComplexDouble kB = myCurve->GetRuleValue(curveSegmentB, curvePointerB);
-		  ComplexDouble wB = myCurve->GetRuleWeight(curveSegmentB, curvePointerB);
-
-		  //ComplexDouble preFactorB = myBasisFunctions[basisPointerB].GetPreFactor();
-		  
-		  HamiltonianMatrix.Element(i, j) += ComplexDouble(1./(2.*PI),0)*
-			sqrt(wA*wB)*
-			myPotential->BasisIntegrate(myBasisFunctions[basisPointerA], 
-										 myBasisFunctions[basisPointerB], 
-										kA, kB) ;
-		}
-	  HamiltonianMatrix.Element(i,i) += pow(HBARC,2)/(2.*MASSOVERC2) * pow(kA, 2);
-	}
-
-  */
-
+  ///Now we should have a Hamiltonian.
 
 
   ///Validate some basic properties of the Hamilton matrix, if they are expected.
@@ -176,6 +140,8 @@ int main(int argc, char *argv[])
 	  sprintf(buffer, "gnuplot/./KPlot.sh \"%s\" \"%s\"", myConfiguration.GetKCurveFile(), myConfiguration.GetKFoundFile());
 	  system(buffer);
 	}
+
+  PrintInterestingKPoints(&myInfo,myConfiguration.GetKCurve());
 
 
   myPrinter.Print(2, "Done, exiting.\n");
@@ -236,6 +202,85 @@ void PrintParametrizedCurveToFile(const char * fileName, const ParametrizedCurve
   PrintKCurveToFile(fileName, printVector);
 }
 
+void PrintInterestingKPoints(const EigenInformation * toPrint, const ParametrizedCurve * filter)
+{
+  vector<ComplexDouble> filterVector;
+  for(unsigned int i = 0; i<filter->GetNumberOfSegments(); ++i)
+	{
+	  const vector<pair<ComplexDouble, ComplexDouble> > * rule = filter->GetSegmentRule(i);
+	  for(vector<pair<ComplexDouble, ComplexDouble> >::const_iterator it = rule->begin(); it != rule->end(); ++it)
+		{
+		  filterVector.push_back(it->first);
+		}
+	}
+
+  double minDistance = 1E99;
+  double maxDistance = -1;
+  for(unsigned int i = 1; i<filterVector.size(); ++i)
+	{
+	  double localDist = abs(filterVector[i-1] - filterVector[i]);
+	  minDistance = MIN(minDistance, localDist);
+	  maxDistance = MAX(maxDistance, localDist);
+	}
+
+  vector<ComplexDouble> printVector;
+  for(vector<ComplexDouble>::const_iterator it = toPrint->Eigenvalues.begin(); it!=toPrint->Eigenvalues.end(); ++it)
+	{
+	  ComplexDouble kToPrint = sqrt((*it)*(double)2.*(double)MASSOVERC2)/HBARC;
+
+	  ///If numerical stability is mean to us, then rotate.
+	  if( (abs(imag(kToPrint)) > 1E2*abs(real(kToPrint))  && imag(kToPrint) < 0))
+		{
+		  kToPrint *= -1.0;
+		}
+
+	  ///Now apply filter rule.
+	  if(imag(kToPrint) > minDistance )
+		printVector.push_back(kToPrint);
+	  else if(real(kToPrint) > minDistance)
+		{
+		  bool tooClose = false;
+		  for(unsigned int i = 0; i<filterVector.size(); ++i)
+			{
+			  double d1 = abs(filterVector[i] - kToPrint);
+			  double d2 = 0;
+			  if(i>0)
+				d2 += abs(filterVector[i-1]-filterVector[i]);
+			  if(i+1<filterVector.size())
+				d2 += abs(filterVector[i+1]-filterVector[i]);
+			  if(i > 0 && i+1 < filterVector.size())
+				d2 /= 2;
+
+			  d2 *= 0.6;
+
+			  if(d1 < d2)
+				{
+				  tooClose = true;
+				  break;
+				}
+			}
+		  if(!tooClose)
+			printVector.push_back(kToPrint);
+		}
+	}
+
+  for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
+	{
+	  if(imag(*it) > minDistance && abs(arg(*it)-PI/2) < 1E-2 )
+		{
+		  printf("Bound state: %+6.10lfi\n", imag(*it));
+		}
+	}
+  for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
+	{
+	  if(!(imag(*it) > minDistance && abs(arg(*it)-PI/2) < 1E-2 ))
+		{
+		  printf("Resonant state: %+6.10lf %+6.10lfi\n", real(*it), imag(*it));
+		}
+	}
+ 
+}
+
 void PrintKFoundToFile(const char * fileName, const EigenInformation * toPrint)
 {
   vector<ComplexDouble> printVector;
@@ -244,7 +289,7 @@ void PrintKFoundToFile(const char * fileName, const EigenInformation * toPrint)
 	  ComplexDouble kToPrint = sqrt((*it)*(double)2.*(double)MASSOVERC2)/HBARC;
 
 	  ///If numerical stability is mean to us, then rotate.
-	  if( (abs(imag(kToPrint)) > 1E1*abs(real(kToPrint))  && imag(kToPrint) < 0))
+	  if( (abs(imag(kToPrint)) > 1E2*abs(real(kToPrint))  && imag(kToPrint) < 0))
 		{
 		  kToPrint *= -1.0;
 		}
@@ -290,8 +335,6 @@ void * EvaluateSubMatrix(WorkerData w)
   vector<BasisFunction> * myBasisFunctions = &w.myBasisFunctions;
   unsigned int numberOfGLPoints = w.numberOfGLPoints;
   unsigned int m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
-
-
 
   for(unsigned int i = m1; i<m2; ++i)
 	{

@@ -30,7 +30,7 @@ using namespace std;
 #define TMP_LIST_STR(n, s) list<string> n; n.push_back(s);
 
 
-
+///Class containing the data used by each worker thread.
 class WorkerData
 {
 public:
@@ -53,8 +53,8 @@ public:
 		it->ForceDeepCopy();
 	  }
 	
-}
-
+  }
+  
   CMatrix * HamiltonianMatrix;
   ParametrizedCurve * myCurve; 
   Potential * myPotential;
@@ -64,7 +64,9 @@ public:
 };
 
 
-
+void PrintInterestingKPoints(const EigenInformation * toPrint, 
+							 const ParametrizedCurve * filter
+							 );
 
 int main(int argc, char *argv[]);
 
