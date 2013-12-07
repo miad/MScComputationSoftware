@@ -83,14 +83,17 @@ $(OBJ): bin/%.o: src/%.cc include/%.hh $(GLOBALDEPEND)
 $(TEST): $(MAINS)
 	@$(MAKE) -C test makerun
 
-clean: fparse_clean
+clean: backup_clean fparse_clean
 	@echo Cleaning up...
 	@rm -rf bin/*
 	@rm -rf $(MAINSOBJ)
-	@find . -type f -name "*~" -exec rm -f {} \;
-	@find . -type f -name "\#*\#" -exec rm -f {} \;
 	@$(MAKE) -C RLlib clean
 	@$(MAKE) -C test clean
+
+backup_clean: 
+	@echo Removing tilde and hashtag files...
+	@find . -type f -name "*~" -exec rm -f {} \;
+	@find . -type f -name "\#*\#" -exec rm -f {} \;
 
 fparse_clean:
 	@echo Cleaning up fparser...

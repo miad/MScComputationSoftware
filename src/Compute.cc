@@ -81,14 +81,16 @@ int main(int argc, char *argv[])
   for(unsigned int i = 0; i<MatrixSize; ++i)
 	{
 	  myMultiTasker.AddInput(WorkerData(&HamiltonianMatrix,
-								   myCurve,
-								   myPotential,
-								   myBasisFunctions,
-								   numberOfGLPoints,
-								   i,
-								   i+1,
-								   0,
-								   MatrixSize)
+										myCurve,
+										myPotential,
+										myBasisFunctions,
+										numberOfGLPoints,
+										myConfiguration.GetHbarTimesLambda(),
+										myConfiguration.GetMassOverLambda2(),
+										i,
+										i+1,
+										0,
+										MatrixSize)
 						);
 	}
   myMultiTasker.LaunchThreads();
@@ -125,9 +127,20 @@ int main(int argc, char *argv[])
   PrintPotentialToFile(myConfiguration.GetPotentialFile(), myConfiguration.GetPotential());
   PrintPotentialPrecisionToFile(myConfiguration.GetPotentialPrecisionFile(), myConfiguration.GetPotential());
   PrintParametrizedCurveToFile(myConfiguration.GetKCurveFile(), myConfiguration.GetKCurve());
-  PrintKFoundToFile(myConfiguration.GetKFoundFile(), &myInfo);
+  PrintKFoundToFile(myConfiguration.GetKFoundFile(), 
+					&myInfo, 
+					myConfiguration.GetHbarTimesLambda(), 
+					myConfiguration.GetMassOverLambda2()
+					);
 
-  PrintInterestingKPointsToFile(myConfiguration.GetInterestingPointsFile(), &myInfo, myConfiguration.GetKCurve(), myBasisFunctions.size());
+  PrintInterestingKPointsToFile(myConfiguration.GetInterestingPointsFile(), 
+								&myInfo, 
+								myConfiguration.GetKCurve(), 
+								myBasisFunctions.size(), 
+								myConfiguration.GetHbarTimesLambda(), 
+								myConfiguration.GetMassOverLambda2()
+								);
+
   PrintInterestingWavefunctionsToFile(&myPrinter,
 									  myConfiguration.GetWavefunctionFile(), 
 									  &myInfo,
@@ -135,10 +148,17 @@ int main(int argc, char *argv[])
 									  &myBasisFunctions,
 									  myConfiguration.GetMinWavefunctionX(),
 									  myConfiguration.GetMaxWavefunctionX(),
-									  myConfiguration.GetWavefunctionStepsizeX()
+									  myConfiguration.GetWavefunctionStepsizeX(),
+									  myConfiguration.GetHbarTimesLambda(), 
+									  myConfiguration.GetMassOverLambda2()
 									  );
 
-  PrintInterestingKPointsVerbosely(&myPrinter, &myInfo,myConfiguration.GetKCurve());
+
+  PrintInterestingKPointsVerbosely(&myPrinter, &myInfo,
+								   myConfiguration.GetKCurve(),
+								   myConfiguration.GetHbarTimesLambda(),
+								   myConfiguration.GetMassOverLambda2()
+								   );
 
 
 
@@ -223,7 +243,7 @@ void PrintParametrizedCurveToFile(const char * fileName, const ParametrizedCurve
 }
 
 
-vector<ComplexDouble> FindInterestingKPoints(const EigenInformation * found, const ParametrizedCurve * filter)
+vector<ComplexDouble> FindInterestingKPoints(const EigenInformation * found, const ParametrizedCurve * filter, double hbarTimesLambda, double massOverLambda2)
 {
   vector<ComplexDouble> filterVector;
   for(unsigned int i = 0; i<filter->GetNumberOfSegments(); ++i)
@@ -247,7 +267,7 @@ vector<ComplexDouble> FindInterestingKPoints(const EigenInformation * found, con
   vector<ComplexDouble> toReturn;
   for(vector<ComplexDouble>::const_iterator it = found->Eigenvalues.begin(); it!=found->Eigenvalues.end(); ++it)
 	{
-	  ComplexDouble kToPrint = sqrt((*it)*(double)2.*(double)MASSOVERC2)/HBARC;
+	  ComplexDouble kToPrint = sqrt((*it)*2.*massOverLambda2)/hbarTimesLambda;
 
 	  ///If numerical stability is mean to us, then rotate.
 	  if( (abs(imag(kToPrint)) > 1E2*abs(real(kToPrint))  && imag(kToPrint) < 0))
@@ -287,9 +307,9 @@ vector<ComplexDouble> FindInterestingKPoints(const EigenInformation * found, con
   return toReturn;
 }
 
-void PrintInterestingKPointsToFile(const char * fileName, const EigenInformation * toPrint, const ParametrizedCurve * filter, unsigned int numberOfBasisVectors)
+void PrintInterestingKPointsToFile(const char * fileName, const EigenInformation * toPrint, const ParametrizedCurve * filter, unsigned int numberOfBasisVectors, double hbarTimesLambda, double massOverLambda2)
 {
-  vector<ComplexDouble> printVector = FindInterestingKPoints(toPrint, filter);
+  vector<ComplexDouble> printVector = FindInterestingKPoints(toPrint, filter, hbarTimesLambda, massOverLambda2);
   FILE * fout = fopen(fileName, "w");
   if(!fout)
 	{
@@ -302,7 +322,7 @@ void PrintInterestingKPointsToFile(const char * fileName, const EigenInformation
 
 	  for(unsigned int i = 0; i<toPrint->Eigenvalues.size(); ++i)
 		{
-		  if(DBL_EQUAL(pow(*it*HBARC,2.0)/(2.*MASSOVERC2), toPrint->Eigenvalues[i]))
+		  if(DBL_EQUAL(pow(*it*hbarTimesLambda,2.0)/(2.*massOverLambda2), toPrint->Eigenvalues[i]))
 			interestingIndexes.push_back(i);
 		}
 	}
@@ -329,9 +349,9 @@ void PrintInterestingKPointsToFile(const char * fileName, const EigenInformation
 
 
 
-void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer, const char * fileName, const EigenInformation * toPrint, const ParametrizedCurve * filter, const vector<BasisFunction> * myBasisFunctions, double minX, double maxX, double deltaX)
+void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer, const char * fileName, const EigenInformation * toPrint, const ParametrizedCurve * filter, const vector<BasisFunction> * myBasisFunctions, double minX, double maxX, double deltaX, double hbarTimesLambda, double massOverLambda2)
 {
-  vector<ComplexDouble> interestingVector = FindInterestingKPoints(toPrint, filter);
+  vector<ComplexDouble> interestingVector = FindInterestingKPoints(toPrint, filter, hbarTimesLambda, massOverLambda2);
 
   FILE * fout = fopen(fileName, "w");
   if(!fout)
@@ -353,7 +373,7 @@ void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer, const char * 
 
 	  for(unsigned int i = 0; i<toPrint->Eigenvalues.size(); ++i)
 		{
-		  if(DBL_EQUAL(pow(*it*HBARC,2.0)/(2.*MASSOVERC2), toPrint->Eigenvalues[i]))
+		  if(DBL_EQUAL(pow(*it*hbarTimesLambda,2.0)/(2.*massOverLambda2), toPrint->Eigenvalues[i]))
 			interestingIndexes.push_back(i);
 		}
 	}
@@ -393,7 +413,7 @@ void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer, const char * 
 		fprintf(fout, "%+13.10e", x);
 		for(unsigned int j = 0; j < wavefunctionValues.size(); ++j)
 		  {
-			fprintf(fout, " %+13.10e %+13.10e %+13.10e", real(wavefunctionValues[j][i]), imag(wavefunctionValues[j][i]), pow(abs(wavefunctionValues[j][i]),2)+real(pow(interestingVector[j]*HBARC,2.0)/(2.*MASSOVERC2)));
+			fprintf(fout, " %+13.10e %+13.10e %+13.10e", real(wavefunctionValues[j][i]), imag(wavefunctionValues[j][i]), pow(abs(wavefunctionValues[j][i]),2)+real(pow(interestingVector[j]*hbarTimesLambda,2.0)/(2.*massOverLambda2)));
 		  }
 		fprintf(fout, "\n");
 	  }
@@ -462,9 +482,9 @@ vector<double> GetBasisRatio(unsigned int numberOfBasisVectors, const vector<Com
 
 
 
-void PrintInterestingKPointsVerbosely(VerbosePrinter * printer, const EigenInformation * toPrint, const ParametrizedCurve * filter)
+void PrintInterestingKPointsVerbosely(VerbosePrinter * printer, const EigenInformation * toPrint, const ParametrizedCurve * filter, double hbarTimesLambda, double massOverLambda2)
 {
-  vector<ComplexDouble> printVector = FindInterestingKPoints(toPrint, filter);
+  vector<ComplexDouble> printVector = FindInterestingKPoints(toPrint, filter, hbarTimesLambda, massOverLambda2);
 
   for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
 	{
@@ -482,12 +502,12 @@ void PrintInterestingKPointsVerbosely(VerbosePrinter * printer, const EigenInfor
 	}
 }
 
-void PrintKFoundToFile(const char * fileName, const EigenInformation * toPrint)
+void PrintKFoundToFile(const char * fileName, const EigenInformation * toPrint, double hbarTimesLambda, double massOverLambda2)
 {
   vector<ComplexDouble> printVector;
   for(vector<ComplexDouble>::const_iterator it = toPrint->Eigenvalues.begin(); it!=toPrint->Eigenvalues.end(); ++it)
 	{
-	  ComplexDouble kToPrint = sqrt((*it)*(double)2.*(double)MASSOVERC2)/HBARC;
+	  ComplexDouble kToPrint = sqrt((*it)*2.*massOverLambda2)/hbarTimesLambda;
 
 	  ///If numerical stability is mean to us, then rotate.
 	  if( (abs(imag(kToPrint)) > 1E2*abs(real(kToPrint))  && imag(kToPrint) < 0))
@@ -534,6 +554,8 @@ void * EvaluateSubMatrix(WorkerData w)
   Potential * myPotential = w.myPotential;
   vector<BasisFunction> * myBasisFunctions = &w.myBasisFunctions;
   unsigned int numberOfGLPoints = w.numberOfGLPoints;
+  double hbarTimesLambda = w.hbarTimesLambda;
+  double massOverLambda2 = w.massOverLambda2;
   unsigned int m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
 
   for(unsigned int i = m1; i<m2; ++i)
@@ -564,7 +586,7 @@ void * EvaluateSubMatrix(WorkerData w)
 										(*myBasisFunctions)[basisPointerB], 
 										kA, kB) ;
 		}
-	HamiltonianMatrix->Element(i,i) += pow(HBARC,2)/(2.*MASSOVERC2) * pow(kA, 2);
+	HamiltonianMatrix->Element(i,i) += pow(hbarTimesLambda,2)/(2.*massOverLambda2) * pow(kA, 2);
    }
    return NULL;
 }

@@ -2,7 +2,9 @@
 
 ComputeConfig::ComputeConfig()
   :numberOfThreads(1), verbosityLevel(0), autoPlotPotential(false), autoPlotKCurve(false),
-   minWavefunctionX(-10), maxWavefunctionX(10), wavefunctionStepsizeX(0.01)
+   minWavefunctionX(-10), maxWavefunctionX(10), wavefunctionStepsizeX(0.01),
+   hbarTimesLambda(197.326971812), ///units MeV * fm (lambda = c^2)
+   massOverLambda2(938.0) ///units MeV/c^2
 {
   strcpy(kCurveFile, "KCurve.dat");
   strcpy(kFoundFile, "KFound.dat");
@@ -212,6 +214,22 @@ void ComputeConfig::ReadFile(const char * fileName)
 
   Setting & computation = root["Computation"];
 
+
+
+  if (! computation.exists("Units") || !computation["Units"].isGroup())
+	{
+	  throw RLException("Units group not properly specified in settings file.");
+	}
+  
+  Setting & units = computation["Units"];
+  if( ! units.lookupValue("HbarTimesLambda", hbarTimesLambda) )
+	{
+	  throw RLException("HbarTimesLambda unit not properly specified.");
+	}
+  if( ! units.lookupValue("MassOverLambda2", massOverLambda2) )
+	{
+	  throw RLException("MassOverLambda2 unit not properly specified.");
+	}
 
   
   if( ! computation.lookupValue("ExpectedMatrixType", temp) )
@@ -462,6 +480,11 @@ void ComputeConfig::WriteFile(const char * fileName) const
   root["Computation"].add("ExpectedMatrixType", Setting::TypeString) = matType;
 	
 
+  Setting & units = root["Computation"].add("Units", Setting::TypeGroup);
+  units.add("HbarTimesLambda", Setting::TypeFloat) = hbarTimesLambda;
+  units.add("MassOverLambda2", Setting::TypeFloat) = massOverLambda2;
+
+
   Setting & basFun = root["Computation"].add("BasisFunctions", Setting::TypeArray);
   for(vector<BasisFunction>::const_iterator it = basisFunctions.begin(); it!=basisFunctions.end(); ++it)
 	{
@@ -705,4 +728,24 @@ double ComputeConfig::GetMaxWavefunctionX() const
 double ComputeConfig::GetWavefunctionStepsizeX() const
 {
   return wavefunctionStepsizeX;
+}
+
+double ComputeConfig::GetHbarTimesLambda() const
+{
+  return hbarTimesLambda;
+}
+
+void ComputeConfig::SetHbarTimesLambda(double value)
+{
+  hbarTimesLambda = value;
+}
+
+double ComputeConfig::GetMassOverLambda2() const
+{
+  return massOverLambda2;
+}
+
+void ComputeConfig::SetMassOverLambda2(double value)
+{
+  massOverLambda2 = value;
 }

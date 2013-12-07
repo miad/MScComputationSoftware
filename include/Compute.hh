@@ -42,6 +42,8 @@ public:
 			 Potential * _myPotential, ///Pointer to the potential in use. NOTE: may not be threadsafe, should be checked (due to underlying function evaluator class).
 			 vector<BasisFunction> _myBasisFunctions, ///Basis functions in use.
 			 unsigned int _numberOfGLPoints, ///Number of GL points in use.
+			 double _hbarTimesLambda, ///Used for k-E transformation.
+			 double _massOverLambda2, ///Used for k-E transformation.
 			 unsigned int _m1, /// Specifies the submatrix to use.
 			 unsigned int _m2, /// Specifies the submatrix to use.
 			 unsigned int _n1, /// Specifies the submatrix to use.
@@ -52,6 +54,8 @@ public:
 	 myPotential(_myPotential),
 	 myBasisFunctions(_myBasisFunctions),
 	 numberOfGLPoints(_numberOfGLPoints),
+	 hbarTimesLambda(_hbarTimesLambda),
+	 massOverLambda2(_massOverLambda2),
 	 m1(_m1),m2(_m2),n1(_n1),n2(_n2)
   { }
   
@@ -60,6 +64,8 @@ public:
   Potential * myPotential; ///Pointer to the potential in use. NOTE: may not be threadsafe, should be checked (due to underlying function evaluator class).
   vector<BasisFunction> myBasisFunctions;
   unsigned int numberOfGLPoints; ///Number of GL points in use.
+  double hbarTimesLambda; /// Used for k-E transformation.
+  double massOverLambda2; /// Used for k-E transformation.
   unsigned int m1; /// Specifies the submatrix to use.
   unsigned int m2; /// Specifies the submatrix to use.
   unsigned int n1; /// Specifies the submatrix to use.
@@ -101,23 +107,31 @@ void PrintKCurveToFile(const char * fileName,
 					   );
 
 void PrintKFoundToFile(const char * fileName, 
-					   const EigenInformation * toPrint
+					   const EigenInformation * toPrint,
+					   double hbarTimesLambda,
+					   double massOverLambda2
 					   );
 
 
 void PrintInterestingKPointsVerbosely(VerbosePrinter * printer,
 									  const EigenInformation * toPrint, 
-									  const ParametrizedCurve * filter
+									  const ParametrizedCurve * filter,
+									  double hbarTimesLambda,
+									  double massOverLambda2
 									  );
 
 void PrintInterestingKPointsToFile(const char * fileName, 
 								   const EigenInformation * toPrint, 
 								   const ParametrizedCurve * filter,
-								   unsigned int numberOfBasisVectors
+								   unsigned int numberOfBasisVectors, 
+								   double hbarTimesLambda,
+								   double massOverLambda2
 								   );
 
 vector<ComplexDouble> FindInterestingKPoints(const EigenInformation * found, 
-											 const ParametrizedCurve * filter
+											 const ParametrizedCurve * filter,
+											 double hbarTimesLambda,
+											 double massOverLambda2
 											 ); ///Find the interesting k-points (bound states or resonant states) by applying a filter on all eigenvalues.
 
 void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer,
@@ -127,7 +141,9 @@ void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer,
 										 const vector<BasisFunction> * myBasisFunctions,
 										 double minX,
 										 double maxX,
-										 double deltaX
+										 double deltaX,
+										 double hbarTimesLambda,
+										 double massOverLambda2
 										 );
 
 vector<double> GetBasisRatio(unsigned int numberOfBasisVectors, 

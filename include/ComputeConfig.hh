@@ -19,7 +19,7 @@
 using namespace std;
 using namespace libconfig;
 
-#define CONFIG_FILE_VERSION 0.2
+#define CONFIG_FILE_VERSION 0.3
 #define MAX_FILENAME_SIZE 1000
 
 
@@ -81,6 +81,9 @@ public:
   double GetMinWavefunctionX() const;
   double GetMaxWavefunctionX() const;
   double GetWavefunctionStepsizeX() const;
+
+  double GetMassOverLambda2() const;
+  double GetHbarTimesLambda() const;
   
 
 
@@ -112,6 +115,9 @@ public:
 
   void SetExpectedMatrixType(ExpectedMatrixType val);
 
+  void SetMassOverLambda2(double value);
+  void SetHbarTimesLambda(double value);
+
 
 private:
 
@@ -130,7 +136,8 @@ private:
   double maxWavefunctionX;
   double wavefunctionStepsizeX;
 
-
+  double hbarTimesLambda; ///The value of hbar times a constant, lambda.
+  double massOverLambda2; ///The value of the mass, divided by lambda (same as hbar) squared.
 
   char kCurveFile[MAX_FILENAME_SIZE]; ///Output file for the basis state curve. Default: KCurve.dat
   char kFoundFile[MAX_FILENAME_SIZE]; ///Output file for found k-values. Default: KFound.dat
