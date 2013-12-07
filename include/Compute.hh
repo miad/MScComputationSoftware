@@ -112,7 +112,8 @@ void PrintInterestingKPointsVerbosely(VerbosePrinter * printer,
 
 void PrintInterestingKPointsToFile(const char * fileName, 
 								   const EigenInformation * toPrint, 
-								   const ParametrizedCurve * filter
+								   const ParametrizedCurve * filter,
+								   unsigned int numberOfBasisVectors
 								   );
 
 vector<ComplexDouble> FindInterestingKPoints(const EigenInformation * found, 
@@ -128,6 +129,11 @@ void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer,
 										 double maxX,
 										 double deltaX
 										 );
+
+vector<double> GetBasisRatio(unsigned int numberOfBasisVectors, 
+							 const vector<ComplexDouble> toSum, 
+							 double & totalSum
+							 );
 
 
 #endif

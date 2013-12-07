@@ -53,6 +53,8 @@ int main(int argc, char *argv[])
   myPrinter.Print(5, ".\n");
 
   unsigned int numberOfGLPoints = myConfiguration.GetKCurve()->GetTotalNumberOfGLPoints();
+
+
   unsigned int numberOfBasisFunctions =  myBasisFunctions.size();
   unsigned int MatrixSize = numberOfGLPoints * numberOfBasisFunctions;
   myPrinter.Print(5, "Total number of GL points in k-space: %d, Matrix size: %d.\n", numberOfGLPoints, MatrixSize);
@@ -125,7 +127,7 @@ int main(int argc, char *argv[])
   PrintParametrizedCurveToFile(myConfiguration.GetKCurveFile(), myConfiguration.GetKCurve());
   PrintKFoundToFile(myConfiguration.GetKFoundFile(), &myInfo);
 
-  PrintInterestingKPointsToFile(myConfiguration.GetInterestingPointsFile(), &myInfo, myConfiguration.GetKCurve());
+  PrintInterestingKPointsToFile(myConfiguration.GetInterestingPointsFile(), &myInfo, myConfiguration.GetKCurve(), myBasisFunctions.size());
   PrintInterestingWavefunctionsToFile(&myPrinter,
 									  myConfiguration.GetWavefunctionFile(), 
 									  &myInfo,
@@ -180,7 +182,6 @@ void PrintPotentialToFile(const char * fileName, const Potential * potential)
 
   vector<pair<double, double> >  plottingPoints = potential->GetPlottingPoints();
 
-  fprintf(fout, "#Potential function\n");
   fprintf(fout, "%+13.10e %+13.10e\n", potential->GetMinX() - scaleFactor*potentialLength, 0.);
   for(vector<pair<double, double> >::const_iterator it = plottingPoints.begin(); it!=plottingPoints.end(); ++it)
 	{
@@ -198,7 +199,6 @@ void PrintPotentialPrecisionToFile(const char * fileName, const Potential * pote
   FILE * fout = fopen(fileName, "w");
 
   vector<pair<double, double> >  plottingPoints = potential->GetPrecisionPoints();
-  fprintf(fout, "#Potential precision\n");
   for(vector<pair<double, double> >::const_iterator it = plottingPoints.begin(); it!=plottingPoints.end(); ++it)
 	{
 	  fprintf(fout, "%+13.10e %+13.10e\n", it->first, it->second);
@@ -287,7 +287,7 @@ vector<ComplexDouble> FindInterestingKPoints(const EigenInformation * found, con
   return toReturn;
 }
 
-void PrintInterestingKPointsToFile(const char * fileName, const EigenInformation * toPrint, const ParametrizedCurve * filter)
+void PrintInterestingKPointsToFile(const char * fileName, const EigenInformation * toPrint, const ParametrizedCurve * filter, unsigned int numberOfBasisVectors)
 {
   vector<ComplexDouble> printVector = FindInterestingKPoints(toPrint, filter);
   FILE * fout = fopen(fileName, "w");
@@ -295,10 +295,28 @@ void PrintInterestingKPointsToFile(const char * fileName, const EigenInformation
 	{
 	  throw RLException("Could not create output file '%s'.", fileName);
 	}
-  
+
+  vector<int> interestingIndexes;
   for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
 	{
-	  fprintf(fout,"%+6.12lf%+6.12lfi\n", real(*it), imag(*it));
+
+	  for(unsigned int i = 0; i<toPrint->Eigenvalues.size(); ++i)
+		{
+		  if(DBL_EQUAL(pow(*it*HBARC,2.0)/(2.*MASSOVERC2), toPrint->Eigenvalues[i]))
+			interestingIndexes.push_back(i);
+		}
+	}
+  
+  for(unsigned int i = 0; i<printVector.size(); ++i)
+	{
+	  fprintf(fout,"%+13.10e %+13.10e", real(printVector[i]), imag(printVector[i]));
+	  double sum = -1;
+	  vector<double> ratio = GetBasisRatio(numberOfBasisVectors, toPrint->Eigenvectors[interestingIndexes[i]], sum);
+	  for(vector<double>::const_iterator it = ratio.begin(); it!=ratio.end(); ++it)
+		{
+		  fprintf(fout, " %+13.10e", *it);
+		}
+	  fprintf(fout, " %+13.10e\n", sum);
 	}
   fclose(fout);
   fout = NULL;
@@ -353,7 +371,7 @@ void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer, const char * 
 	  for(double x = minX; x <= maxX; x += deltaX)
 		{
 		  wavefunctionValues.back().push_back(ComplexDouble(0.0,0.0));
-		  for(unsigned int i = 0; i<numberOfGLPoints; ++i)
+		  for(unsigned int i = 0; i<toPrint->Eigenvectors[*it].size(); ++i)
 			{
 			  unsigned int curvePointer = i % numberOfGLPoints;
 			  unsigned int basisPointer = i / numberOfGLPoints;
@@ -381,40 +399,57 @@ void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer, const char * 
 	  }
   }
 
-
-
   int loopCounter = 0;
-
   for(vector<int>::const_iterator it = interestingIndexes.begin(); it!=interestingIndexes.end(); ++it)
 	{
-	  vector<double> basisRatio;
-	  for(unsigned int i = 0; i<myBasisFunctions->size(); ++i)
-		{
-		  basisRatio.push_back(0);
-		}
-	  for(unsigned int i = 0; i<numberOfGLPoints; ++i)
-		{
-		  unsigned int basisPointer = i / numberOfGLPoints;
-		  basisRatio[basisPointer] += pow(abs(toPrint->Eigenvectors[*it][i]),2);
-		}
-	  double sum = 0;
+	  double totalSum = -1;
+	  vector<double> basisRatio = GetBasisRatio(myBasisFunctions->size(), toPrint->Eigenvectors[*it], totalSum);
+
 	  printer->Print(3, "Basis element decomposition for k = %+10.6lf%+10.6lfi:\n", real(interestingVector[loopCounter]), imag(interestingVector[loopCounter]));
 	  ++loopCounter;
 	  
 	  for(unsigned int i = 0; i<basisRatio.size(); ++i)
 		{
-		  sum += basisRatio[i];
-		  printer->Print(3, "\t%s : \t%3.2lf\n", (*myBasisFunctions)[i].GetName(), basisRatio[i]);
+		  printer->Print(3, "\t%s : \t%3.2lf%%\n", (*myBasisFunctions)[i].GetName(), basisRatio[i]*100);
 		}
-	  printer->Print(3, "Element square sum: %+13.10e\n\n", sum);
+	  printer->Print(3, "Element square sum: %+13.10e\n\n", totalSum);
 	}
-
 }
 
 
 
 
+vector<double> GetBasisRatio(unsigned int numberOfBasisVectors, const vector<ComplexDouble> toSum, double & totalSum)
+{
+  totalSum = 0;
+  unsigned int numberOfGLPoints = toSum.size() / numberOfBasisVectors;
 
+  if(toSum.size() % numberOfBasisVectors != 0)
+	{
+	  throw RLException("Vector length and # basis vectors does not match.");
+	}
+
+  vector<double> basisRatio;
+  for(unsigned int i = 0; i<numberOfBasisVectors; ++i)
+	{
+	  basisRatio.push_back(0);
+	}
+  for(unsigned int i = 0; i<toSum.size(); ++i)
+	{
+	  unsigned int basisPointer = i / numberOfGLPoints;
+	  basisRatio[basisPointer] += pow(abs(toSum[i]),2);
+	}
+  
+  for(unsigned int i = 0; i<basisRatio.size(); ++i)
+	{
+	  totalSum += basisRatio[i];
+	}
+  for(unsigned int i = 0; i<basisRatio.size(); ++i)
+	{
+	  basisRatio[i] /= totalSum;
+	}
+  return basisRatio;
+}
 
 
 
@@ -469,7 +504,6 @@ void PrintKFoundToFile(const char * fileName, const EigenInformation * toPrint)
 void PrintKCurveToFile(const char * fileName, const vector<ComplexDouble> & toPrint)
 {
   FILE * fout = fopen(fileName, "w");
-  fprintf(fout, "#KCurve\n");
   for(vector<ComplexDouble>::const_iterator it = toPrint.begin(); it!=toPrint.end(); ++it)
 	{
 	  fprintf(fout, "%+13.10e %+13.10e\n", real(*it), imag(*it));
