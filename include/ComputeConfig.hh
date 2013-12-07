@@ -21,6 +21,7 @@ using namespace libconfig;
 
 #define CONFIG_FILE_VERSION 0.3
 #define MAX_FILENAME_SIZE 1000
+#define MAX_UNITNAME_SIZE 1000
 
 
   enum ExpectedMatrixType
@@ -69,6 +70,10 @@ public:
   const char * GetInterestingPointsFile() const;
   const char * GetWavefunctionFile() const;
 
+  const char * GetLengthUnitName() const;
+  const char * GetEnergyUnitName() const;
+
+
   Potential * GetPotential() const;
 
   ParametrizedCurve * GetKCurve() const;
@@ -98,6 +103,11 @@ public:
   void SetPotentialPrecisionFile(const char * value);
   void SetInterestingPointsFile(const char * value);
   void SetWavefunctionFile(const char * value);
+
+  void SetLengthUnitName(const char * value);
+  void SetEnergyUnitName(const char * value);
+
+
   
   void SetPotential(Potential * value);
   void SetKCurve(ParametrizedCurve * value);
@@ -145,6 +155,9 @@ private:
   char potentialPrecisionFile[MAX_FILENAME_SIZE]; ///Output file for potential precision points. Default: PotentialPrec.dat
   char interestingPointsFile[MAX_FILENAME_SIZE]; ///Store interesting points (bound states, resonances) here.
   char wavefunctionFile[MAX_FILENAME_SIZE]; ///Store wavefunction to interesting points here. First column is x-values, the other columns are wavefunctions for the eigenvalues, in order.
+
+  char lengthUnitName[MAX_UNITNAME_SIZE];
+  char energyUnitName[MAX_UNITNAME_SIZE];
 
   Potential * potential; ///Potential function. Default: a piecewise potential with 3 nonzero regions.
   ParametrizedCurve * kCurve; ///KCurve. Default: a somewhat standard Berggren curve.

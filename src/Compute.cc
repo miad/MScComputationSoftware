@@ -166,13 +166,22 @@ int main(int argc, char *argv[])
   if(myConfiguration.GetAutoPlotPotential())
 	{
 	  char buffer[4000];
-	  sprintf(buffer, "gnuplot/./PotentialPlot.sh \"%s\" \"%s\"", myConfiguration.GetPotentialFile(), myConfiguration.GetPotentialPrecisionFile());
+	  sprintf(buffer, "gnuplot/./PotentialPlot.sh \"%s\" \"%s\" \"%s\" \"%s\"", 
+			  myConfiguration.GetPotentialFile(), 
+			  myConfiguration.GetPotentialPrecisionFile(),
+			  myConfiguration.GetLengthUnitName(),
+			  myConfiguration.GetEnergyUnitName()
+			  );
 	  system(buffer);
 	}
   if(myConfiguration.GetAutoPlotKCurve())
 	{
 	  char buffer[4000];
-	  sprintf(buffer, "gnuplot/./KPlot.sh \"%s\" \"%s\"", myConfiguration.GetKCurveFile(), myConfiguration.GetKFoundFile());
+	  sprintf(buffer, "gnuplot/./KPlot.sh \"%s\" \"%s\" \"%s\"", 
+			  myConfiguration.GetKCurveFile(), 
+			  myConfiguration.GetKFoundFile(),
+			  myConfiguration.GetLengthUnitName()
+			  );
 	  system(buffer);
 	}
 

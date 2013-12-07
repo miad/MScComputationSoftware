@@ -12,6 +12,8 @@ ComputeConfig::ComputeConfig()
   strcpy(potentialPrecisionFile,"PotentialPrecision.dat");
   strcpy(interestingPointsFile, "InterestingPoints.dat");
   strcpy(wavefunctionFile, "Wavefunctions.dat");
+  strcpy(energyUnitName, "MeV");
+  strcpy(lengthUnitName, "fm");
   PiecewiseConstantPotential * stdPotential = new PiecewiseConstantPotential();
   stdPotential->AddValue(-3, -1, 10);
   stdPotential->AddValue(-1, 1, -225);
@@ -64,7 +66,15 @@ ComputeConfig::~ComputeConfig()
 void ComputeConfig::ReadFile(const char * fileName)
 {
   Config cfg;
-  cfg.readFile(fileName);
+  try
+	{
+	  cfg.readFile(fileName);
+	}
+  catch(ParseException &ex)
+	{
+	  printf("Caught ParseException : %s Location : line %d in the config file.\n", ex.getError(), ex.getLine());
+	  throw ex;
+	}
   Setting & root = cfg.getRoot();
 
   delete potential;
@@ -231,6 +241,17 @@ void ComputeConfig::ReadFile(const char * fileName)
 	  throw RLException("MassOverLambda2 unit not properly specified.");
 	}
 
+  if( ! units.lookupValue("LengthUnitName", temp) )
+	{
+	  throw RLException("Could not find LengthUnitName in config file.");
+	}
+  strcpy(lengthUnitName, temp.c_str());
+  if( !units.lookupValue("EnergyUnitName", temp) )
+	{
+	  throw RLException("Could not find EnergyUnitName in config file.");
+	}
+  strcpy(energyUnitName, temp.c_str());
+
   
   if( ! computation.lookupValue("ExpectedMatrixType", temp) )
 	{
@@ -324,6 +345,12 @@ void ComputeConfig::ReadFile(const char * fileName)
 		{
 		  throw RLException("Could not find precision setting in settings file.");
 		}
+
+	  if( ! poten.exists("Parameters") || ! poten["Parameters"].isList() )
+		{
+		  throw RLException("Potential parameters not properly specified.");
+		}
+
 	  Setting & pparam = poten["Parameters"];
 
 	  vector<pair<string, double> > parameters;
@@ -483,6 +510,8 @@ void ComputeConfig::WriteFile(const char * fileName) const
   Setting & units = root["Computation"].add("Units", Setting::TypeGroup);
   units.add("HbarTimesLambda", Setting::TypeFloat) = hbarTimesLambda;
   units.add("MassOverLambda2", Setting::TypeFloat) = massOverLambda2;
+  units.add("LengthUnitName", Setting::TypeString) = lengthUnitName;
+  units.add("EnergyUnitName", Setting::TypeString) = energyUnitName;
 
 
   Setting & basFun = root["Computation"].add("BasisFunctions", Setting::TypeArray);
@@ -570,7 +599,7 @@ const char * ComputeConfig::GetKCurveFile() const
 
 void ComputeConfig::SetKCurveFile(const char * value)
 {
-  if(strlen(value) > MAX_FILENAME_SIZE)
+  if(strlen(value) > MAX_FILENAME_SIZE - 1)
 	throw RLException("Too long filename.");
   strcpy(kCurveFile, value);
 }
@@ -584,7 +613,7 @@ const char * ComputeConfig::GetKFoundFile() const
 
 void ComputeConfig::SetKFoundFile(const char * value)
 {
-  if(strlen(value) > MAX_FILENAME_SIZE)
+  if(strlen(value) > MAX_FILENAME_SIZE - 1)
 	throw RLException("Too long filename.");
   strcpy(kFoundFile, value);
 }
@@ -597,7 +626,7 @@ const char * ComputeConfig::GetPotentialFile() const
 
 void ComputeConfig::SetPotentialFile(const char * value)
 {
-  if(strlen(value) > MAX_FILENAME_SIZE)
+  if(strlen(value) > MAX_FILENAME_SIZE - 1)
 	throw RLException("Too long filename.");
   strcpy(potentialFile, value);
 }
@@ -609,7 +638,7 @@ const char * ComputeConfig::GetPotentialPrecisionFile() const
 
 void ComputeConfig::SetPotentialPrecisionFile(const char * value)
 {
-  if(strlen(value) > MAX_FILENAME_SIZE)
+  if(strlen(value) > MAX_FILENAME_SIZE - 1)
 	throw RLException("Too long filename.");
   strcpy(potentialPrecisionFile, value);
 }
@@ -621,7 +650,7 @@ const char * ComputeConfig::GetInterestingPointsFile() const
 
 void ComputeConfig::SetInterestingPointsFile(const char * value)
 {
-  if(strlen(value) > MAX_FILENAME_SIZE)
+  if(strlen(value) > MAX_FILENAME_SIZE - 1)
 	throw RLException("Too long filename.");
   strcpy(interestingPointsFile, value);
 }
@@ -633,12 +662,40 @@ const char * ComputeConfig::GetWavefunctionFile() const
 
 void ComputeConfig::SetWavefunctionFile(const char * value)
 {
-  if(strlen(value) > MAX_FILENAME_SIZE)
-	throw RLException("Too long filename.");
+  if(strlen(value) > MAX_FILENAME_SIZE - 1)
+	{
+	  throw RLException("Too long filename.");
+	}
   strcpy(wavefunctionFile, value);
 }
 
+const char * ComputeConfig::GetLengthUnitName() const
+{
+  return lengthUnitName;
+}
 
+void ComputeConfig::SetLengthUnitName(const char * value)
+{
+  if(strlen(value) > MAX_UNITNAME_SIZE - 1)
+	{
+	  throw RLException("Too long unit name.");
+	}
+  strcpy(lengthUnitName, value);
+}
+
+const char * ComputeConfig::GetEnergyUnitName() const
+{
+  return energyUnitName;
+}
+
+void ComputeConfig::SetEnergyUnitName(const char * value)
+{
+  if(strlen(value) > MAX_UNITNAME_SIZE - 1)
+	{
+	  throw RLException("Too long unit name.");
+	}
+  strcpy(energyUnitName, value);
+}
 
 Potential * ComputeConfig::GetPotential() const
 {
