@@ -29,6 +29,12 @@ public:
 						double maxX /// Maximum x value.
 						); ///Constructor. \todo Implement reading potential from file.
 
+  ParametrizedPotential(string function, /// The function to use.
+						vector<pair<string, double> > parameters, /// The parameters to use. 
+						const char * minXFunction, ///Min x function.
+						const char * maxXFunction ///Max x function.
+						); ///Constructor. \todo Implement reading potential from file.
+
   ParametrizedPotential(const ParametrizedPotential &other ///Other potential
 						); ///Copy constructor.
 

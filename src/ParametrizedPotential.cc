@@ -8,8 +8,70 @@ ParametrizedPotential::ParametrizedPotential(string function, vector<pair<string
 	{
 	  fp.AddConstant(it->first, it->second);
 	}
-  fp.Parse(function, "x");
+  int retVal = fp.Parse(function, "x");
+  if(retVal != -1)
+	{
+	  throw RLException("Error in parsing the function '%s' at character %d.", function.c_str(), retVal);
+	}
 
+  fp.Optimize();
+}
+
+ParametrizedPotential::ParametrizedPotential(string function, vector<pair<string, double> > parameters, const char * minXFunction, const char * maxXFunction)
+{
+  SetPrecision(100);
+  for(vector<pair<string, double> >::const_iterator it = parameters.begin(); it!=parameters.end(); ++it)
+	{
+	  fp.AddConstant(it->first, it->second);
+	}
+
+  int retVal1 = fp.Parse(minXFunction, "");
+  if(retVal1 != -1)
+	{
+	  char buffer[10000];
+	  memset(buffer, ' ', sizeof(char)*9995);
+	  buffer[retVal1 +1] = '\0';
+	  throw RLException("Error in parsing the function \n'%s' at character %d\n%s%c\n%s", 
+						function.c_str(), 
+						retVal1,
+						buffer,
+						'#',
+						fp.ErrorMsg());
+	}
+
+  minX = fp.Eval(NULL);
+  int retVal2 = fp.Parse(maxXFunction, "");
+  if(retVal2 != -1)
+	{
+	  char buffer[10000];
+	  memset(buffer, ' ', sizeof(char)*9995);
+	  buffer[retVal2 +1] = '\0';
+	  throw RLException("Error in parsing the function \n'%s' at character %d\n%s%c\n%s", 
+						function.c_str(), 
+						retVal2,
+						buffer,
+						'#',
+						fp.ErrorMsg());
+
+	}
+
+  maxX = fp.Eval(NULL);
+
+
+  int retVal3 = fp.Parse(function, "x");
+  if(retVal3 != -1)
+	{
+	  char buffer[10000];
+	  memset(buffer, ' ', sizeof(char)*9995);
+	  buffer[retVal3 +1] = '\0';
+	  throw RLException("Error in parsing the function \n'%s' at character %d\n%s%c\n%s", 
+						function.c_str(), 
+						retVal3,
+						buffer,
+						'#',
+						fp.ErrorMsg());
+
+	}
   fp.Optimize();
 }
 

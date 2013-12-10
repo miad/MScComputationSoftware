@@ -21,3 +21,4 @@ test/RunTests
 *.dat
 libconfig-1.4.9/*
 fparser/*
+confDir/*

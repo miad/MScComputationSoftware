@@ -4,7 +4,11 @@ BasisFunction::BasisFunction(string _name)
   :type(-1), name(_name)
 {
 
-  fp.Parse(name, "x,k");
+  int retVal = fp.Parse(name, "x,k");
+  if( retVal != -1 )
+	{
+	  throw RLException("Failed to parse the basis function '%s' at character %d.", name.c_str(), retVal);
+	}
   fp.Optimize();
 }
 

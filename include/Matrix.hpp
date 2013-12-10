@@ -154,7 +154,7 @@ bool Matrix<T>::IsSymmetric( bool verbose ) const
 		  if(! TEquality(Element(n, m), Element(m, n)) )
 			{
 			  if(verbose)
- 				printf("Symmetricity invalidity detected: (%d, %d) = %lf , (%d, %d) = %lf .\n",n,m,Element(n,m),m,n,Element(m, n));
+ 				printf("Symmetricity invalidity detected: (%d, %d) = %5.12lf , (%d, %d) = %5.12lf .\n",n,m,Element(n,m),m,n,Element(m, n));
 			  return false;
 			}
 		}
@@ -178,7 +178,7 @@ inline bool Matrix<ComplexDouble>::IsSymmetric( bool verbose ) const
 		  if(! TEquality(Element(n, m), Element(m, n)) )
 			{
 			  if(verbose)
- 				printf("Symmetricity invalidity detected: (%d, %d) = %lf + %lfi, (%d, %d) = %lf + %lfi.\n",n,m,real(Element(n,m)),imag(Element(n,m)),m,n,real(Element(m, n)), imag(Element(m, n)));
+ 				printf("Symmetricity invalidity detected: (%d, %d) = %10.12lf%+10.12lfi, (%d, %d) = %10.12lf%+10.12lfi.\n",n,m,real(Element(n,m)),imag(Element(n,m)),m,n,real(Element(m, n)), imag(Element(m, n)));
 			  return false;
 			}
 		}

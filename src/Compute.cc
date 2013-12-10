@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
 									  myConfiguration.GetHbarTimesLambda(), 
 									  myConfiguration.GetMassOverLambda2()
 									  );
-
+  
 
   PrintInterestingKPointsVerbosely(&myPrinter, &myInfo,
 								   myConfiguration.GetKCurve(),
@@ -382,14 +382,14 @@ void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer, const char * 
 
 	  for(unsigned int i = 0; i<toPrint->Eigenvalues.size(); ++i)
 		{
-		  if(DBL_EQUAL(pow(*it*hbarTimesLambda,2.0)/(2.*massOverLambda2), toPrint->Eigenvalues[i]))
+		  if(DBL_EQUAL_HPREC(pow(*it*hbarTimesLambda,2.0)/(2.*massOverLambda2), toPrint->Eigenvalues[i]))
 			interestingIndexes.push_back(i);
 		}
 	}
 
   if(interestingIndexes.size() != interestingVector.size() )
 	{
-	  throw RLException("Could not pinpoint the points in a good way.");
+	  throw RLException("Internal consistency error: could not pinpoint the points in a good way: interestingIndexes is %d, but interestingVectorSize is %d.", interestingIndexes.size(), interestingVector.size());
 	}
 
   vector<vector<ComplexDouble> > wavefunctionValues;

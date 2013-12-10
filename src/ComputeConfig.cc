@@ -370,21 +370,19 @@ void ComputeConfig::ReadFile(const char * fileName)
 		{
 		  throw RLException("Could not find the 'Function' property in the parametrized potential in the config file.");
 		}
-	  double minX, maxX;
+	  string minX, maxX;
 	  if(!poten.exists("Interval") || ! poten["Interval"].isArray() || poten["Interval"].getLength() != 2)
 		{
 		  throw RLException("Invalid interval specified for parametrized input potential.");
 		}
-	  minX = poten["Interval"][0];
-	  maxX = poten["Interval"][1];
-	  if(minX > maxX)
-		{
-		  throw RLException("Invalid interval specified in settings file: min is larger than max.");
-		}
+	  
+	  minX = poten["Interval"][0].c_str();
+	  maxX = poten["Interval"][1].c_str();
+
 	  ParametrizedPotential * locPot = new ParametrizedPotential(paraFunction,
 																 parameters, 
-																 minX,
-																 maxX
+																 minX.c_str(),
+																 maxX.c_str()
 																 );
 	  locPot->SetPrecision(potPrec);
 	  potential = locPot;
