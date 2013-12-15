@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
 
 
   myPrinter.Print(2, "Launching plotters.\n");
+  
   ExternalLauncher myLauncher(&myConfiguration);
   myLauncher.Launch();
 

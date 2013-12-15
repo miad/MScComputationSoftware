@@ -74,6 +74,8 @@ public:
 
   const vector<BasisFunction> & GetBasisFunctions() const;
 
+  const vector<ComplexDouble> & GetExtraInterestingPoints() const;
+
   ExpectedMatrixType GetExpectedMatrixType() const;
 
 
@@ -84,42 +86,77 @@ public:
 
   ///Setters
 
-  void SetAutoPlotPotential(bool value);
-  void SetAutoPlotKCurve(bool value);
-  void SetAutoPlotWavefunctions(bool value);
+
+  void SetExtraInterestingPoints(vector<ComplexDouble> value
+								 );
+
+  void SetAutoPlotPotential(bool value
+							);
+  void SetAutoPlotKCurve(bool value
+						 );
+  void SetAutoPlotWavefunctions(bool value
+								);
 
 
-  void SetOutputFilenames(const OutputFilenames & value);
+  void SetOutputFilenames(const OutputFilenames & value
+						  );
 
-  void SetSpecificUnits(const SpecificUnits & value);
+  void SetSpecificUnits(const SpecificUnits & value
+						);
   
-  void SetPotential(Potential * value);
-  void SetKCurve(ParametrizedCurve * value);
+  void SetPotential(Potential * value
+					);
+  void SetKCurve(ParametrizedCurve * value
+				 );
   
-  void SetBasisFunctions(vector<BasisFunction> value);
+  void SetBasisFunctions(vector<BasisFunction> value
+						 );
 
-  void SetMinWavefunctionX(double value);
-  void SetMaxWavefunctionX(double value);
-  void SetWavefunctionStepsizeX(double value);
+  void SetMinWavefunctionX(double value
+						   );
+  void SetMaxWavefunctionX(double value
+						   );
+  void SetWavefunctionStepsizeX(double value
+								);
 
 
   
-  void SetVerbosityLevel(unsigned int value);
-  void SetNumberOfThreads(unsigned int value);
+  void SetVerbosityLevel(unsigned int value
+						 );
+  void SetNumberOfThreads(unsigned int value
+						  );
 
-  void SetExpectedMatrixType(ExpectedMatrixType val);
+  void SetExpectedMatrixType(ExpectedMatrixType val
+							 );
 
 
 private:
-  void ReadOutputFiles(Setting & output);
-  void ReadExpectedMatrixType(Setting & computation);
-  void ReadSpecificUnits(Setting & computation);
-  void ReadPotential(Setting & computation);
-  void ReadKCurve(Setting & computation);
-  void ReadBasisFunctions(Setting & computation);
-  void ReadAutoLaunch(Setting & program);
+  void ReadOutputFiles(Setting & output
+					   );
+  void ReadExpectedMatrixType(Setting & computation
+							  );
+  void ReadSpecificUnits(Setting & computation
+						 );
+  void ReadPotential(Setting & computation
+					 );
+  void ReadKCurve(Setting & computation
+				  );
+  void ReadBasisFunctions(Setting & computation
+						  );
+
+  void ReadAutoLaunch(Setting & program
+					  );
+
+  void ReadWavefunctionProperties(Setting & outputSpecifics
+								  );
+
+  void ReadExtraInteresting(Setting & outputSpecifics
+							);
+
 
 private:
+
+  vector<ComplexDouble> extraInterestingPoints; ///An extra filtering option for artificially inducing extra InterestingPoints to the output, main use is quality control purposes.
 
   ///This stuff should typically be contained in the configuration file.
 

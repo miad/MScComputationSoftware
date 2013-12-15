@@ -173,14 +173,16 @@ void OutputProcessor::WriteInterestingKPointsVerbosely() const
 		{
 		  vPrint(1,"Bound state: %+6.10lfi\n", imag(*it));
 		}
-	}
-  for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
-	{
-	  if(!(imag(*it) > 1E-5 && abs(arg(*it)-PI/2) < 1E-2 ))
+	  else if((imag(*it) < -1E-6 && arg(*it) < 0.0 && arg(*it) > -1.0*PI/2 ))
 		{
 		  vPrint(1,"Resonant state: %+6.10lf %+6.10lfi\n", real(*it), imag(*it));
 		}
+	  else
+		{
+		  vPrint(1,"Other state: %+6.10lf %+6.10lfi\n", real(*it), imag(*it));
+		}
 	}
+
 }
 
 void OutputProcessor::WriteInterestingKPointsToFile() const
@@ -286,6 +288,32 @@ vector<ComplexDouble> OutputProcessor::FindInterestingKPoints() const
 			toReturn.push_back(kToPrint);
 		}
 	}
+
+  vector<ComplexDouble> extraInterestingPoints = config->GetExtraInterestingPoints();
+
+  ///Append some other points that are "enforced interesting".
+  for(vector<ComplexDouble>::const_iterator ip = extraInterestingPoints.begin(); ip!=extraInterestingPoints.end(); ++ip)
+	{
+	  double minDistance = 1E99;
+	  ComplexDouble bestMatch = ComplexDouble(-10000.0, 0);
+	  for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
+		{
+		  ComplexDouble kToPrint = EnergyToKValue(*it);
+		  double locDist = abs(kToPrint-*ip);
+		  if(minDistance > locDist)
+			{
+			  minDistance = locDist;
+			  bestMatch = kToPrint;
+			}
+		}
+	  if(DBL_EQUAL(bestMatch, -10000.0))
+		throw RLException("Best match was never found. This should never happen.");
+	  toReturn.push_back(bestMatch);
+	}
+
+
+
+
   return toReturn;
 }
 

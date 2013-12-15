@@ -2,6 +2,7 @@
 #define SpecificUnits_hh 1
 
 #include <string>
+#include <iostream>
 
 using namespace std;
 
@@ -18,6 +19,7 @@ public:
 				); ///Constructor.
   
   SpecificUnits(); ///Default constructor. 
+  ~SpecificUnits();
 
   double GetHbarTimesLambda() const; /// Getter.
   double GetMassOverLambda2() const; /// Getter. 

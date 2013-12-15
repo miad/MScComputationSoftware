@@ -127,24 +127,12 @@ void ComputeConfig::ReadFile(const char * fileName)
 
   Setting & outputSpecifics = root["OutputSpecifics"];
 
-  if( !outputSpecifics.exists("WavefunctionProperties") || !outputSpecifics["WavefunctionProperties"].isGroup() )
-	{
-	  throw RLException("WavefunctionProperties not properly defined.");
-	}
 
-  Setting & wfProp = outputSpecifics["WavefunctionProperties"];
-  if( ! wfProp.lookupValue("MinX", minWavefunctionX))
-	{
-	  throw RLException("Could not find MinX in WavefunctionProperties.");
-	}
-  if( ! wfProp.lookupValue("MaxX", maxWavefunctionX))
-	{
-	  throw RLException("Could not find MaxX in WavefunctionProperties.");
-	}
-  if( ! wfProp.lookupValue("DeltaX", wavefunctionStepsizeX))
-	{
-	  throw RLException("Could not find DeltaX in WavefunctionProperties.");
-	}
+  ReadWavefunctionProperties(outputSpecifics);
+  ReadExtraInteresting(outputSpecifics);
+
+
+
 
 
 
@@ -164,6 +152,54 @@ void ComputeConfig::ReadFile(const char * fileName)
   ReadKCurve(computation);
   // Read the file. If there is an error, report it and exit.
 }
+
+void ComputeConfig::ReadWavefunctionProperties(Setting & outputSpecifics)
+{
+  if( !outputSpecifics.exists("WavefunctionProperties") || !outputSpecifics["WavefunctionProperties"].isGroup() )
+	{
+	  throw RLException("WavefunctionProperties not properly defined.");
+	}
+
+  Setting & wfProp = outputSpecifics["WavefunctionProperties"];
+  if( ! wfProp.lookupValue("MinX", minWavefunctionX))
+	{
+	  throw RLException("Could not find MinX in WavefunctionProperties.");
+	}
+  if( ! wfProp.lookupValue("MaxX", maxWavefunctionX))
+	{
+	  throw RLException("Could not find MaxX in WavefunctionProperties.");
+	}
+  if( ! wfProp.lookupValue("DeltaX", wavefunctionStepsizeX))
+	{
+	  throw RLException("Could not find DeltaX in WavefunctionProperties.");
+	}
+}
+
+void ComputeConfig::ReadExtraInteresting(Setting & outputSpecifics)
+{
+  extraInterestingPoints.clear();
+  if( ! outputSpecifics.exists("ExtraInteresting") || ! outputSpecifics["ExtraInteresting"].isList() )
+	{
+	  throw RLException("ExtraInteresting not properly specified.");
+	}
+  Setting & extraInteresting = outputSpecifics["ExtraInteresting"];
+  for(int i = 0; i<extraInteresting.getLength(); ++i)
+	{
+	  if(!extraInteresting[i].isArray() || (extraInteresting[i].getLength() != 2))
+		{
+		  throw RLException("Invalid number specification at number %d in ExtraInteresting list.", i);
+		}
+	  for(int j = 0; j<2; ++j)
+		if(extraInteresting[i][j].getType() != Setting::TypeFloat )
+		  {
+			throw RLException("ExtraInteresting number %d position %d was not float.", i, j);
+		  }
+	  extraInterestingPoints.push_back(ComplexDouble(extraInteresting[i][0], extraInteresting[i][1]));
+	}
+
+  
+}
+
 
 unsigned int ComputeConfig::GetVerbosityLevel() const
 {
@@ -289,6 +325,16 @@ bool ComputeConfig::GetAutoPlotPotential() const
 void ComputeConfig::SetAutoPlotPotential(bool value)
 {
   autoPlotPotential = value;
+}
+
+void ComputeConfig::SetExtraInterestingPoints(vector<ComplexDouble> value)
+{
+  extraInterestingPoints = value;
+}
+
+const vector<ComplexDouble> & ComputeConfig::GetExtraInterestingPoints() const
+{
+  return extraInterestingPoints;
 }
 
 bool ComputeConfig::GetAutoPlotKCurve() const
