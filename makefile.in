@@ -29,6 +29,7 @@ OBJ:= $(SRC:src/%.cc=bin/%.o)
 
 MAINS := Compute
 MAINSOBJ:= $(MAINS:%=bin/%.o)
+MAINSNAME := Compute
 
 
 
@@ -74,7 +75,7 @@ bin:
 
 $(MAINS): %: $(filter-out $(MAINSOBJ), $(OBJ)) bin/%.o
 	@echo Compiling $@...
-	@$(CC) $(CCFLAGS) $(INCLUDE) $^ $(LIBS)  -o $@  
+	@$(CC) $(CCFLAGS) $(INCLUDE) $^ $(LIBS)  -o $(MAINSNAME)
 
 $(OBJ): bin/%.o: src/%.cc include/%.hh $(GLOBALDEPEND)
 	@echo Compiling $@...

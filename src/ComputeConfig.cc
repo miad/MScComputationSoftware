@@ -2,18 +2,17 @@
 
 ComputeConfig::ComputeConfig()
   :numberOfThreads(1), verbosityLevel(0), autoPlotPotential(false), autoPlotKCurve(false),
-   minWavefunctionX(-10), maxWavefunctionX(10), wavefunctionStepsizeX(0.01),
-   hbarTimesLambda(197.326971812), ///units MeV * fm (lambda = c^2)
-   massOverLambda2(938.0) ///units MeV/c^2
+   autoPlotWavefunctions(false),
+   minWavefunctionX(-10), maxWavefunctionX(10), wavefunctionStepsizeX(0.01)
 {
-  strcpy(kCurveFile, "KCurve.dat");
-  strcpy(kFoundFile, "KFound.dat");
-  strcpy(potentialFile,"Potential.dat");
-  strcpy(potentialPrecisionFile,"PotentialPrecision.dat");
-  strcpy(interestingPointsFile, "InterestingPoints.dat");
-  strcpy(wavefunctionFile, "Wavefunctions.dat");
-  strcpy(energyUnitName, "MeV");
-  strcpy(lengthUnitName, "fm");
+  outputFilenames.Add("KCurveFile", "KCurve.dat");
+  outputFilenames.Add("KFoundFile", "KFound.dat");
+  outputFilenames.Add("PotentialFile", "Potential.dat");
+  outputFilenames.Add("PotentialPrecisionFile", "PotentialPrecision.dat");
+  outputFilenames.Add("InterestingPointsFile", "InterestingPoints.dat");
+  outputFilenames.Add("WavefunctionFile", "Wavefunctions.dat");
+
+
   PiecewiseConstantPotential * stdPotential = new PiecewiseConstantPotential();
   stdPotential->AddValue(-3, -1, 10);
   stdPotential->AddValue(-1, 1, -225);
@@ -21,7 +20,6 @@ ComputeConfig::ComputeConfig()
   stdPotential->RecomputeLegendreRules();
 
   potential = stdPotential;
-
 
   kCurve = new ParametrizedCurve(-1,1);
   kCurve->AddValue(0.0);
@@ -55,11 +53,6 @@ ComputeConfig::~ComputeConfig()
 	{
 	  delete kCurve;
 	  kCurve = NULL;
-	}
-  if(potential != NULL)
-	{
-	  delete potential;
-	  potential = NULL;
 	}
 }
 
@@ -102,10 +95,7 @@ void ComputeConfig::ReadFile(const char * fileName)
 	}
 
   Setting & program = root["Program"];
-  if(!program.exists("AutoLaunch") || ! program["AutoLaunch"].isGroup())
-	{
-	  throw RLException("The group 'AutoLaunch' was not properly defined in the config file.");
-	}
+
 
   if(! program.lookupValue("VerbosityLevel", verbosityLevel))
 	{
@@ -117,23 +107,9 @@ void ComputeConfig::ReadFile(const char * fileName)
 	  throw RLException("The value 'NumberOfThreads' was not defined.");
 	}
 
-  Setting & autolaunch = program["AutoLaunch"];
-  if(!autolaunch.exists("Gnuplot") || ! autolaunch["Gnuplot"].isGroup())
-	{
-	  throw RLException("The group 'Gnuplot' was not properly defined in the config file.");
-	}
 
-  Setting & gnuplot = autolaunch["Gnuplot"];
+  ReadAutoLaunch(program);
 
-  if( !gnuplot.lookupValue("Potential", autoPlotPotential))
-	{
-	  throw RLException("The value 'Potential' in 'AutoLaunch' was not set appropriately.");
-	}
-
-  if( !gnuplot.lookupValue("KCurve", autoPlotKCurve))
-	{
-	  throw RLException("The value 'KCurve' in 'AutoLaunch' was not set appropriately.");
-	}
 
   if( !root.exists("Output") || ! root["Output"].isGroup())
 	{
@@ -141,67 +117,22 @@ void ComputeConfig::ReadFile(const char * fileName)
 	}
 
   Setting & output = root["Output"];
-  string temp;
-  if( output.lookupValue("KCurve", temp) )
+
+  ReadOutputFiles(output);
+
+  if( !root.exists("OutputSpecifics") || ! root["OutputSpecifics"].isGroup())
 	{
-	  strcpy(kCurveFile, temp.c_str());
-	}
-  else
-	{
-	  throw RLException("The value 'KCurve' was not set appropriately.");
+	  throw RLException("Could not find OutputSpecifics group.");
 	}
 
-  if( output.lookupValue("KFound", temp) )
-	{
-	  strcpy(kFoundFile, temp.c_str());
-	}
-  else
-	{
-	  throw RLException("The value 'KFound' was not set appropriately.");
-	}
+  Setting & outputSpecifics = root["OutputSpecifics"];
 
-  if( output.lookupValue("Potential", temp) )
-	{
-	  strcpy(potentialFile, temp.c_str());
-	}
-  else
-	{
-	  throw RLException("The value 'Potential' was not set appropriately.");
-	}
-
-  if( output.lookupValue("PotentialPrecision", temp) )
-	{
-	  strcpy(potentialPrecisionFile, temp.c_str());
-	}
-  else
-	{
-	  throw RLException("The value 'PotentialPrecision' was not set appropriately.");
-	}
-
-  if( output.lookupValue("InterestingPoints", temp) )
-	{
-	  strcpy(interestingPointsFile, temp.c_str());
-	}
-  else
-	{
-	  throw RLException("The value 'InterestingPoints' was not set appropriately.");
-	}
-
-  if( output.lookupValue("Wavefunctions", temp) )
-	{
-	  strcpy(wavefunctionFile, temp.c_str());
-	}
-  else
-	{
-	  throw RLException("The value 'Wavefunctions' was not set appropriately.");
-	}
-
-  if( !output.exists("WavefunctionProperties") || !output["WavefunctionProperties"].isGroup() )
+  if( !outputSpecifics.exists("WavefunctionProperties") || !outputSpecifics["WavefunctionProperties"].isGroup() )
 	{
 	  throw RLException("WavefunctionProperties not properly defined.");
 	}
 
-  Setting & wfProp = output["WavefunctionProperties"];
+  Setting & wfProp = outputSpecifics["WavefunctionProperties"];
   if( ! wfProp.lookupValue("MinX", minWavefunctionX))
 	{
 	  throw RLException("Could not find MinX in WavefunctionProperties.");
@@ -225,234 +156,12 @@ void ComputeConfig::ReadFile(const char * fileName)
   Setting & computation = root["Computation"];
 
 
+  ReadSpecificUnits(computation);
+  ReadExpectedMatrixType(computation);
 
-  if (! computation.exists("Units") || !computation["Units"].isGroup())
-	{
-	  throw RLException("Units group not properly specified in settings file.");
-	}
-  
-  Setting & units = computation["Units"];
-  if( ! units.lookupValue("HbarTimesLambda", hbarTimesLambda) )
-	{
-	  throw RLException("HbarTimesLambda unit not properly specified.");
-	}
-  if( ! units.lookupValue("MassOverLambda2", massOverLambda2) )
-	{
-	  throw RLException("MassOverLambda2 unit not properly specified.");
-	}
-
-  if( ! units.lookupValue("LengthUnitName", temp) )
-	{
-	  throw RLException("Could not find LengthUnitName in config file.");
-	}
-  strcpy(lengthUnitName, temp.c_str());
-  if( !units.lookupValue("EnergyUnitName", temp) )
-	{
-	  throw RLException("Could not find EnergyUnitName in config file.");
-	}
-  strcpy(energyUnitName, temp.c_str());
-
-  
-  if( ! computation.lookupValue("ExpectedMatrixType", temp) )
-	{
-	  throw RLException("Expected matrix type not set properly.");
-	}
-  bool found = false;
-  if(strcmp(temp.c_str(), "General") == 0) 
-	{
-	  matrixType = GeneralMatrix;
-	  found = true;
-	}
-  if(strcmp(temp.c_str(), "Symmetric") == 0)
-	{
-	  matrixType = SymmetricMatrix;
-	  found = true;
-	}
-  if(strcmp(temp.c_str(), "Hermitian") == 0 )
-	{
-	  matrixType = HermitianMatrix;
-	  found = true;
-	}
-  if(!found)
-	throw RLException("Invalid option for ExpectedMatrixType.");
-
-
-
-  if( !computation.exists("BasisFunctions") || !computation["BasisFunctions"].isArray())
-	{
-	  throw RLException("Basis functions not properly defined.");
-	}
-
-  Setting & bf = computation["BasisFunctions"];
-  for(int i = 0; i<bf.getLength(); ++i)
-	{
-	  basisFunctions.push_back(BasisFunction(bf[i]));
-	}
-
-  if( !computation.exists("Potential") || !computation["Potential"].isGroup())
-	{
-	  throw RLException("Potential not properly defined.");
-	}
-
-  Setting & poten = computation["Potential"];
-  
-  if( ! poten.lookupValue("Type", temp))
-	{
-	  throw RLException("Potential type not properly defined.");
-	}
-
-
-
-  if(strcmp(temp.c_str(), "PiecewiseConstant") == 0)
-	{
-	  PiecewiseConstantPotential * locPot = new PiecewiseConstantPotential();
-	  int potPrec;
-	  if( ! poten.lookupValue("Precision", potPrec))
-		{
-		  throw RLException("Could not find precision setting in settings file.");
-		}
-	  locPot->SetPrecision(potPrec);
-
-	  if( !poten.exists("Values") || ! poten["Values"].isList())
-		{
-		  throw RLException("Could not find 'Values'.");
-		}
-	  
-	  Setting & vval = poten["Values"];
-	  for(int i = 0; i<vval.getLength(); ++i)
-		{
-		  double x1, x2, y;
-		  if( ! vval[i].exists("Interval") || ! vval[i]["Interval"].isArray() || vval[i]["Interval"].getLength() != 2)
-			{
-			  throw RLException("Potential interval #%d was not set correctly.", i);
-			}
-		  x1 = vval[i]["Interval"][0];
-		  x2 = vval[i]["Interval"][1];
-		  
-		  if( !vval[i].lookupValue("Value", y))
-			{
-			  throw RLException("Potential value in interval #%d was not set correctly.", i);
-			}
-		  locPot->AddValue(x1, x2, y);
-		}
-	  locPot->RecomputeLegendreRules();
-	  potential = locPot;
-	}
-  else if(strcmp(temp.c_str(), "Parametrized") == 0)
-	{
-	  int potPrec;
-	  if( ! poten.lookupValue("Precision", potPrec))
-		{
-		  throw RLException("Could not find precision setting in settings file.");
-		}
-
-	  if( ! poten.exists("Parameters") || ! poten["Parameters"].isList() )
-		{
-		  throw RLException("Potential parameters not properly specified.");
-		}
-
-	  Setting & pparam = poten["Parameters"];
-
-	  vector<pair<string, double> > parameters;
-	  for(int i = 0; i<pparam.getLength(); ++i)
-		{
-		  string paraStr;
-		  double paraDbl;
-		  if(!pparam[i].lookupValue("Name", paraStr) || !pparam[i].lookupValue("Value", paraDbl))
-			{
-			  throw RLException("Potential parameter #%d was not properly specified.", i);
-			}
-		  parameters.push_back(make_pair(paraStr, paraDbl));
-		}
-	  
-	  string paraFunction;
-	  if(!poten.lookupValue("Function", paraFunction))
-		{
-		  throw RLException("Could not find the 'Function' property in the parametrized potential in the config file.");
-		}
-	  string minX, maxX;
-	  if(!poten.exists("Interval") || ! poten["Interval"].isArray() || poten["Interval"].getLength() != 2)
-		{
-		  throw RLException("Invalid interval specified for parametrized input potential.");
-		}
-	  
-	  minX = poten["Interval"][0].c_str();
-	  maxX = poten["Interval"][1].c_str();
-
-	  ParametrizedPotential * locPot = new ParametrizedPotential(paraFunction,
-																 parameters, 
-																 minX.c_str(),
-																 maxX.c_str()
-																 );
-	  locPot->SetPrecision(potPrec);
-	  potential = locPot;
-	}
-  else
-	{
-	  throw RLException("Unsupported potential type: '%s'", temp.c_str());
-	}
-
-
-
-
-
-  
-  if(! computation.exists("KCurve") || !computation["KCurve"].isGroup())
-	{
-	  throw RLException("KCurve not properly set.");
-	}
-  
-  Setting & kcur = computation["KCurve"];
-  
-  if( ! kcur.exists("Values") || ! kcur["Values"].isList())
-	{
-	  throw RLException("Values in KCurve not properly set.");
-	}
-  Setting & kv = kcur["Values"];
-  ComplexDouble lastVal;
-  for(int i = 0; i<kv.getLength(); ++i)
-	{
-	  if(!kv[i].exists("P0") || !kv[i]["P0"].isArray() || kv[i]["P0"].getLength() != 2)
-		{
-		  throw RLException("P0 not properly set in item %d.", i);
-		}
-	  if(!kv[i].exists("P1") || !kv[i]["P1"].isArray() || kv[i]["P1"].getLength() != 2)
-		{
-		  throw RLException("P1 not properly set in item %d.", i);
-		}
-	  double p0r, p0i, p1r, p1i;
-	  p0r = kv[i]["P0"][0];
-	  p0i = kv[i]["P0"][1];
-	  p1r = kv[i]["P1"][0];
-	  p1i = kv[i]["P1"][1];
-	  ComplexDouble p0(p0r, p0i);
-	  ComplexDouble p1(p1r, p1i);
-
-	  int points;
-	  if(! kv[i].lookupValue("Points", points) )
-		{
-		  throw RLException("Points not found in item %d.", i);
-		}
-
-	  if(i>0)
-		{
-		  if(!DBL_EQUAL(lastVal, p0))
-			{
-			  throw RLException("The specified curve had a discontinuity: %lf + i %lf is not equal to %lf + i %lf.",
-								real(lastVal), imag(lastVal), p0r, p0i);
-			}
-		}
-	  else
-		{
-		  kCurve->AddValue(p0);
-		}
-	  kCurve->AddGLPoints(points);
-	  kCurve->AddValue(p1);
-	  lastVal = p1;
-	}
-  
-  kCurve->ComputeGaussLegendre();
-  
+  ReadBasisFunctions(computation);
+  ReadPotential(computation);
+  ReadKCurve(computation);
   // Read the file. If there is an error, report it and exit.
 }
 
@@ -481,15 +190,17 @@ void ComputeConfig::WriteFile(const char * fileName) const
   Setting & gnuplot = autolaunch.add("Gnuplot", Setting::TypeGroup);  
   gnuplot.add("Potential", Setting::TypeBoolean) = autoPlotPotential;
   gnuplot.add("KCurve", Setting::TypeBoolean) = autoPlotKCurve;
+  gnuplot.add("Wavefunctions", Setting::TypeBoolean) = autoPlotWavefunctions;
 
   Setting & output = root.add("Output", Setting::TypeGroup);
-  output.add("KCurve", Setting::TypeString) = kCurveFile;
-  output.add("KFound", Setting::TypeString) = kFoundFile;
-  output.add("Potential", Setting::TypeString) = potentialFile;
-  output.add("PotentialPrecision", Setting::TypeString) = potentialPrecisionFile;
-  output.add("InterestingPoints", Setting::TypeString) = interestingPointsFile;
-  output.add("Wavefunctions", Setting::TypeString) = wavefunctionFile;
-  Setting & wavePrecision = output.add("WavefunctionProperties", Setting::TypeGroup);
+  output.add("KCurve", Setting::TypeString) = outputFilenames.Get("KCurveFile");
+  output.add("KFound", Setting::TypeString) = outputFilenames.Get("KFoundFile");
+  output.add("Potential", Setting::TypeString) = outputFilenames.Get("PotentialFile");
+  output.add("PotentialPrecision", Setting::TypeString) = outputFilenames.Get("PotentialPrecisionFile");
+  output.add("InterestingPoints", Setting::TypeString) = outputFilenames.Get("InterestingPointsFile");
+  output.add("Wavefunctions", Setting::TypeString) = outputFilenames.Get("WavefunctionFile");
+  Setting & outputSpecifics = root.add("OutputSpecifics", Setting::TypeGroup);
+  Setting & wavePrecision = outputSpecifics.add("WavefunctionProperties", Setting::TypeGroup);
   wavePrecision.add("MinX", Setting::TypeFloat) = minWavefunctionX;
   wavePrecision.add("MaxX", Setting::TypeFloat) = minWavefunctionX;
   wavePrecision.add("DeltaX", Setting::TypeFloat) = minWavefunctionX;
@@ -506,10 +217,10 @@ void ComputeConfig::WriteFile(const char * fileName) const
 	
 
   Setting & units = root["Computation"].add("Units", Setting::TypeGroup);
-  units.add("HbarTimesLambda", Setting::TypeFloat) = hbarTimesLambda;
-  units.add("MassOverLambda2", Setting::TypeFloat) = massOverLambda2;
-  units.add("LengthUnitName", Setting::TypeString) = lengthUnitName;
-  units.add("EnergyUnitName", Setting::TypeString) = energyUnitName;
+  units.add("HbarTimesLambda", Setting::TypeFloat) = specificUnits.GetHbarTimesLambda();
+  units.add("MassOverLambda2", Setting::TypeFloat) = specificUnits.GetMassOverLambda2();
+  units.add("LengthUnitName", Setting::TypeString) = specificUnits.GetLengthUnitName();
+  units.add("EnergyUnitName", Setting::TypeString) = specificUnits.GetEnergyUnitName();
 
 
   Setting & basFun = root["Computation"].add("BasisFunctions", Setting::TypeArray);
@@ -518,7 +229,7 @@ void ComputeConfig::WriteFile(const char * fileName) const
 	  basFun.add(Setting::TypeString) = it->GetName();
 	}
 
-  Setting & poten = root["Computation"].add("Potential", Setting::TypeGroup);
+  Setting & poten = root["Computation"].add("PotentialFile", Setting::TypeGroup);
   if(PiecewiseConstantPotential * locPot = dynamic_cast<PiecewiseConstantPotential*>(potential))
 	{
 	  poten.add("Type", Setting::TypeString) = "PiecewiseConstant";
@@ -590,110 +301,16 @@ void ComputeConfig::SetAutoPlotKCurve(bool value)
   autoPlotKCurve = value;
 }
 
-const char * ComputeConfig::GetKCurveFile() const
+bool ComputeConfig::GetAutoPlotWavefunctions() const
 {
-  return kCurveFile;
+  return autoPlotWavefunctions;
 }
 
-void ComputeConfig::SetKCurveFile(const char * value)
+void ComputeConfig::SetAutoPlotWavefunctions(bool value)
 {
-  if(strlen(value) > MAX_FILENAME_SIZE - 1)
-	throw RLException("Too long filename.");
-  strcpy(kCurveFile, value);
+  autoPlotWavefunctions = value;
 }
 
-
-
-const char * ComputeConfig::GetKFoundFile() const
-{
-  return kFoundFile;
-}
-
-void ComputeConfig::SetKFoundFile(const char * value)
-{
-  if(strlen(value) > MAX_FILENAME_SIZE - 1)
-	throw RLException("Too long filename.");
-  strcpy(kFoundFile, value);
-}
-
-
-const char * ComputeConfig::GetPotentialFile() const
-{
-  return potentialFile;
-}
-
-void ComputeConfig::SetPotentialFile(const char * value)
-{
-  if(strlen(value) > MAX_FILENAME_SIZE - 1)
-	throw RLException("Too long filename.");
-  strcpy(potentialFile, value);
-}
-
-const char * ComputeConfig::GetPotentialPrecisionFile() const
-{
-  return potentialPrecisionFile;
-}
-
-void ComputeConfig::SetPotentialPrecisionFile(const char * value)
-{
-  if(strlen(value) > MAX_FILENAME_SIZE - 1)
-	throw RLException("Too long filename.");
-  strcpy(potentialPrecisionFile, value);
-}
-
-const char * ComputeConfig::GetInterestingPointsFile() const
-{
-  return interestingPointsFile;
-}
-
-void ComputeConfig::SetInterestingPointsFile(const char * value)
-{
-  if(strlen(value) > MAX_FILENAME_SIZE - 1)
-	throw RLException("Too long filename.");
-  strcpy(interestingPointsFile, value);
-}
-
-const char * ComputeConfig::GetWavefunctionFile() const
-{
-  return wavefunctionFile;
-}
-
-void ComputeConfig::SetWavefunctionFile(const char * value)
-{
-  if(strlen(value) > MAX_FILENAME_SIZE - 1)
-	{
-	  throw RLException("Too long filename.");
-	}
-  strcpy(wavefunctionFile, value);
-}
-
-const char * ComputeConfig::GetLengthUnitName() const
-{
-  return lengthUnitName;
-}
-
-void ComputeConfig::SetLengthUnitName(const char * value)
-{
-  if(strlen(value) > MAX_UNITNAME_SIZE - 1)
-	{
-	  throw RLException("Too long unit name.");
-	}
-  strcpy(lengthUnitName, value);
-}
-
-const char * ComputeConfig::GetEnergyUnitName() const
-{
-  return energyUnitName;
-}
-
-void ComputeConfig::SetEnergyUnitName(const char * value)
-{
-  if(strlen(value) > MAX_UNITNAME_SIZE - 1)
-	{
-	  throw RLException("Too long unit name.");
-	}
-  strcpy(energyUnitName, value);
-}
 
 Potential * ComputeConfig::GetPotential() const
 {
@@ -785,22 +402,364 @@ double ComputeConfig::GetWavefunctionStepsizeX() const
   return wavefunctionStepsizeX;
 }
 
-double ComputeConfig::GetHbarTimesLambda() const
+
+const OutputFilenames * ComputeConfig::GetOutputFilenames() const
 {
-  return hbarTimesLambda;
+  return &outputFilenames;
 }
 
-void ComputeConfig::SetHbarTimesLambda(double value)
+void ComputeConfig::SetOutputFilenames(const OutputFilenames & value)
 {
-  hbarTimesLambda = value;
+  outputFilenames = value;
 }
 
-double ComputeConfig::GetMassOverLambda2() const
+const SpecificUnits * ComputeConfig::GetSpecificUnits() const
 {
-  return massOverLambda2;
+  return &specificUnits;
 }
 
-void ComputeConfig::SetMassOverLambda2(double value)
+void ComputeConfig::SetSpecificUnits(const SpecificUnits & value)
 {
-  massOverLambda2 = value;
+  specificUnits = value;
+}
+
+void ComputeConfig::ReadOutputFiles(Setting & output)
+{
+  outputFilenames.Clear();
+  string temp;
+
+  if( output.lookupValue("KCurve", temp) )
+	{
+	  outputFilenames.Add("KCurveFile", temp);
+	}
+  else
+	{
+	  throw RLException("The value 'KCurve' was not set appropriately.");
+	}
+
+
+  if( output.lookupValue("KFound", temp) )
+	{
+	  outputFilenames.Add("KFoundFile", temp);
+	}
+  else
+	{
+	  throw RLException("The value 'KFound' was not set appropriately.");
+	}
+
+
+  if( output.lookupValue("Potential", temp) )
+	{
+	  outputFilenames.Add("PotentialFile", temp);
+	}
+  else
+	{
+	  throw RLException("The value 'Potential' was not set appropriately.");
+	}
+
+
+  if( output.lookupValue("PotentialPrecision", temp) )
+	{
+	  outputFilenames.Add("PotentialPrecisionFile", temp);
+	}
+  else
+	{
+	  throw RLException("The value 'PotentialPrecision' was not set appropriately.");
+	}
+
+
+  if( output.lookupValue("InterestingPoints", temp) )
+	{
+	  outputFilenames.Add("InterestingPointsFile", temp);
+	}
+  else
+	{
+	  throw RLException("The value 'InterestingPoints' was not set appropriately.");
+	}
+
+
+  if( output.lookupValue("Wavefunctions", temp) )
+	{
+	  outputFilenames.Add("WavefunctionsFile", temp);
+	}
+  else
+	{
+	  throw RLException("The value 'Wavefunctions' was not set appropriately.");
+	}
+
+}
+
+
+void ComputeConfig::ReadExpectedMatrixType(Setting & computation)
+{
+  string temp;
+
+  if( ! computation.lookupValue("ExpectedMatrixType", temp) )
+	{
+	  throw RLException("Expected matrix type not set properly.");
+	}
+  bool found = false;
+  if(strcmp(temp.c_str(), "General") == 0) 
+	{
+	  matrixType = GeneralMatrix;
+	  found = true;
+	}
+  if(strcmp(temp.c_str(), "Symmetric") == 0)
+	{
+	  matrixType = SymmetricMatrix;
+	  found = true;
+	}
+  if(strcmp(temp.c_str(), "Hermitian") == 0 )
+	{
+	  matrixType = HermitianMatrix;
+	  found = true;
+	}
+  if(!found)
+	throw RLException("Invalid option for ExpectedMatrixType.");
+}
+
+void ComputeConfig::ReadSpecificUnits(Setting & computation)
+{
+  if (! computation.exists("Units") || !computation["Units"].isGroup())
+	{
+	  throw RLException("Units group not properly specified in settings file.");
+	}
+  
+  Setting & units = computation["Units"];
+  double hbarTimesLambda, massOverLambda2;
+  if( ! units.lookupValue("HbarTimesLambda", hbarTimesLambda) )
+	{
+	  throw RLException("HbarTimesLambda unit not properly specified.");
+	}
+  if( ! units.lookupValue("MassOverLambda2", massOverLambda2) )
+	{
+	  throw RLException("MassOverLambda2 unit not properly specified.");
+	}
+  string lengthUnitName, energyUnitName;
+  if( ! units.lookupValue("LengthUnitName", lengthUnitName) )
+	{
+	  throw RLException("Could not find LengthUnitName in config file.");
+	}
+  if( !units.lookupValue("EnergyUnitName", energyUnitName) )
+	{
+	  throw RLException("Could not find EnergyUnitName in config file.");
+	}
+  specificUnits = SpecificUnits(hbarTimesLambda, massOverLambda2, lengthUnitName, energyUnitName);
+}
+
+
+void ComputeConfig::ReadPotential(Setting & computation)
+{
+
+  if( !computation.exists("Potential") || !computation["Potential"].isGroup())
+	{
+	  throw RLException("Potential not properly defined.");
+	}
+
+  Setting & poten = computation["Potential"];
+
+  string temp;
+  if( ! poten.lookupValue("Type", temp))
+	{
+	  throw RLException("Potential type not properly defined.");
+	}
+
+  if(strcmp(temp.c_str(), "PiecewiseConstant") == 0)
+	{
+	  PiecewiseConstantPotential * locPot = new PiecewiseConstantPotential();
+	  int potPrec;
+	  if( ! poten.lookupValue("Precision", potPrec))
+		{
+		  throw RLException("Could not find precision setting in settings file.");
+		}
+	  locPot->SetPrecision(potPrec);
+
+	  if( !poten.exists("Values") || ! poten["Values"].isList())
+		{
+		  throw RLException("Could not find 'Values'.");
+		}
+	  
+	  Setting & vval = poten["Values"];
+	  for(int i = 0; i<vval.getLength(); ++i)
+		{
+		  double x1, x2, y;
+		  if( ! vval[i].exists("Interval") || ! vval[i]["Interval"].isArray() || vval[i]["Interval"].getLength() != 2)
+			{
+			  throw RLException("Potential interval #%d was not set correctly.", i);
+			}
+		  x1 = vval[i]["Interval"][0];
+		  x2 = vval[i]["Interval"][1];
+		  
+		  if( !vval[i].lookupValue("Value", y))
+			{
+			  throw RLException("Potential value in interval #%d was not set correctly.", i);
+			}
+		  locPot->AddValue(x1, x2, y);
+		}
+	  locPot->RecomputeLegendreRules();
+	  potential = locPot;
+	}
+  else if(strcmp(temp.c_str(), "Parametrized") == 0)
+	{
+	  int potPrec;
+	  if( ! poten.lookupValue("Precision", potPrec))
+		{
+		  throw RLException("Could not find precision setting in settings file.");
+		}
+
+	  if( ! poten.exists("Parameters") || ! poten["Parameters"].isList() )
+		{
+		  throw RLException("Potential parameters not properly specified.");
+		}
+
+	  Setting & pparam = poten["Parameters"];
+
+	  vector<pair<string, double> > parameters;
+	  for(int i = 0; i<pparam.getLength(); ++i)
+		{
+		  string paraStr;
+		  double paraDbl;
+		  if(!pparam[i].lookupValue("Name", paraStr) || !pparam[i].lookupValue("Value", paraDbl))
+			{
+			  throw RLException("Potential parameter #%d was not properly specified.", i);
+			}
+		  parameters.push_back(make_pair(paraStr, paraDbl));
+		}
+	  
+	  string paraFunction;
+	  if(!poten.lookupValue("Function", paraFunction))
+		{
+		  throw RLException("Could not find the 'Function' property in the parametrized potential in the config file.");
+		}
+	  string minX, maxX;
+	  if(!poten.exists("Interval") || ! poten["Interval"].isArray() || poten["Interval"].getLength() != 2)
+		{
+		  throw RLException("Invalid interval specified for parametrized input potential.");
+		}
+	  
+	  minX = poten["Interval"][0].c_str();
+	  maxX = poten["Interval"][1].c_str();
+
+	  ParametrizedPotential * locPot = new ParametrizedPotential(paraFunction,
+																 parameters, 
+																 minX.c_str(),
+																 maxX.c_str()
+																 );
+	  locPot->SetPrecision(potPrec);
+	  potential = locPot;
+	}
+  else
+	{
+	  throw RLException("Unsupported potential type: '%s'", temp.c_str());
+	}
+}
+
+
+void ComputeConfig::ReadKCurve(Setting & computation)
+{
+
+  if(! computation.exists("KCurve") || !computation["KCurve"].isGroup())
+	{
+	  throw RLException("KCurve not properly set.");
+	}
+  
+  Setting & kcur = computation["KCurve"];
+  
+  if( ! kcur.exists("Values") || ! kcur["Values"].isList())
+	{
+	  throw RLException("Values in KCurve not properly set.");
+	}
+  Setting & kv = kcur["Values"];
+  ComplexDouble lastVal;
+  for(int i = 0; i<kv.getLength(); ++i)
+	{
+	  if(!kv[i].exists("P0") || !kv[i]["P0"].isArray() || kv[i]["P0"].getLength() != 2)
+		{
+		  throw RLException("P0 not properly set in item %d.", i);
+		}
+	  if(!kv[i].exists("P1") || !kv[i]["P1"].isArray() || kv[i]["P1"].getLength() != 2)
+		{
+		  throw RLException("P1 not properly set in item %d.", i);
+		}
+	  double p0r, p0i, p1r, p1i;
+	  p0r = kv[i]["P0"][0];
+	  p0i = kv[i]["P0"][1];
+	  p1r = kv[i]["P1"][0];
+	  p1i = kv[i]["P1"][1];
+	  ComplexDouble p0(p0r, p0i);
+	  ComplexDouble p1(p1r, p1i);
+
+	  int points;
+	  if(! kv[i].lookupValue("Points", points) )
+		{
+		  throw RLException("Points not found in item %d.", i);
+		}
+
+	  if(i>0)
+		{
+		  if(!DBL_EQUAL(lastVal, p0))
+			{
+			  throw RLException("The specified curve had a discontinuity: %lf + i %lf is not equal to %lf + i %lf.",
+								real(lastVal), imag(lastVal), p0r, p0i);
+			}
+		}
+	  else
+		{
+		  kCurve->AddValue(p0);
+		}
+	  kCurve->AddGLPoints(points);
+	  kCurve->AddValue(p1);
+	  lastVal = p1;
+	}
+  
+  kCurve->ComputeGaussLegendre();
+  
+
+}
+
+
+void ComputeConfig::ReadBasisFunctions(Setting & computation)
+{
+  if( !computation.exists("BasisFunctions") || !computation["BasisFunctions"].isArray())
+	{
+	  throw RLException("Basis functions not properly defined.");
+	}
+
+  Setting & bf = computation["BasisFunctions"];
+  for(int i = 0; i<bf.getLength(); ++i)
+	{
+	  basisFunctions.push_back(BasisFunction(bf[i]));
+	}
+}
+
+
+void ComputeConfig::ReadAutoLaunch(Setting & program)
+{
+  if(!program.exists("AutoLaunch") || ! program["AutoLaunch"].isGroup())
+	{
+	  throw RLException("The group 'AutoLaunch' was not properly defined in the config file.");
+	}
+
+  Setting & autolaunch = program["AutoLaunch"];
+  if(!autolaunch.exists("Gnuplot") || ! autolaunch["Gnuplot"].isGroup())
+	{
+	  throw RLException("The group 'Gnuplot' was not properly defined in the config file.");
+	}
+
+  Setting & gnuplot = autolaunch["Gnuplot"];
+
+  if( !gnuplot.lookupValue("Potential", autoPlotPotential))
+	{
+	  throw RLException("The value 'Potential' in 'AutoLaunch' was not set appropriately.");
+	}
+
+  if( !gnuplot.lookupValue("KCurve", autoPlotKCurve))
+	{
+	  throw RLException("The value 'KCurve' in 'AutoLaunch' was not set appropriately.");
+	}
+
+  if( ! gnuplot.lookupValue("Wavefunctions", autoPlotWavefunctions))
+	{
+	  throw RLException("The value 'Wavefunctions' in 'AutoLaunch' was not set appropriately.");
+	}
 }

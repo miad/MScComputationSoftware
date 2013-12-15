@@ -30,11 +30,16 @@ EigenInformation EigenvalueSolver::Solve(CMatrix * toSolve)
 	}
   EigenInformation toReturn;
   toReturn.Eigenvalues = w;
-  foru(i, n*n)
+  for(int i = 0; i<n*n; ++i)
 	{
-	  if(i%n==0)
+	  if(i/n==0)
+		toReturn.Eigenvectors.push_back(vector<ComplexDouble>());
+	  toReturn.Eigenvectors[i%n].push_back(vr.at(i));
+
+	  /*	  if(i%n==0)
 		toReturn.Eigenvectors.push_back(vector<ComplexDouble>());
 	  toReturn.Eigenvectors.back().push_back(vr.at(i));
+	  */
 	}
 
 

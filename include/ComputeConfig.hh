@@ -14,22 +14,22 @@
 #include "RLMacros.hpp"
 #include "PiecewiseConstantPotential.hh"
 #include "ParametrizedPotential.hh"
+#include "OutputFilenames.hh"
+#include "SpecificUnits.hh"
 
 
 using namespace std;
 using namespace libconfig;
 
-#define CONFIG_FILE_VERSION 0.3
-#define MAX_FILENAME_SIZE 1000
-#define MAX_UNITNAME_SIZE 1000
+#define CONFIG_FILE_VERSION 0.35
 
 
-  enum ExpectedMatrixType
-	{
-	  GeneralMatrix = 0,
-	  SymmetricMatrix = 1,
-	  HermitianMatrix = 2
-	};
+enum ExpectedMatrixType
+  {
+	GeneralMatrix = 0,
+	SymmetricMatrix = 1,
+	HermitianMatrix = 2
+  };
 
 
 
@@ -62,17 +62,11 @@ public:
 
   bool GetAutoPlotPotential() const;
   bool GetAutoPlotKCurve() const;
+  bool GetAutoPlotWavefunctions() const;
+
+  const OutputFilenames * GetOutputFilenames() const;
+  const SpecificUnits * GetSpecificUnits() const;
   
-  const char * GetKCurveFile() const;
-  const char * GetKFoundFile() const;
-  const char * GetPotentialFile() const;
-  const char * GetPotentialPrecisionFile() const;
-  const char * GetInterestingPointsFile() const;
-  const char * GetWavefunctionFile() const;
-
-  const char * GetLengthUnitName() const;
-  const char * GetEnergyUnitName() const;
-
 
   Potential * GetPotential() const;
 
@@ -87,27 +81,17 @@ public:
   double GetMaxWavefunctionX() const;
   double GetWavefunctionStepsizeX() const;
 
-  double GetMassOverLambda2() const;
-  double GetHbarTimesLambda() const;
-  
-
 
   ///Setters
 
   void SetAutoPlotPotential(bool value);
   void SetAutoPlotKCurve(bool value);
-  
-  void SetKCurveFile(const char * value);
-  void SetKFoundFile(const char * value);
-  void SetPotentialFile(const char * value);
-  void SetPotentialPrecisionFile(const char * value);
-  void SetInterestingPointsFile(const char * value);
-  void SetWavefunctionFile(const char * value);
-
-  void SetLengthUnitName(const char * value);
-  void SetEnergyUnitName(const char * value);
+  void SetAutoPlotWavefunctions(bool value);
 
 
+  void SetOutputFilenames(const OutputFilenames & value);
+
+  void SetSpecificUnits(const SpecificUnits & value);
   
   void SetPotential(Potential * value);
   void SetKCurve(ParametrizedCurve * value);
@@ -125,45 +109,40 @@ public:
 
   void SetExpectedMatrixType(ExpectedMatrixType val);
 
-  void SetMassOverLambda2(double value);
-  void SetHbarTimesLambda(double value);
 
+private:
+  void ReadOutputFiles(Setting & output);
+  void ReadExpectedMatrixType(Setting & computation);
+  void ReadSpecificUnits(Setting & computation);
+  void ReadPotential(Setting & computation);
+  void ReadKCurve(Setting & computation);
+  void ReadBasisFunctions(Setting & computation);
+  void ReadAutoLaunch(Setting & program);
 
 private:
 
   ///This stuff should typically be contained in the configuration file.
-  
-
-
-
 
   unsigned int numberOfThreads; ///number of threads. Default: 1
   unsigned int verbosityLevel; ///The verbosity level. Default: 0
+
   bool autoPlotPotential; ///Auto plot potential. Default: false
   bool autoPlotKCurve; ///Auto plot K curve .Default: false
+  bool autoPlotWavefunctions; ///Auto plot wavefunctions. Default: false
 
   double minWavefunctionX;
   double maxWavefunctionX;
   double wavefunctionStepsizeX;
 
-  double hbarTimesLambda; ///The value of hbar times a constant, lambda.
-  double massOverLambda2; ///The value of the mass, divided by lambda (same as hbar) squared.
-
-  char kCurveFile[MAX_FILENAME_SIZE]; ///Output file for the basis state curve. Default: KCurve.dat
-  char kFoundFile[MAX_FILENAME_SIZE]; ///Output file for found k-values. Default: KFound.dat
-  char potentialFile[MAX_FILENAME_SIZE]; ///Output file for potential. Default: Potential.dat
-  char potentialPrecisionFile[MAX_FILENAME_SIZE]; ///Output file for potential precision points. Default: PotentialPrec.dat
-  char interestingPointsFile[MAX_FILENAME_SIZE]; ///Store interesting points (bound states, resonances) here.
-  char wavefunctionFile[MAX_FILENAME_SIZE]; ///Store wavefunction to interesting points here. First column is x-values, the other columns are wavefunctions for the eigenvalues, in order.
-
-  char lengthUnitName[MAX_UNITNAME_SIZE];
-  char energyUnitName[MAX_UNITNAME_SIZE];
 
   Potential * potential; ///Potential function. Default: a piecewise potential with 3 nonzero regions.
   ParametrizedCurve * kCurve; ///KCurve. Default: a somewhat standard Berggren curve.
   vector<BasisFunction> basisFunctions; ///Basis functions. Default: two functions, "expi+" and "expi-"
 
-  ExpectedMatrixType matrixType;
+  OutputFilenames outputFilenames; ///The output filenames.
+  SpecificUnits specificUnits; /// Units to use in computation.
+
+  ExpectedMatrixType matrixType; ///The expected matrix type.
 };
 
 #endif

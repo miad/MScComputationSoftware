@@ -18,6 +18,8 @@
 
 using namespace std;
 
+#define EIGEN_EQUAL(a, b) (DBL_EQUAL(a, b) || DBL_EQUAL(a, -1.0*b))
+
 class EigenvalueSolverTest : public GenericUnitTest
 {
  public:
@@ -25,6 +27,7 @@ class EigenvalueSolverTest : public GenericUnitTest
  protected:
   int TestCase1() const; /// Test case.
   int TestCase2() const; /// Test case.
+  int TestCase3() const;
 
 
   static bool CplexCompare(const ComplexDouble & c1,  ///First.

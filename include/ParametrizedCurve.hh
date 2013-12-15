@@ -56,7 +56,7 @@ public:
 
 
   const vector<pair<ComplexDouble, ComplexDouble> > * GetSegmentRule(unsigned int segment ///Segment number.
-													  ) const; ///Returns the GL rule for a specific segment. 
+													  ) const; ///Returns the GL rule for a specific segment. First element of pair is value, second element is weight.
 
   void ComputeGaussLegendre(); ///Computes GL rules for all segments. Throws an exception if all segments has not been associated with a rule number.
 

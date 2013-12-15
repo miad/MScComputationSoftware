@@ -22,6 +22,10 @@
 #include "ParametrizedCurve.hh"
 #include "LegendreRule.hh"
 #include "ComputeConfig.hh"
+#include "WorkerData.hh"
+#include "OutputProcessor.hh"
+#include "SpecificUnits.hh"
+#include "ExternalLauncher.hh"
 
 
 using namespace std;
@@ -30,126 +34,11 @@ using namespace std;
 #define TMP_LIST_STR(n, s) list<string> n; n.push_back(s);
 
 
-/**
-Class containing the data used by each worker thread.
-Essential for the use in RLLib.
-*/
-class WorkerData
-{
-public:
-  WorkerData(CMatrix * _HamiltonianMatrix, ///Pointer to the Hamilton matrix in use.
-			 ParametrizedCurve * _myCurve, ///Pointer to the ParametrizedCurve in use.
-			 Potential * _myPotential, ///Pointer to the potential in use. NOTE: may not be threadsafe, should be checked (due to underlying function evaluator class).
-			 vector<BasisFunction> _myBasisFunctions, ///Basis functions in use.
-			 unsigned int _numberOfGLPoints, ///Number of GL points in use.
-			 double _hbarTimesLambda, ///Used for k-E transformation.
-			 double _massOverLambda2, ///Used for k-E transformation.
-			 unsigned int _m1, /// Specifies the submatrix to use.
-			 unsigned int _m2, /// Specifies the submatrix to use.
-			 unsigned int _n1, /// Specifies the submatrix to use.
-			 unsigned int _n2 /// Specifies the submatrix to use.
-			 ) ///Constructor, basically initialize all values.
-	:HamiltonianMatrix(_HamiltonianMatrix),
-	 myCurve(_myCurve),
-	 myPotential(_myPotential),
-	 myBasisFunctions(_myBasisFunctions),
-	 numberOfGLPoints(_numberOfGLPoints),
-	 hbarTimesLambda(_hbarTimesLambda),
-	 massOverLambda2(_massOverLambda2),
-	 m1(_m1),m2(_m2),n1(_n1),n2(_n2)
-  { }
-  
-  CMatrix * HamiltonianMatrix; ///Pointer to the Hamilton matrix in use.
-  ParametrizedCurve * myCurve; ///Pointer to the ParametrizedCurve in use.
-  Potential * myPotential; ///Pointer to the potential in use. NOTE: may not be threadsafe, should be checked (due to underlying function evaluator class).
-  vector<BasisFunction> myBasisFunctions;
-  unsigned int numberOfGLPoints; ///Number of GL points in use.
-  double hbarTimesLambda; /// Used for k-E transformation.
-  double massOverLambda2; /// Used for k-E transformation.
-  unsigned int m1; /// Specifies the submatrix to use.
-  unsigned int m2; /// Specifies the submatrix to use.
-  unsigned int n1; /// Specifies the submatrix to use.
-  unsigned int n2; /// Specifies the submatrix to use.
-};
-
-
-
-
 int main(int argc, char *argv[]);
 
 CommandLineInterpreter * InitInterpreter();///Returns a command line interpreter with defined commands.
 
-
 void * EvaluateSubMatrix(WorkerData w);
-
-///TODO: Fix this function. 
-void PrintDataToFile(VerbosePrinter * myPrinter,
-					 const string fileName, 
-					 const EigenInformation & data, 
-					 const vector<ComplexDouble> & kValuesOnCurve,
-					 const list<Interval> & potentialIntervals
-					 );
-
-void PrintPotentialToFile(const char * fileName, 
-						  const Potential * potential
-						  );
-
-void PrintPotentialPrecisionToFile(const char * fileName, 
-						  const Potential * potential
-						  );
-
-void PrintParametrizedCurveToFile(const char * fileName, 
-								  const ParametrizedCurve * toPrint
-								  );
-
-void PrintKCurveToFile(const char * fileName, 
-					   const vector<ComplexDouble> & toPrint
-					   );
-
-void PrintKFoundToFile(const char * fileName, 
-					   const EigenInformation * toPrint,
-					   double hbarTimesLambda,
-					   double massOverLambda2
-					   );
-
-
-void PrintInterestingKPointsVerbosely(VerbosePrinter * printer,
-									  const EigenInformation * toPrint, 
-									  const ParametrizedCurve * filter,
-									  double hbarTimesLambda,
-									  double massOverLambda2
-									  );
-
-void PrintInterestingKPointsToFile(const char * fileName, 
-								   const EigenInformation * toPrint, 
-								   const ParametrizedCurve * filter,
-								   unsigned int numberOfBasisVectors, 
-								   double hbarTimesLambda,
-								   double massOverLambda2
-								   );
-
-vector<ComplexDouble> FindInterestingKPoints(const EigenInformation * found, 
-											 const ParametrizedCurve * filter,
-											 double hbarTimesLambda,
-											 double massOverLambda2
-											 ); ///Find the interesting k-points (bound states or resonant states) by applying a filter on all eigenvalues.
-
-void PrintInterestingWavefunctionsToFile(VerbosePrinter * printer,
-										 const char * fileName,
-										 const EigenInformation * toPrint,
-										 const ParametrizedCurve * filter,
-										 const vector<BasisFunction> * myBasisFunctions,
-										 double minX,
-										 double maxX,
-										 double deltaX,
-										 double hbarTimesLambda,
-										 double massOverLambda2
-										 );
-
-vector<double> GetBasisRatio(unsigned int numberOfBasisVectors, 
-							 const vector<ComplexDouble> toSum, 
-							 double & totalSum
-							 );
 
 
 #endif
