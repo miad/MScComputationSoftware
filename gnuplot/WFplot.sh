@@ -28,7 +28,7 @@ gnuplot -persist << EOF
 set term wxt 0
 set xlabel 'Distance /$LengthUnit'
 set ylabel 'No unit'
-set title 'Squared Wavefunctions'
+set title 'Wavefunctions Modulus Squared'
 set key
 set auto
 $PlotterString

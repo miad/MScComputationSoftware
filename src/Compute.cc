@@ -199,8 +199,7 @@ void * EvaluateSubMatrix(WorkerData w)
 		  
 		  //ComplexDouble preFactorB = myBasisFunctions[basisPointerB].GetPreFactor();
 		  
-		  HamiltonianMatrix->Element(i, j) += ComplexDouble(1./(2.*PI),0)*
-			sqrt(wA*wB)*
+		  HamiltonianMatrix->Element(i, j) += sqrt(wA*wB)*
 			myPotential->BasisIntegrate((*myBasisFunctions)[basisPointerA], 
 										(*myBasisFunctions)[basisPointerB], 
 										kA, kB) ;

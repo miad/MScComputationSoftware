@@ -11,7 +11,7 @@ OutputProcessor::OutputProcessor(ComputeConfig * _config)
 
 OutputProcessor::~OutputProcessor()
 {
-  
+
 }
 
 void OutputProcessor::SetEigenInformation(EigenInformation * data)
@@ -188,30 +188,14 @@ void OutputProcessor::WriteInterestingKPointsVerbosely() const
 void OutputProcessor::WriteInterestingKPointsToFile() const
 {
   vPrint(4, "Saving interesting k-points...");
-  
+
   vector<ComplexDouble> printVector = FindInterestingKPoints();
+  vector<unsigned int> interestingIndexes = FindInterestingKPointIndex();
+
   string fileName = config->GetOutputFilenames()->Get("InterestingPointsFile");
   FILE * fout = AssuredFopen(fileName);
   
   
-  vector<int> interestingIndexes;
-  for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
-	{
-	  bool found = false;
-	  for(unsigned int i = 0; i<eigenData->Eigenvalues.size(); ++i)
-		{
-		  if(DBL_EQUAL(*it, EnergyToKValue(eigenData->Eigenvalues[i])))
-			{
-			  interestingIndexes.push_back(i);
-			  found = true;
-			}
-		}
-	  if(!found)
-		{
-		  throw RLException("Found no exact match for k-point %13.10e%+13.10ei among the eigenvalues.", real(*it), imag(*it));
-		}
-	}
-
   if(printVector.size() != interestingIndexes.size())
 	{
 	  throw RLException("There were %d print vectors but %d interestingIndexes, they should match.\n", printVector.size(), interestingIndexes.size());
@@ -236,12 +220,9 @@ void OutputProcessor::WriteInterestingKPointsToFile() const
 }
 
 
-
-
-
-vector<ComplexDouble> OutputProcessor::FindInterestingKPoints() const
+vector<unsigned int> OutputProcessor::FindInterestingKPointIndex() const
 {
-  ///Retrieve k-points corresponding to the basis: those are the "filter", which means that
+    ///Retrieve k-points corresponding to the basis: those are the "filter", which means that
   ///points too close to them are considered "uninteresting".
   vector<ComplexDouble> filterVector;
   for(unsigned int i = 0; i<config->GetKCurve()->GetNumberOfSegments(); ++i)
@@ -254,14 +235,15 @@ vector<ComplexDouble> OutputProcessor::FindInterestingKPoints() const
 	}
   
   ///Filter out the uninteresting values and return the interesting ones.
-  vector<ComplexDouble> toReturn;
+  vector<unsigned int> toReturn;
+  unsigned int eigenCounter = 0;
   for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
 	{
 	  ComplexDouble kToPrint = EnergyToKValue(*it);
 
 	  ///Now apply filter rule.
 	  if(imag(kToPrint) > 1E-5 && abs(arg(kToPrint)-PI/2) < 1E-2 )
-		toReturn.push_back(kToPrint);
+		toReturn.push_back(eigenCounter);
 	  else if(real(kToPrint) > 1E-5 )
 		{
 		  bool tooClose = false;
@@ -285,17 +267,23 @@ vector<ComplexDouble> OutputProcessor::FindInterestingKPoints() const
 				}
 			}
 		  if(!tooClose)
-			toReturn.push_back(kToPrint);
+			toReturn.push_back(eigenCounter);
 		}
+	  ++eigenCounter;
 	}
-
+  if(eigenCounter != eigenData->Eigenvalues.size() )
+	throw RLException("Consistency error: invalid number of eigenvalues.");
+  
   vector<ComplexDouble> extraInterestingPoints = config->GetExtraInterestingPoints();
 
   ///Append some other points that are "enforced interesting".
   for(vector<ComplexDouble>::const_iterator ip = extraInterestingPoints.begin(); ip!=extraInterestingPoints.end(); ++ip)
 	{
 	  double minDistance = 1E99;
-	  ComplexDouble bestMatch = ComplexDouble(-10000.0, 0);
+	  unsigned int bestMatch = -1;
+	  
+
+	  unsigned int loopCount = 0;
 	  for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
 		{
 		  ComplexDouble kToPrint = EnergyToKValue(*it);
@@ -303,16 +291,30 @@ vector<ComplexDouble> OutputProcessor::FindInterestingKPoints() const
 		  if(minDistance > locDist)
 			{
 			  minDistance = locDist;
-			  bestMatch = kToPrint;
+			  bestMatch = loopCount;
 			}
+		  ++loopCount;
 		}
-	  if(DBL_EQUAL(bestMatch, -10000.0))
+	  if(DBL_EQUAL(bestMatch, -1))
 		throw RLException("Best match was never found. This should never happen.");
 	  toReturn.push_back(bestMatch);
 	}
+  return toReturn;
+}
 
 
 
+
+vector<ComplexDouble> OutputProcessor::FindInterestingKPoints() const
+{
+  vector<ComplexDouble> toReturn;
+  vector<unsigned int> ikpIndex = FindInterestingKPointIndex();
+  for(vector<unsigned int>::const_iterator it = ikpIndex.begin(); it!=ikpIndex.end(); ++it)
+	{
+	  if(*it >= eigenData->Eigenvalues.size())
+		throw RLException("Consistency error: interesting index was larger than eigenvalue vector size.");
+	  toReturn.push_back(EnergyToKValue(eigenData->Eigenvalues[*it]));
+	}
 
   return toReturn;
 }
@@ -323,13 +325,14 @@ vector<ComplexDouble> OutputProcessor::FindInterestingKPoints() const
 
 void OutputProcessor::WriteInterestingWavefunctionsToFile() const
 {
-  vPrint(4, "Saving wavefunctions...");
+  vPrint(4, "Saving wavefunctions...\n");
+
+  ///Some setup.
+  vector<unsigned int> interestingIndexes = FindInterestingKPointIndex();
   vector<ComplexDouble> interestingVector = FindInterestingKPoints();
+
   string fileName = config->GetOutputFilenames()->Get("WavefunctionsFile");
-
-
   vector<BasisFunction> myBasisFunctions = config->GetBasisFunctions();
-
   unsigned int numberOfGLPoints = eigenData->Eigenvalues.size() / config->GetBasisFunctions().size();
   if(eigenData->Eigenvalues.size() % config->GetBasisFunctions().size() != 0)
 	{
@@ -337,32 +340,16 @@ void OutputProcessor::WriteInterestingWavefunctionsToFile() const
 	}
 
 
-  vector<int> interestingIndexes;
-
-  for(vector<ComplexDouble>::const_iterator it = interestingVector.begin(); it!=interestingVector.end(); ++it)
-	{
-
-	  for(unsigned int i = 0; i<eigenData->Eigenvalues.size(); ++i)
-		{
-		  if(DBL_EQUAL_HPREC(KValueToEnergy(*it), eigenData->Eigenvalues[i]))
-			interestingIndexes.push_back(i);
-		}
-	}
-
-  if(interestingIndexes.size() != interestingVector.size() )
-	{
-	  throw RLException("Internal consistency error: could not pinpoint the points in a good way: interestingIndexes is %d, but interestingVectorSize is %d.", interestingIndexes.size(), interestingVector.size());
-	}
-
+  ///Compute the wavefunctions : this is where the magic is.
   vector<vector<ComplexDouble> > wavefunctionValues;
-
-  for(vector<int>::const_iterator it = interestingIndexes.begin(); it!=interestingIndexes.end(); ++it)
+  for(vector<unsigned int>::const_iterator it = interestingIndexes.begin(); it!=interestingIndexes.end(); ++it)
 	{
 	  wavefunctionValues.push_back(vector<ComplexDouble>());
+	  vector<ComplexDouble> eigVect = GetReshapedEigenvector(*it);
 	  for(double x = config->GetMinWavefunctionX(); x <= config->GetMaxWavefunctionX(); x += config->GetWavefunctionStepsizeX())
 		{
 		  wavefunctionValues.back().push_back(ComplexDouble(0.0,0.0));
-		  for(unsigned int i = 0; i<eigenData->Eigenvectors[*it].size(); ++i)
+		  for(unsigned int i = 0; i<eigVect.size(); ++i)
 			{
 			  unsigned int curvePointer = i % numberOfGLPoints;
 			  unsigned int basisPointer = i / numberOfGLPoints;
@@ -371,7 +358,7 @@ void OutputProcessor::WriteInterestingWavefunctionsToFile() const
 			  ComplexDouble kW = config->GetKCurve()->GetRuleWeight(curveSegment, curvePointer);
 			  
 			  wavefunctionValues.back().back() += 
-				(eigenData->Eigenvectors[*it][i] * kW * 
+				(eigVect[i] * kW * 
 				 myBasisFunctions[basisPointer].Eval(x, kVal)
 				 );
 			}
@@ -383,37 +370,38 @@ void OutputProcessor::WriteInterestingWavefunctionsToFile() const
 		{
 		  sqSum += pow(abs(*ip), 2) * config->GetWavefunctionStepsizeX();
 		}
-	  vPrint(2, "Area: %+13.10e\n", sqSum);
+	  vPrint(2, "k = %+2.5lf%+2.5lf => Graph area: %+13.10e\n", real(EnergyToKValue(eigenData->Eigenvalues[*it])), imag(EnergyToKValue(eigenData->Eigenvalues[*it])), sqSum);
 
 	}
 
 
-  {
-	FILE * fout = AssuredFopen(fileName);
-
-	fprintf(fout, "#x-value");
-	for(unsigned int j = 0; j<wavefunctionValues.size(); ++j)
-	  {
-		fprintf(fout, " Real_wave_%d(k=%+2.5lf+%2.5lfi) Imag_wave_%d", j, real(interestingVector[j]), imag(interestingVector[j]),j);
-	  }
-	fprintf(fout, "\n");
-	unsigned int i = 0;
-	for(double x = config->GetMinWavefunctionX(); x <= config->GetMaxWavefunctionX(); x += config->GetWavefunctionStepsizeX())
-	  {
-		++i;
-		fprintf(fout, "%+13.10e", x);
-		for(unsigned int j = 0; j < wavefunctionValues.size(); ++j)
-		  {
-			fprintf(fout, " %+13.10e %+13.10e", real(wavefunctionValues[j][i]), imag(wavefunctionValues[j][i]));
-		  }
-		fprintf(fout, "\n");
-	  }
+  ///Save to file.
+  FILE * fout = AssuredFopen(fileName);
+  
+  fprintf(fout, "#x-value");
+  for(unsigned int j = 0; j<wavefunctionValues.size(); ++j)
+	{
+	  fprintf(fout, " Real_wave_%d(k=%+2.5lf%+2.5lfi) Imag_wave_%d", j, real(EnergyToKValue(interestingVector[j])), imag(EnergyToKValue(interestingVector[j])),j);
+	}
+  fprintf(fout, "\n");
+  unsigned int i = 0;
+  for(double x = config->GetMinWavefunctionX(); x <= config->GetMaxWavefunctionX(); x += config->GetWavefunctionStepsizeX())
+	{
+	  ++i;
+	  fprintf(fout, "%+13.10e", x);
+	  for(unsigned int j = 0; j < wavefunctionValues.size(); ++j)
+		{
+		  fprintf(fout, " %+13.10e %+13.10e", real(wavefunctionValues[j][i]), imag(wavefunctionValues[j][i]));
+		}
+	  fprintf(fout, "\n");
+	}
   fclose(fout);
   fout = NULL;
-  }
 
+
+  ///Compute basis element decomposition and print it.
   int loopCounter = 0;
-  for(vector<int>::const_iterator it = interestingIndexes.begin(); it!=interestingIndexes.end(); ++it)
+  for(vector<unsigned int>::const_iterator it = interestingIndexes.begin(); it!=interestingIndexes.end(); ++it)
 	{
 	  double totalSum = -1;
 	  vector<double> basisRatio = GetBasisRatio(*it, totalSum);
@@ -428,8 +416,9 @@ void OutputProcessor::WriteInterestingWavefunctionsToFile() const
 	  vPrint(3, "Element square sum: %+13.10e\n\n", totalSum);
 	}
   
-  vPrint(4, "done\n");
+  vPrint(4, "Saving wavefunctions...done\n");
 }
+
 
 vector<double> OutputProcessor::GetBasisRatio(unsigned int eigenIndex, double & totalSum) const
 {
@@ -475,3 +464,30 @@ vector<double> OutputProcessor::GetBasisRatio(unsigned int eigenIndex, double & 
 
 
 
+vector<ComplexDouble> OutputProcessor::GetReshapedEigenvector(unsigned int index) const
+{
+  if(index >= eigenData->Eigenvectors.size())
+	{
+	  throw RLException("Tried to access eigenvector %d, but max is %d.", index, eigenData->Eigenvectors.size());
+	}
+  vector<ComplexDouble> toReturn = eigenData->Eigenvectors[index];
+
+  unsigned int numberOfBasisVectors = config->GetBasisFunctions().size();
+  unsigned int numberOfGLPoints = eigenData->Eigenvectors[index].size() / numberOfBasisVectors;
+
+
+  ComplexDouble normalizationFactor = ComplexDouble(0.0,0.0);
+  for(unsigned int i = 0; i<toReturn.size(); ++i)
+	{
+	  unsigned int curvePointer = i % numberOfGLPoints;
+	  unsigned int curveSegment = config->GetKCurve()->SegmentIndexFromGLNumber(curvePointer);
+	  ComplexDouble wK = config->GetKCurve()->GetRuleWeight(curveSegment, curvePointer);
+	  normalizationFactor += pow(toReturn[i], 2.0) * wK;
+	}
+  ComplexDouble toDivideBy = sqrt(normalizationFactor);
+  for(vector<ComplexDouble>::iterator it = toReturn.begin(); it!=toReturn.end(); ++it)
+	{
+	  *it /= toDivideBy;
+	}
+  return toReturn;
+}

@@ -12,15 +12,9 @@
 #include "CommandLineInterpreter.hh"
 #include "VerbosePrinter.hh"
 #include "VerbosePrinterEventEnabled.hh"
+#include "EigenInformation.hh"
 
 using namespace std;
-
-
-struct EigenInformation
-{
-  vector<vector<ComplexDouble> > Eigenvectors;
-  vector<ComplexDouble> Eigenvalues;
-};
 
 
 

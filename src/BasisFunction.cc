@@ -3,7 +3,7 @@
 BasisFunction::BasisFunction(string _name)
   :type(-1), name(_name)
 {
-
+  fp.AddConstant("pi", PI);
   int retVal = fp.Parse(name, "x,k");
   if( retVal != -1 )
 	{

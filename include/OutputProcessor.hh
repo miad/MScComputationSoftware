@@ -11,6 +11,7 @@
 #include "EigenvalueSolver.hh"
 #include "RLException.hh"
 #include "ComputeConfig.hh"
+#include "EigenInformation.hh"
 
 /** This class will process the results from computations, and save it in the correct format in the correct output files. In order to do so it has to do some filtering etc. of points.
 
@@ -23,13 +24,16 @@ public:
 
   ~OutputProcessor(); ///Destructor.
 
-  void SetEigenInformation(EigenInformation * data);
+  void SetEigenInformation(EigenInformation * data ///Eigeninfo to set.
+						   ); ///Set eigeninfo. Must be done before calling WriteOutput. NOTE: Ownership is not passed, and data may not be deleted before this object is destroyed.
   
   void WriteOutput() const; ///Call this to perform ALL output processing on the set value of data. Throws exception if data is not set.
 
 
 
 private:
+
+
 
   // Performs certain portions of the output writing, etc.
   void WritePotentialToFile() const; ///Writes output.
@@ -38,11 +42,18 @@ private:
   void WriteKFoundToFile() const; ///Writes output.
   void WriteInterestingKPointsVerbosely() const; ///Writes output.
   void WriteInterestingKPointsToFile() const; ///Writes output.
-  vector<ComplexDouble> FindInterestingKPoints() const; ///Writes output.
   void WriteInterestingWavefunctionsToFile() const; ///Writes output.
 
 
   // Auxiliary functions.
+
+  vector<unsigned int> FindInterestingKPointIndex() const; ///Returns the interesting K points by index (in the eigenData object)
+
+  vector<ComplexDouble> FindInterestingKPoints() const; ///Returns the interesting K points by value.
+
+  vector<ComplexDouble> GetReshapedEigenvector(unsigned int index ///Index.
+											   ) const; ///Normalize the eigenvector with respect to another norm.
+
 
   static FILE * AssuredFopen(const string filename ///File to open.
 							 ); ///Opens a file FOR WRITING and returns the handle, throws exception if the open failed. Ownership passed on.

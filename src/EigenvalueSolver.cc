@@ -22,12 +22,11 @@ EigenInformation EigenvalueSolver::Solve(CMatrix * toSolve)
   int reply = LAPACKE_zgeev(matrix_order, jobvl, jobvr,
 							n, a, lda, &w[0], vl, ldvl, &vr[0], ldvr);
   
-  if( reply != 0)
+  if( reply )
 	{
-	  char buffer[400];
-	  sprintf(buffer, "EigenvalueSolver: LAPACKe terminated with return code %d.", reply);
-	  throw RLException(buffer);
+	  throw RLException("EigenvalueSolver: LAPACKe terminated with return code %d.", reply);
 	}
+
   EigenInformation toReturn;
   toReturn.Eigenvalues = w;
   for(int i = 0; i<n*n; ++i)
@@ -35,11 +34,6 @@ EigenInformation EigenvalueSolver::Solve(CMatrix * toSolve)
 	  if(i/n==0)
 		toReturn.Eigenvectors.push_back(vector<ComplexDouble>());
 	  toReturn.Eigenvectors[i%n].push_back(vr.at(i));
-
-	  /*	  if(i%n==0)
-		toReturn.Eigenvectors.push_back(vector<ComplexDouble>());
-	  toReturn.Eigenvectors.back().push_back(vr.at(i));
-	  */
 	}
 
 
