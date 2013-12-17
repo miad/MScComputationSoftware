@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
   
   ///Now we should have a Hamiltonian.
 
-
+  SaveMatrix(&HamiltonianMatrix);
   ///Validate some basic properties of the Hamilton matrix, if they are expected.
   if(myConfiguration.GetExpectedMatrixType() == SymmetricMatrix)
 	{
@@ -207,4 +207,18 @@ void * EvaluateSubMatrix(WorkerData w)
 	HamiltonianMatrix->Element(i,i) += pow(hbarTimesLambda,2)/(2.*massOverLambda2) * pow(kA, 2);
    }
    return NULL;
+}
+
+
+void SaveMatrix(CMatrix * toSave)
+{
+  FILE * fout = fopen("matrix.dat", "w");
+  for(unsigned int i = 0; i<toSave->Rows(); ++i)
+	{
+	  for(unsigned int j = 0; j<toSave->Columns(); ++j)
+		{
+		  fprintf(fout, "%d %d %+13.10e %+13.10e\n", i, j, real(toSave->Element(i, j)), imag(toSave->Element(i, j)));
+		}
+	}
+  fclose(fout);
 }

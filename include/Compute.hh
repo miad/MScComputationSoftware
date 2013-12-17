@@ -36,6 +36,8 @@ using namespace std;
 
 int main(int argc, char *argv[]);
 
+void SaveMatrix(CMatrix * toSave);
+
 CommandLineInterpreter * InitInterpreter();///Returns a command line interpreter with defined commands.
 
 void * EvaluateSubMatrix(WorkerData w);

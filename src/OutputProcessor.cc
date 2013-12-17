@@ -381,7 +381,7 @@ void OutputProcessor::WriteInterestingWavefunctionsToFile() const
   fprintf(fout, "#x-value");
   for(unsigned int j = 0; j<wavefunctionValues.size(); ++j)
 	{
-	  fprintf(fout, " Real_wave_%d(k=%+2.5lf%+2.5lfi) Imag_wave_%d", j, real(EnergyToKValue(interestingVector[j])), imag(EnergyToKValue(interestingVector[j])),j);
+	  fprintf(fout, " Real_wave_%d(k=%+2.5lf%+2.5lfi) Imag_wave_%d", j, real(interestingVector[j]), imag(interestingVector[j]),j);
 	}
   fprintf(fout, "\n");
   unsigned int i = 0;

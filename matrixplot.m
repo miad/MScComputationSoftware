@@ -1,0 +1,10 @@
+AA=load('matrix.dat');
+figure;
+hold on;
+EPS=1E-10;
+C=AA(mod(AA(:,1),3)==0,:);
+C=C(mod(C(:,2),3)==0,:);
+C=C(abs(C(:,3))+abs(C(:,4)) > 1E-4, :);
+scatter(C(:,1),C(:,2),abs(500*log(1+EPS+abs(C(:,3)))),'x');
+hold on;
+scatter(C(:,1),C(:,2),abs(500*log(1+EPS+abs(C(:,4)))),'r','*');

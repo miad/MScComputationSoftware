@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <sstream>
 #include <iomanip>
+#include <string>
 
 #define T_EPS 1E-5
 
