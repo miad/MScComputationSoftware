@@ -513,14 +513,10 @@ vector<ComplexDouble> OutputProcessor::GetReshapedEigenvector(unsigned int index
 	}
   vector<ComplexDouble> toReturn = eigenData->Eigenvectors[index];
 
-  unsigned int numberOfBasisVectors = config->GetBasisFunctions().size();
-  unsigned int numberOfGLPoints = eigenData->Eigenvectors[index].size() / numberOfBasisVectors;
-
-
   ComplexDouble normalizationFactor = ComplexDouble(0.0,0.0);
   for(unsigned int i = 0; i<toReturn.size(); ++i)
 	{
-	  normalizationFactor += pow(toReturn[i], 2.0) * wK;
+ 	  normalizationFactor += pow(toReturn[i], 2.0);
 	}
   ComplexDouble toDivideBy = sqrt(normalizationFactor);
   for(vector<ComplexDouble>::iterator it = toReturn.begin(); it!=toReturn.end(); ++it)
