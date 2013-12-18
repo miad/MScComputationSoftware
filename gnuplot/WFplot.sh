@@ -31,6 +31,7 @@ set ylabel 'No unit'
 set title 'Wavefunctions Modulus Squared'
 set key
 set auto
+set yra [0:2]
 $PlotterString
 replot
 EOF

@@ -23,3 +23,5 @@ libconfig-1.4.9/*
 fparser/*
 confDir/*
 output/*
+runData*
+*#*

@@ -198,15 +198,15 @@ void OutputProcessor::WriteInterestingKPointsVerbosely() const
 	{
 	  if(imag(*it) > 1E-5 && abs(arg(*it)-PI/2) < 1E-2 )
 		{
-		  vPrint(1,"Bound state: %+6.10lfi\n", imag(*it));
+		  vPrint(1,"Bound state: k = %+6.10lfi [%s]^(-1)    =>   E = %+6.10lf %s \n", imag(*it), config->GetSpecificUnits()->GetLengthUnitName().c_str(), real(KValueToEnergy(*it)), config->GetSpecificUnits()->GetEnergyUnitName().c_str());
 		}
 	  else if((imag(*it) < -1E-6 && arg(*it) < 0.0 && arg(*it) > -1.0*PI/2 ))
 		{
-		  vPrint(1,"Resonant state: %+6.10lf %+6.10lfi\n", real(*it), imag(*it));
+		  vPrint(1,"Resonant state: k = [ %+6.10lf %+6.10lfi ] [%s]^(-1)    =>    E = [ %+6.10lf %+6.10lfi] %s\n", real(*it), imag(*it), config->GetSpecificUnits()->GetLengthUnitName().c_str(), real(KValueToEnergy(*it)), imag(KValueToEnergy(*it)), config->GetSpecificUnits()->GetEnergyUnitName().c_str());
 		}
 	  else
 		{
-		  vPrint(1,"Other state: %+6.10lf %+6.10lfi\n", real(*it), imag(*it));
+		  vPrint(1,"Other state: k = %+6.10lf %+6.10lfi\n", real(*it), imag(*it));
 		}
 	}
 
@@ -291,8 +291,8 @@ vector<unsigned int> OutputProcessor::FindInterestingKPointIndex() const
 				d2 += abs(filterVector[i+1]-filterVector[i]);
 			  if(i > 0 && i+1 < filterVector.size())
 				d2 /= 2;
-
-			  d2 *= 0.6;
+			  if(i +1 < filterVector.size())
+				d2 *= 0.6;
 
 			  if(d1 < d2)
 				{

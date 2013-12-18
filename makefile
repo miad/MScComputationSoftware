@@ -29,7 +29,7 @@ OBJ:= $(SRC:src/%.cc=bin/%.o)
 
 MAINS := Compute
 MAINSOBJ:= $(MAINS:%=bin/%.o)
-MAINSNAME := Compute
+MAINSNAME := Compute2
 
 
 
