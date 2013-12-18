@@ -39,7 +39,7 @@ void OutputProcessor::WritePotentialToFile() const
   string fileName = config->GetOutputFilenames()->Get("PotentialFile");
   if(fileName.empty() )
 	{
-	  vPrint(4, "Empty potential filename, not saving.");
+	  vPrint(4, "Empty potential filename, not saving.\n");
 	  return;
 	}
 
@@ -76,7 +76,7 @@ void OutputProcessor::WritePotentialPrecisionToFile() const
 
   if(fileName.empty() )
 	{
-	  vPrint(4, "Empty potential precision filename, not saving.");
+	  vPrint(4, "Empty potential precision filename, not saving.\n");
 	  return;
 	}
 
@@ -104,7 +104,7 @@ void OutputProcessor::WriteKCurveToFile() const
 
   if(fileName.empty() )
 	{
-	  vPrint(4, "Empty KCurve filename, not saving.");
+	  vPrint(4, "Empty KCurve filename, not saving.\n");
 	  return;
 	}
 
@@ -142,7 +142,7 @@ void OutputProcessor::WriteKFoundToFile() const
 
   if(fileName.empty() )
 	{
-	  vPrint(4, "Empty KFound filename, not saving.");
+	  vPrint(4, "Empty KFound filename, not saving.\n");
 	  return;
 	}
 
@@ -218,7 +218,7 @@ void OutputProcessor::WriteInterestingKPointsToFile() const
 
   if(fileName.empty() )
 	{
-	  vPrint(4, "Empty InterestingPoints filename, not saving.");
+	  vPrint(4, "Empty InterestingPoints filename, not saving.\n");
 	  return;
 	}
 
@@ -363,7 +363,7 @@ void OutputProcessor::WriteInterestingWavefunctionsToFile() const
 
   if(fileName.empty() )
 	{
-	  vPrint(4, "Empty Wavefunctions filename, not saving.");
+	  vPrint(4, "Empty Wavefunctions filename, not saving.\n");
 	  return;
 	}
 
@@ -534,7 +534,7 @@ void OutputProcessor::SaveMatrix(CMatrix * toSave) const
 
   if(fileName.empty() )
 	{
-	  vPrint(4, "Empty Matrix filename, not saving.");
+	  vPrint(4, "Empty Matrix filename, not saving.\n");
 	  return;
 	}
 
