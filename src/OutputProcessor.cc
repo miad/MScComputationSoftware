@@ -20,7 +20,7 @@ void OutputProcessor::SetEigenInformation(EigenInformation * data)
 }
 
 
-void OutputProcessor::WriteOutput() const
+void OutputProcessor::WritePostOutput() const
 {
   if(eigenData == NULL)
 	throw RLException("OutputProcessor error: eigenData was null.");
@@ -36,9 +36,15 @@ void OutputProcessor::WriteOutput() const
 
 void OutputProcessor::WritePotentialToFile() const
 {
+  string fileName = config->GetOutputFilenames()->Get("PotentialFile");
+  if(fileName.empty() )
+	{
+	  vPrint(4, "Empty potential filename, not saving.");
+	  return;
+	}
+
   vPrint(4, "Saving potential...");
 
-  string fileName = config->GetOutputFilenames()->Get("PotentialFile");
   FILE * fout = AssuredFopen(fileName);
 
   Potential * potential = config->GetPotential();
@@ -66,9 +72,16 @@ void OutputProcessor::WritePotentialToFile() const
 
 void OutputProcessor::WritePotentialPrecisionToFile() const
 {
+  string fileName = config->GetOutputFilenames()->Get("PotentialPrecisionFile");
+
+  if(fileName.empty() )
+	{
+	  vPrint(4, "Empty potential precision filename, not saving.");
+	  return;
+	}
+
   vPrint(4, "Saving potential precision points...");
 
-  string fileName = config->GetOutputFilenames()->Get("PotentialPrecisionFile");
   Potential * potential = config->GetPotential();
 
   FILE * fout = AssuredFopen(fileName);
@@ -87,9 +100,16 @@ void OutputProcessor::WritePotentialPrecisionToFile() const
 
 void OutputProcessor::WriteKCurveToFile() const
 {
+  string fileName = config->GetOutputFilenames()->Get("KCurveFile");
+
+  if(fileName.empty() )
+	{
+	  vPrint(4, "Empty KCurve filename, not saving.");
+	  return;
+	}
+
   vPrint(4, "Saving K-curve...");
   ParametrizedCurve * toPrint = config->GetKCurve();
-  string fileName = config->GetOutputFilenames()->Get("KCurveFile");
   FILE * fout = AssuredFopen(fileName);
 
   for(unsigned int i = 0; i<toPrint->GetNumberOfSegments(); ++i)
@@ -118,9 +138,16 @@ FILE * OutputProcessor::AssuredFopen(const string filename)
 
 void OutputProcessor::WriteKFoundToFile() const
 {
+  string fileName = config->GetOutputFilenames()->Get("KFoundFile");
+
+  if(fileName.empty() )
+	{
+	  vPrint(4, "Empty KFound filename, not saving.");
+	  return;
+	}
+
   vPrint(4, "Saving k-values for found eigenvalues...");
 
-  string fileName = config->GetOutputFilenames()->Get("KFoundFile");
   FILE * fout = AssuredFopen(fileName);
 
   for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
@@ -187,12 +214,19 @@ void OutputProcessor::WriteInterestingKPointsVerbosely() const
 
 void OutputProcessor::WriteInterestingKPointsToFile() const
 {
+  string fileName = config->GetOutputFilenames()->Get("InterestingPointsFile");
+
+  if(fileName.empty() )
+	{
+	  vPrint(4, "Empty InterestingPoints filename, not saving.");
+	  return;
+	}
+
   vPrint(4, "Saving interesting k-points...");
 
   vector<ComplexDouble> printVector = FindInterestingKPoints();
   vector<unsigned int> interestingIndexes = FindInterestingKPointIndex();
 
-  string fileName = config->GetOutputFilenames()->Get("InterestingPointsFile");
   FILE * fout = AssuredFopen(fileName);
   
   
@@ -325,13 +359,20 @@ vector<ComplexDouble> OutputProcessor::FindInterestingKPoints() const
 
 void OutputProcessor::WriteInterestingWavefunctionsToFile() const
 {
+  string fileName = config->GetOutputFilenames()->Get("WavefunctionsFile");
+
+  if(fileName.empty() )
+	{
+	  vPrint(4, "Empty Wavefunctions filename, not saving.");
+	  return;
+	}
+
   vPrint(4, "Saving wavefunctions...\n");
 
   ///Some setup.
   vector<unsigned int> interestingIndexes = FindInterestingKPointIndex();
   vector<ComplexDouble> interestingVector = FindInterestingKPoints();
 
-  string fileName = config->GetOutputFilenames()->Get("WavefunctionsFile");
   vector<BasisFunction> myBasisFunctions = config->GetBasisFunctions();
   unsigned int numberOfGLPoints = eigenData->Eigenvalues.size() / config->GetBasisFunctions().size();
   if(eigenData->Eigenvalues.size() % config->GetBasisFunctions().size() != 0)
@@ -355,10 +396,10 @@ void OutputProcessor::WriteInterestingWavefunctionsToFile() const
 			  unsigned int basisPointer = i / numberOfGLPoints;
 			  unsigned int curveSegment = config->GetKCurve()->SegmentIndexFromGLNumber(curvePointer);
 			  ComplexDouble kVal = config->GetKCurve()->GetRuleValue(curveSegment, curvePointer);
-			  ComplexDouble kW = config->GetKCurve()->GetRuleWeight(curveSegment, curvePointer);
+			  ComplexDouble wK = config->GetKCurve()->GetRuleWeight(curveSegment, curvePointer);
 			  
 			  wavefunctionValues.back().back() += 
-				(eigVect[i] * kW * 
+				(eigVect[i] * sqrt(wK) * 
 				 myBasisFunctions[basisPointer].Eval(x, kVal)
 				 );
 			}
@@ -479,9 +520,6 @@ vector<ComplexDouble> OutputProcessor::GetReshapedEigenvector(unsigned int index
   ComplexDouble normalizationFactor = ComplexDouble(0.0,0.0);
   for(unsigned int i = 0; i<toReturn.size(); ++i)
 	{
-	  unsigned int curvePointer = i % numberOfGLPoints;
-	  unsigned int curveSegment = config->GetKCurve()->SegmentIndexFromGLNumber(curvePointer);
-	  ComplexDouble wK = config->GetKCurve()->GetRuleWeight(curveSegment, curvePointer);
 	  normalizationFactor += pow(toReturn[i], 2.0) * wK;
 	}
   ComplexDouble toDivideBy = sqrt(normalizationFactor);
@@ -490,4 +528,32 @@ vector<ComplexDouble> OutputProcessor::GetReshapedEigenvector(unsigned int index
 	  *it /= toDivideBy;
 	}
   return toReturn;
+}
+
+
+void OutputProcessor::SaveMatrix(CMatrix * toSave) const
+{
+  string fileName = config->GetOutputFilenames()->Get("MatrixFile");
+
+
+  if(fileName.empty() )
+	{
+	  vPrint(4, "Empty Matrix filename, not saving.");
+	  return;
+	}
+
+
+  vPrint(4, "Saving matrix...");
+  FILE * fout = AssuredFopen(fileName);
+
+  for(unsigned int i = 0; i<toSave->Rows(); ++i)
+	{
+	  for(unsigned int j = 0; j<toSave->Columns(); ++j)
+		{
+		  fprintf(fout, "%d %d %+13.10e %+13.10e\n", i, j, real(toSave->Element(i, j)), imag(toSave->Element(i, j)));
+		}
+	}
+  fclose(fout);
+
+  vPrint(4, "done\n");
 }

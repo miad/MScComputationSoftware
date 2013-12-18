@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
   
   ///Now we should have a Hamiltonian.
 
-  SaveMatrix(&HamiltonianMatrix);
+  myProcessor.SaveMatrix(&HamiltonianMatrix);
   ///Validate some basic properties of the Hamilton matrix, if they are expected.
   if(myConfiguration.GetExpectedMatrixType() == SymmetricMatrix)
 	{
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
   myPrinter.Print(2, "Saving results to files.\n");
 
   myProcessor.SetEigenInformation(&myInfo);
-  myProcessor.WriteOutput();
+  myProcessor.WritePostOutput();
 
 
   myPrinter.Print(2, "Launching plotters.\n");
@@ -209,16 +209,3 @@ void * EvaluateSubMatrix(WorkerData w)
    return NULL;
 }
 
-
-void SaveMatrix(CMatrix * toSave)
-{
-  FILE * fout = fopen("matrix.dat", "w");
-  for(unsigned int i = 0; i<toSave->Rows(); ++i)
-	{
-	  for(unsigned int j = 0; j<toSave->Columns(); ++j)
-		{
-		  fprintf(fout, "%d %d %+13.10e %+13.10e\n", i, j, real(toSave->Element(i, j)), imag(toSave->Element(i, j)));
-		}
-	}
-  fclose(fout);
-}

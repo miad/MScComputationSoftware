@@ -12,6 +12,7 @@
 #include "RLException.hh"
 #include "ComputeConfig.hh"
 #include "EigenInformation.hh"
+#include "Matrix.hpp"
 
 /** This class will process the results from computations, and save it in the correct format in the correct output files. In order to do so it has to do some filtering etc. of points.
 
@@ -27,7 +28,10 @@ public:
   void SetEigenInformation(EigenInformation * data ///Eigeninfo to set.
 						   ); ///Set eigeninfo. Must be done before calling WriteOutput. NOTE: Ownership is not passed, and data may not be deleted before this object is destroyed.
   
-  void WriteOutput() const; ///Call this to perform ALL output processing on the set value of data. Throws exception if data is not set.
+  void WritePostOutput() const; ///Call this to perform all POST output processing on the set value of data. Throws exception if data is not set.
+
+  void SaveMatrix(CMatrix * toSave ///The matrix.
+				  ) const; ///Write the matrix to predetermined file.
 
 
 

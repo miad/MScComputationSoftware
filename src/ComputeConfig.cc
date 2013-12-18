@@ -11,6 +11,7 @@ ComputeConfig::ComputeConfig()
   outputFilenames.Add("PotentialPrecisionFile", "PotentialPrecision.dat");
   outputFilenames.Add("InterestingPointsFile", "InterestingPoints.dat");
   outputFilenames.Add("WavefunctionFile", "Wavefunctions.dat");
+  outputFilenames.Add("Matrix", "Matrix.dat");
 
 
   PiecewiseConstantPotential * stdPotential = new PiecewiseConstantPotential();
@@ -235,6 +236,7 @@ void ComputeConfig::WriteFile(const char * fileName) const
   output.add("PotentialPrecision", Setting::TypeString) = outputFilenames.Get("PotentialPrecisionFile");
   output.add("InterestingPoints", Setting::TypeString) = outputFilenames.Get("InterestingPointsFile");
   output.add("Wavefunctions", Setting::TypeString) = outputFilenames.Get("WavefunctionFile");
+  output.add("Matrix", Setting::TypeString) = outputFilenames.Get("MatrixFile");
   Setting & outputSpecifics = root.add("OutputSpecifics", Setting::TypeGroup);
   Setting & wavePrecision = outputSpecifics.add("WavefunctionProperties", Setting::TypeGroup);
   wavePrecision.add("MinX", Setting::TypeFloat) = minWavefunctionX;
@@ -531,6 +533,15 @@ void ComputeConfig::ReadOutputFiles(Setting & output)
   else
 	{
 	  throw RLException("The value 'Wavefunctions' was not set appropriately.");
+	}
+
+  if( output.lookupValue("Matrix", temp) )
+	{
+	  outputFilenames.Add("MatrixFile", temp);
+	}
+  else
+	{
+	  throw RLException("The value 'Matrix' was not set appropriately.");
 	}
 
 }
