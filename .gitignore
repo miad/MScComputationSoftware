@@ -21,6 +21,7 @@ test/RunTests
 *.dat
 libconfig-1.4.9/*
 fparser/*
+fparser4.5.1/*
 confDir/*
 output/*
 runData*

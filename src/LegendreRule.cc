@@ -11,9 +11,9 @@ vector<pair<double, double> > LegendreRule::GetRule(unsigned int numberOfPoints,
 	{
 	  toReturn.push_back(make_pair(xValues[i], weights[i]));
 	}
-  delete xValues;
+  delete [] xValues;
   xValues = NULL;
-  delete weights;
+  delete [] weights;
   weights = NULL;
   return toReturn;
 }

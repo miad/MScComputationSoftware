@@ -3,7 +3,8 @@
 ComputeConfig::ComputeConfig()
   :numberOfThreads(1), verbosityLevel(0), autoPlotPotential(false), autoPlotKCurve(false),
    autoPlotWavefunctions(false),
-   minWavefunctionX(-10), maxWavefunctionX(10), wavefunctionStepsizeX(0.01)
+   minWavefunctionX(-10), maxWavefunctionX(10), wavefunctionStepsizeX(0.01),
+   numberOfParticles(2), couplingCoefficient(0.0)
 {
   outputFilenames.Add("KCurveFile", "KCurve.dat");
   outputFilenames.Add("KFoundFile", "KFound.dat");
@@ -149,9 +150,36 @@ void ComputeConfig::ReadFile(const char * fileName)
   ReadExpectedMatrixType(computation);
 
   ReadBasisFunctions(computation);
+  //ReadMultiParticleData(computation);
   ReadPotential(computation);
   ReadKCurve(computation);
   // Read the file. If there is an error, report it and exit.
+}
+
+void ComputeConfig::ReadMultiParticleData(Setting & computation)
+{
+  if (! computation.exists("NumberOfParticles"))
+	{
+	  throw RLException("NumberOfParticles not properly specified.");
+	}
+  if(! computation.lookupValue("NumberOfParticles", numberOfParticles))
+	{
+	  throw RLException("Could not lookup # particles.");
+	}
+  if(numberOfParticles < 1 || numberOfParticles > 2)
+	{
+	  throw RLException("Unsupported # particles.");
+	}
+
+  if (! computation.exists("CouplingCoefficient"))
+	{
+	  throw RLException("CouplingCoefficient not properly specified.");
+	}
+  if(! computation.lookupValue("CouplingCoefficient", couplingCoefficient))
+	{
+	  throw RLException("Could not lookup coupling coefficient.");
+	}
+
 }
 
 void ComputeConfig::ReadWavefunctionProperties(Setting & outputSpecifics)
@@ -202,12 +230,12 @@ void ComputeConfig::ReadExtraInteresting(Setting & outputSpecifics)
 }
 
 
-unsigned int ComputeConfig::GetVerbosityLevel() const
+uint ComputeConfig::GetVerbosityLevel() const
 {
   return verbosityLevel;
 }
 
-void ComputeConfig::SetVerbosityLevel(unsigned int value) 
+void ComputeConfig::SetVerbosityLevel(uint value) 
 {
   verbosityLevel = value;
 }
@@ -252,6 +280,8 @@ void ComputeConfig::WriteFile(const char * fileName) const
   if(matrixType == SymmetricMatrix)
 	matType = "Symmetric";
   root["Computation"].add("ExpectedMatrixType", Setting::TypeString) = matType;
+  root["Computation"].add("NumberOfParticles", Setting::TypeInt) = (int)numberOfParticles;
+  root["Computation"].add("CouplingCoefficient", Setting::TypeFloat) = couplingCoefficient;
 	
 
   Setting & units = root["Computation"].add("Units", Setting::TypeGroup);
@@ -289,7 +319,7 @@ void ComputeConfig::WriteFile(const char * fileName) const
   Setting & kval = kcurve.add("Values", Setting::TypeList);
 
 
-  for(unsigned int i = 0; i<kCurve->GetNumberOfSegments(); ++i)
+  for(uint i = 0; i<kCurve->GetNumberOfSegments(); ++i)
 	{
 	  Setting & k0 = kval.add(Setting::TypeGroup);
 	  Setting & k0p0 = k0.add("P0", Setting::TypeArray);
@@ -408,12 +438,12 @@ void ComputeConfig::SetExpectedMatrixType(ExpectedMatrixType value)
 }
 
 
-unsigned int ComputeConfig::GetNumberOfThreads() const
+uint ComputeConfig::GetNumberOfThreads() const
 {
   return numberOfThreads;
 }
 
-void ComputeConfig::SetNumberOfThreads(unsigned int value)
+void ComputeConfig::SetNumberOfThreads(uint value)
 {
   numberOfThreads = value;
 }
@@ -819,4 +849,24 @@ void ComputeConfig::ReadAutoLaunch(Setting & program)
 	{
 	  throw RLException("The value 'Wavefunctions' in 'AutoLaunch' was not set appropriately.");
 	}
+}
+
+void ComputeConfig::SetNumberOfParticles(uint value)
+{
+  numberOfParticles = value;
+}
+
+void ComputeConfig::SetCouplingCoefficient(double value)
+{
+  couplingCoefficient = value;
+}
+
+uint ComputeConfig::GetNumberOfParticles() const
+{
+  return numberOfParticles;
+}
+
+double ComputeConfig::GetCouplingCoefficient() const
+{
+  return couplingCoefficient;
 }

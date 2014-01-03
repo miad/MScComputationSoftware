@@ -21,7 +21,7 @@
 using namespace std;
 using namespace libconfig;
 
-#define CONFIG_FILE_VERSION 0.35
+#define CONFIG_FILE_VERSION 0.40
 
 
 enum ExpectedMatrixType
@@ -56,9 +56,9 @@ public:
   ///Getters
   double GetVersion() const;
 
-  unsigned int GetVerbosityLevel() const;
+  uint GetVerbosityLevel() const;
 
-  unsigned int GetNumberOfThreads() const;
+  uint GetNumberOfThreads() const;
 
   bool GetAutoPlotPotential() const;
   bool GetAutoPlotKCurve() const;
@@ -82,6 +82,9 @@ public:
   double GetMinWavefunctionX() const;
   double GetMaxWavefunctionX() const;
   double GetWavefunctionStepsizeX() const;
+
+  uint GetNumberOfParticles() const;
+  double GetCouplingCoefficient() const;
 
 
   ///Setters
@@ -121,13 +124,19 @@ public:
 
 
   
-  void SetVerbosityLevel(unsigned int value
+  void SetVerbosityLevel(uint value
 						 );
-  void SetNumberOfThreads(unsigned int value
+  void SetNumberOfThreads(uint value
 						  );
 
   void SetExpectedMatrixType(ExpectedMatrixType val
 							 );
+
+  void SetNumberOfParticles(uint value
+							);
+  
+  void SetCouplingCoefficient(double value
+							  );
 
 
 private:
@@ -153,6 +162,9 @@ private:
   void ReadExtraInteresting(Setting & outputSpecifics
 							);
 
+  void ReadMultiParticleData(Setting & computation
+							 );
+
 
 private:
 
@@ -160,8 +172,8 @@ private:
 
   ///This stuff should typically be contained in the configuration file.
 
-  unsigned int numberOfThreads; ///number of threads. Default: 1
-  unsigned int verbosityLevel; ///The verbosity level. Default: 0
+  uint numberOfThreads; ///number of threads. Default: 1
+  uint verbosityLevel; ///The verbosity level. Default: 0
 
   bool autoPlotPotential; ///Auto plot potential. Default: false
   bool autoPlotKCurve; ///Auto plot K curve .Default: false
@@ -170,6 +182,9 @@ private:
   double minWavefunctionX;
   double maxWavefunctionX;
   double wavefunctionStepsizeX;
+
+  uint numberOfParticles;
+  double couplingCoefficient;
 
 
   Potential * potential; ///Potential function. Default: a piecewise potential with 3 nonzero regions.
