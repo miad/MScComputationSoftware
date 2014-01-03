@@ -8,11 +8,6 @@
 
 using namespace std;
 
-
-#include <complex>
-typedef complex<double> ComplexDouble;
-
-
 #include "Matrix.hpp"
 typedef Matrix<ComplexDouble> CMatrix;
 

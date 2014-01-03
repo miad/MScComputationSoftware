@@ -29,7 +29,7 @@ OBJ:= $(SRC:src/%.cc=bin/%.o)
 
 MAINS := Compute
 MAINSOBJ:= $(MAINS:%=bin/%.o)
-MAINSNAME := Compute2
+MAINSNAME := Compute
 
 
 
@@ -100,7 +100,7 @@ fparse_clean:
 	@echo Cleaning up fparser...
 	@rm -f $(FPARSER:%=include/%.hh)
 	@rm -f $(FPARSER:%=src/%.cc)
-	@rm -f include/extrasrc
+	@rm -rf include/extrasrc
 
 $(RLLIB):
 	$(MAKE) -C RLlib
