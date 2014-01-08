@@ -33,14 +33,20 @@ using namespace std;
 
 #define TMP_LIST_STR(n, s) list<string> n; n.push_back(s);
 
+#define DELTA(a, b) ((double)(a==b))
+
 
 int main(int argc, char *argv[]);
 
-void SaveMatrix(CMatrix * toSave);
-
 CommandLineInterpreter * InitInterpreter();///Returns a command line interpreter with defined commands.
 
-void * EvaluateSubMatrix(WorkerData w);
+void * EvaluateSubMatrixOneParticle(WorkerData w);
+
+void * EvaluateSubMatrixTwoParticles(WorkerData w);
+
+
+CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, 
+							   VerbosePrinter & myPrinter);
 
 
 #endif

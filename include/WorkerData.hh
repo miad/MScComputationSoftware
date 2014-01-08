@@ -27,6 +27,7 @@ public:
 			 unsigned int _numberOfGLPoints, ///Number of GL points in use.
 			 double _hbarTimesLambda, ///Used for k-E transformation.
 			 double _massOverLambda2, ///Used for k-E transformation.
+			 double _couplingCoefficient, ///Used only in 2-particle computations.
 			 unsigned int _m1, /// Specifies the submatrix to use.
 			 unsigned int _m2, /// Specifies the submatrix to use.
 			 unsigned int _n1, /// Specifies the submatrix to use.
@@ -40,6 +41,7 @@ public:
   unsigned int numberOfGLPoints; ///Number of GL points in use.
   double hbarTimesLambda; /// Used for k-E transformation.
   double massOverLambda2; /// Used for k-E transformation.
+  double couplingCoefficient; ///The coupling coefficient in 2-particle interactions.
   unsigned int m1; /// Specifies the submatrix to use.
   unsigned int m2; /// Specifies the submatrix to use.
   unsigned int n1; /// Specifies the submatrix to use.

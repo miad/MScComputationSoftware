@@ -46,16 +46,17 @@ private:
   void WriteKFoundToFile() const; ///Writes output.
   void WriteInterestingKPointsVerbosely() const; ///Writes output.
   void WriteInterestingKPointsToFile() const; ///Writes output.
-  void WriteInterestingWavefunctionsToFile() const; ///Writes output.
+  void WriteInterestingOneParticleWavefunctionsToFile() const; ///Writes output.
+  void WriteInterestingTwoParticleWavefunctionsToFile() const;
 
 
   // Auxiliary functions.
 
-  vector<unsigned int> FindInterestingKPointIndex() const; ///Returns the interesting K points by index (in the eigenData object)
+  vector<uint> FindInterestingKPointIndex() const; ///Returns the interesting K points by index (in the eigenData object)
 
   vector<ComplexDouble> FindInterestingKPoints() const; ///Returns the interesting K points by value.
 
-  vector<ComplexDouble> GetReshapedEigenvector(unsigned int index ///Index.
+  vector<ComplexDouble> GetReshapedEigenvector(uint index ///Index.
 											   ) const; ///Normalize the eigenvector with respect to another norm.
 
 
@@ -69,9 +70,9 @@ private:
 							   ) const; ///Converts a wave vector to an energy using the supplied internal unit system.
 
 
-  vector<double> GetBasisRatio(unsigned int eigenIndex, ///Index of wavevector to compute ratio for.
-							   double & totalSum /// Output value. May be used.
-							   ) const; ///Returns a vector with entries corresponding to the relative dominance (all sum up to 1) of each basis vector
+  vector<double> GetOneParticleBasisRatio(uint eigenIndex, ///Index of wavevector to compute ratio for.
+										  double & totalSum /// Output value. May be used.
+										  ) const; ///Returns a vector with entries corresponding to the relative dominance (all sum up to 1) of each basis vector
 
 
 

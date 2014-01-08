@@ -45,8 +45,6 @@ int main(int argc, char *argv[])
   myPrinter.Print(3, "Initializing...\n");
 
 
-  OutputProcessor myProcessor(&myConfiguration);
-  myProcessor.RegisterListener(&myPrinter);
 
 
   vector<BasisFunction> myBasisFunctions = myConfiguration.GetBasisFunctions();
@@ -57,16 +55,82 @@ int main(int argc, char *argv[])
 	}
   myPrinter.Print(5, ".\n");
 
-  unsigned int numberOfGLPoints = myConfiguration.GetKCurve()->GetTotalNumberOfGLPoints();
+
+  CMatrix * HamiltonianMatrix = ConstructHamiltonian(myConfiguration, myPrinter);
+
+  uint nonzero = 0;
+  for(uint i = 0; i<HamiltonianMatrix->Rows(); ++i)
+	{
+	  for(uint j = 0; j<HamiltonianMatrix->Columns(); ++j)
+		{
+		  nonzero += !DBL_EQUAL(HamiltonianMatrix->Element(i, j),0.0);
+		}
+	}
+  myPrinter.Print(3, "Number of nonzero Hamiltonian elements: %d\n", nonzero);
+
+  OutputProcessor myProcessor(&myConfiguration);
+  myProcessor.RegisterListener(&myPrinter);
+  myProcessor.SaveMatrix(HamiltonianMatrix);
+  ///Validate some basic properties of the Hamilton matrix, if they are expected.
+  if(myConfiguration.GetExpectedMatrixType() == SymmetricMatrix)
+	{
+	  myPrinter.Print(1, "Validating symmetricity of matrix.\n");
+	  if ( ! HamiltonianMatrix->IsSymmetric(true) )
+		{
+		  throw RLException("The matrix was found to be non-symmetric.");
+		}
+	}
+  if(myConfiguration.GetExpectedMatrixType() == HermitianMatrix)
+	{
+	  myPrinter.Print(1, "Validating hermiticity of matrix.\n");
+	  if( ! HamiltonianMatrix->IsHermitian(true))
+		{
+		  throw RLException("The matrix was found to be non-hermitian.");
+		}
+	}
+
+  myPrinter.Print(1, "Solving for eigenvalues and eigenvectors of the Hamiltonian.\n");
+  EigenInformation myInfo = EigenvalueSolver::Solve(HamiltonianMatrix);
+  
+  
+  myPrinter.Print(2, "Saving results to files.\n");
+
+  myProcessor.SetEigenInformation(&myInfo);
+  myProcessor.WritePostOutput();
+
+  delete HamiltonianMatrix;
+
+  myPrinter.Print(2, "Launching plotters.\n");
+  
+  ExternalLauncher myLauncher(&myConfiguration);
+  myLauncher.Launch();
+
+  myPrinter.Print(2, "Done, exiting.\n");
+  return 0;
+}
 
 
-  unsigned int numberOfBasisFunctions =  myBasisFunctions.size();
-  unsigned int MatrixSize = numberOfGLPoints * numberOfBasisFunctions;
+CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePrinter & myPrinter)
+{
+  uint numberOfParticles = myConfiguration.GetNumberOfParticles();
+  if(numberOfParticles < 1 || numberOfParticles > 2)
+	throw RLException("Invalid number of particles.");
+  myPrinter.Print(3, "Number of particles: %d\n", numberOfParticles);
+  
+  vector<BasisFunction> myBasisFunctions = myConfiguration.GetBasisFunctions();
+
+  uint numberOfGLPoints = myConfiguration.GetKCurve()->GetTotalNumberOfGLPoints();
+  uint numberOfBasisFunctions =  myBasisFunctions.size();
+  uint MatrixSize = numberOfGLPoints * numberOfBasisFunctions;
+
+  if(numberOfParticles == 2)
+	MatrixSize *= MatrixSize;
+
   myPrinter.Print(5, "Total number of GL points in k-space: %d, Matrix size: %d.\n", numberOfGLPoints, MatrixSize);
 
 
-  CMatrix HamiltonianMatrix(MatrixSize, MatrixSize);
-  HamiltonianMatrix.InitializeAll(0.);
+  CMatrix * HamiltonianMatrix = new CMatrix(MatrixSize, MatrixSize);
+  HamiltonianMatrix->InitializeAll(0.);
 
 
   ///The main stuff: construct the Hamiltoninan matrix.
@@ -79,76 +143,51 @@ int main(int argc, char *argv[])
 
   myPrinter.Print(3, "Potential: minX %13.10e maxX %13.10e\n", myPotential->GetMinX(), myPotential->GetMaxX());
 
-
+  MultiTasker<WorkerData, void*> * myMultiTasker = NULL;
   ///Generate the Hamiltonian in parallell!
-  MultiTasker<WorkerData, void*> myMultiTasker(EvaluateSubMatrix, myConfiguration.GetNumberOfThreads());
-
-  myMultiTasker.RegisterListener(&myPrinter);
-
-  for(unsigned int i = 0; i<MatrixSize; ++i)
+  if(numberOfParticles == 1)
 	{
-	  myMultiTasker.AddInput(WorkerData(&HamiltonianMatrix,
-										myCurve,
-										myPotential,
-										myBasisFunctions,
-										numberOfGLPoints,
-										myConfiguration.GetSpecificUnits()->GetHbarTimesLambda(),
-										myConfiguration.GetSpecificUnits()->GetMassOverLambda2(),
-										i,
-										i+1,
-										0,
-										MatrixSize)
-						);
+	  myMultiTasker = new MultiTasker<WorkerData, void*>(EvaluateSubMatrixOneParticle, myConfiguration.GetNumberOfThreads());
 	}
-  myMultiTasker.LaunchThreads();
-  myMultiTasker.PauseUntilOutputIsGenerated();
-  myMultiTasker.DestroyThreads();
-  
-  ///Now we should have a Hamiltonian.
-
-  myProcessor.SaveMatrix(&HamiltonianMatrix);
-  ///Validate some basic properties of the Hamilton matrix, if they are expected.
-  if(myConfiguration.GetExpectedMatrixType() == SymmetricMatrix)
+  else if(numberOfParticles == 2)
 	{
-	  myPrinter.Print(1, "Validating symmetricity of matrix.\n");
-	  if ( ! HamiltonianMatrix.IsSymmetric(true) )
-		{
-		  throw RLException("The matrix was found to be non-symmetric.");
-		}
+	  myMultiTasker = new MultiTasker<WorkerData, void*>(EvaluateSubMatrixTwoParticles, myConfiguration.GetNumberOfThreads());
 	}
-  if(myConfiguration.GetExpectedMatrixType() == HermitianMatrix)
+  else
 	{
-	  myPrinter.Print(1, "Validating hermiticity of matrix.\n");
-	  if( ! HamiltonianMatrix.IsHermitian(true))
-		{
-		  throw RLException("The matrix was found to be non-hermitian.");
-		}
+	  throw RLException("Improbable exception, this should never happen.");
 	}
+  if(myMultiTasker == NULL)
+	{
+	  throw RLException("Equally improbable.");
+	}
+	
 
-  myPrinter.Print(1, "Solving for eigenvalues and eigenvectors of the Hamiltonian.\n");
-  EigenInformation myInfo = EigenvalueSolver::Solve(&HamiltonianMatrix);
-  
-  
-  myPrinter.Print(2, "Saving results to files.\n");
+  myMultiTasker->RegisterListener(&myPrinter);
 
-  myProcessor.SetEigenInformation(&myInfo);
-  myProcessor.WritePostOutput();
+  for(uint i = 0; i<MatrixSize; ++i)
+	{
+	  myMultiTasker->AddInput(WorkerData(HamiltonianMatrix,
+										 myCurve,
+										 myPotential,
+										 myBasisFunctions,
+										 numberOfGLPoints,
+										 myConfiguration.GetSpecificUnits()->GetHbarTimesLambda(),
+										 myConfiguration.GetSpecificUnits()->GetMassOverLambda2(),
+										 0,
+										 i,
+										 i+1,
+										 myConfiguration.GetCouplingCoefficient(),
+										 MatrixSize)
+							  );
+	}
+  myMultiTasker->LaunchThreads();
+  myMultiTasker->PauseUntilOutputIsGenerated();
+  myMultiTasker->DestroyThreads();
+  delete myMultiTasker; myMultiTasker = NULL;
 
-
-  myPrinter.Print(2, "Launching plotters.\n");
-  
-  ExternalLauncher myLauncher(&myConfiguration);
-  myLauncher.Launch();
-
-  myPrinter.Print(2, "Done, exiting.\n");
-  return 0;
+  return HamiltonianMatrix;
 }
-
-
-
-
-
-
 
 
 
@@ -166,38 +205,34 @@ CommandLineInterpreter * InitInterpreter()
   return myInterpreter;
 }
 
-void * EvaluateSubMatrix(WorkerData w)
+void * EvaluateSubMatrixOneParticle(WorkerData w)
 {
   CMatrix * HamiltonianMatrix = w.HamiltonianMatrix;
   ParametrizedCurve * myCurve = w.myCurve;
   Potential * myPotential = w.myPotential;
   vector<BasisFunction> * myBasisFunctions = &w.myBasisFunctions;
-  unsigned int numberOfGLPoints = w.numberOfGLPoints;
+  uint numberOfGLPoints = w.numberOfGLPoints;
   double hbarTimesLambda = w.hbarTimesLambda;
   double massOverLambda2 = w.massOverLambda2;
-  unsigned int m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
+  uint m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
 
-  for(unsigned int i = m1; i<m2; ++i)
+  for(uint i = m1; i<m2; ++i)
 	{
-	  unsigned int curvePointerA = i % numberOfGLPoints;
-	  unsigned int basisPointerA = i / numberOfGLPoints;
-	  unsigned int curveSegmentA = myCurve->SegmentIndexFromGLNumber(curvePointerA);
+	  uint curvePointerA = i % numberOfGLPoints;
+	  uint basisPointerA = i / numberOfGLPoints;
+	  uint curveSegmentA = myCurve->SegmentIndexFromGLNumber(curvePointerA);
 	  
 	  ComplexDouble kA = myCurve->GetRuleValue(curveSegmentA, curvePointerA);
 	  ComplexDouble wA = myCurve->GetRuleWeight(curveSegmentA, curvePointerA);
 	  
-	  //ComplexDouble preFactorA = myBasisFunctions[basisPointerA].GetPreFactor();
-	  
-	  for(unsigned int j = n1; j<n2; ++j)
+	  for(uint j = n1; j<n2; ++j)
 		{
-		  unsigned int curvePointerB = j % numberOfGLPoints;
-		  unsigned int basisPointerB = j / numberOfGLPoints;
-		  unsigned int curveSegmentB = myCurve->SegmentIndexFromGLNumber(curvePointerB);
+		  uint curvePointerB = j % numberOfGLPoints;
+		  uint basisPointerB = j / numberOfGLPoints;
+		  uint curveSegmentB = myCurve->SegmentIndexFromGLNumber(curvePointerB);
 		  
 		  ComplexDouble kB = myCurve->GetRuleValue(curveSegmentB, curvePointerB);
 		  ComplexDouble wB = myCurve->GetRuleWeight(curveSegmentB, curvePointerB);
-		  
-		  //ComplexDouble preFactorB = myBasisFunctions[basisPointerB].GetPreFactor();
 		  
 		  HamiltonianMatrix->Element(i, j) += sqrt(wA*wB)*
 			myPotential->BasisIntegrate((*myBasisFunctions)[basisPointerA], 
@@ -205,6 +240,91 @@ void * EvaluateSubMatrix(WorkerData w)
 										kA, kB) ;
 		}
 	HamiltonianMatrix->Element(i,i) += pow(hbarTimesLambda,2)/(2.*massOverLambda2) * pow(kA, 2);
+   }
+   return NULL;
+}
+
+
+void * EvaluateSubMatrixTwoParticles(WorkerData w)
+{
+  CMatrix * HamiltonianMatrix = w.HamiltonianMatrix;
+  ParametrizedCurve * myCurve = w.myCurve;
+  Potential * myPotential = w.myPotential;
+  vector<BasisFunction> * myBasisFunctions = &w.myBasisFunctions;
+  uint numberOfGLPoints = w.numberOfGLPoints;
+  double hbarTimesLambda = w.hbarTimesLambda;
+  double massOverLambda2 = w.massOverLambda2;
+  uint m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
+  double couplingCoefficient = w.couplingCoefficient;
+  uint N = myBasisFunctions->size() * numberOfGLPoints; ///Number of points in each subspace.
+
+
+
+  for(uint i = m1; i<m2; ++i)
+	{
+	  uint a = i/N;
+	  uint b = i % N;
+
+	  uint curvePointerA = a % numberOfGLPoints;
+	  uint basisPointerA = a / numberOfGLPoints;
+	  uint curveSegmentA = myCurve->SegmentIndexFromGLNumber(curvePointerA);
+	  
+	  ComplexDouble kA = myCurve->GetRuleValue(curveSegmentA, curvePointerA);
+	  ComplexDouble wA = myCurve->GetRuleWeight(curveSegmentA, curvePointerA);
+
+
+	  uint curvePointerB = b % numberOfGLPoints;
+	  uint basisPointerB = b / numberOfGLPoints;
+	  uint curveSegmentB = myCurve->SegmentIndexFromGLNumber(curvePointerB);
+	  
+	  ComplexDouble kB = myCurve->GetRuleValue(curveSegmentB, curvePointerB);
+	  ComplexDouble wB = myCurve->GetRuleWeight(curveSegmentB, curvePointerB);
+
+	  
+	  for(uint j = n1; j<n2; ++j)
+		{
+		  uint c = j / N;
+		  uint d = j % N;
+
+		  if(c != d && a != b) //To speed things up.
+			continue;
+
+		  uint curvePointerC = c % numberOfGLPoints;
+		  uint basisPointerC = c / numberOfGLPoints;
+		  uint curveSegmentC = myCurve->SegmentIndexFromGLNumber(curvePointerC);
+		  
+		  ComplexDouble kC = myCurve->GetRuleValue(curveSegmentC, curvePointerC);
+		  ComplexDouble wC = myCurve->GetRuleWeight(curveSegmentC, curvePointerC);
+
+		  uint curvePointerD = d % numberOfGLPoints;
+		  uint basisPointerD = d / numberOfGLPoints;
+		  uint curveSegmentD = myCurve->SegmentIndexFromGLNumber(curvePointerD);
+		  
+		  ComplexDouble kD = myCurve->GetRuleValue(curveSegmentD, curvePointerD);
+		  ComplexDouble wD = myCurve->GetRuleWeight(curveSegmentD, curvePointerD);
+
+		  if(b==d) //2nd term
+			{
+			  HamiltonianMatrix->Element(i, j) += 
+				sqrt(wA*wC) * myPotential->BasisIntegrate((*myBasisFunctions)[basisPointerA], 
+														   (*myBasisFunctions)[basisPointerC], 
+														   kA, kC);
+			}
+
+		  if(a==c) //3rd term
+			{
+			  HamiltonianMatrix->Element(i, j) += 
+				sqrt(wB*wD) * myPotential->BasisIntegrate((*myBasisFunctions)[basisPointerB], 
+														   (*myBasisFunctions)[basisPointerD], 
+														   kB, kD);
+			}
+
+		  if(a==c && b==d) //1st term
+			{
+			  HamiltonianMatrix->Element(i, j) += 
+				pow(hbarTimesLambda,2)/(2.*massOverLambda2) * (pow(kA,2) + pow(kB,2) + couplingCoefficient);
+			}
+		}
    }
    return NULL;
 }

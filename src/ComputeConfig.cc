@@ -150,7 +150,7 @@ void ComputeConfig::ReadFile(const char * fileName)
   ReadExpectedMatrixType(computation);
 
   ReadBasisFunctions(computation);
-  //ReadMultiParticleData(computation);
+  ReadMultiParticleData(computation);
   ReadPotential(computation);
   ReadKCurve(computation);
   // Read the file. If there is an error, report it and exit.
