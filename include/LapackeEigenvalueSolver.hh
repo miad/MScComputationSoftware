@@ -1,13 +1,13 @@
-#ifndef EigenvalueSolver_hh
-#define EigenvalueSolver_hh 1
+#ifndef LapackeEigenvalueSolver_hh
+#define LapackeEigenvalueSolver_hh 1
 
+#include <stdio.h>
+#include <vector>
 #include "lapacke.h"
 #include "lapacke_utils.h"
 #include "Globals.hpp"
 #include "Matrix.hpp"
 #include "RLException.hh"
-#include <stdio.h>
-#include <vector>
 #include "CommandLineArgument.hh"
 #include "CommandLineInterpreter.hh"
 #include "VerbosePrinter.hh"
@@ -18,12 +18,12 @@ using namespace std;
 
 
 
-class EigenvalueSolver
+class LapackeEigenvalueSolver
 {
 public:
   static EigenInformation Solve(CMatrix * toSolve);
 private:
-  EigenvalueSolver() {}
+  LapackeEigenvalueSolver() {}
 };
 
 

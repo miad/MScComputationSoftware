@@ -8,7 +8,7 @@
 #include "VerbosePrinter.hh"
 #include "VerbosePrinterEventEnabled.hh"
 #include "OutputFilenames.hh"
-#include "EigenvalueSolver.hh"
+#include "LapackeEigenvalueSolver.hh"
 #include "RLException.hh"
 #include "ComputeConfig.hh"
 #include "EigenInformation.hh"

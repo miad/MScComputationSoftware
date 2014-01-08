@@ -11,7 +11,7 @@
 #include "Potential.hh"
 #include "Globals.hpp"
 #include "Matrix.hpp"
-#include "EigenvalueSolver.hh"
+#include "LapackeEigenvalueSolver.hh"
 #include "RLException.hh"
 #include "MultiTasker.hpp"
 #include "CommandLineInterpreter.hh"

@@ -1,5 +1,5 @@
-#ifndef EigenvalueSolverTest_hh
-#define EigenvalueSolverTest_hh 1
+#ifndef LapackeEigenvalueSolverTest_hh
+#define LapackeEigenvalueSolverTest_hh 1
 
 #include <iostream>
 #include <assert.h>
@@ -12,7 +12,7 @@
 #include "Globals.hpp"
 #include "GenericUnitTest.hh"
 #include "Matrix.hpp"
-#include "EigenvalueSolver.hh"
+#include "LapackeEigenvalueSolver.hh"
 
 #include <algorithm>
 
@@ -20,7 +20,7 @@ using namespace std;
 
 #define EIGEN_EQUAL(a, b) (DBL_EQUAL(a, b) || DBL_EQUAL(a, -1.0*b))
 
-class EigenvalueSolverTest : public GenericUnitTest
+class LapackeEigenvalueSolverTest : public GenericUnitTest
 {
  public:
   int runUnitTests() const; ///Main function.

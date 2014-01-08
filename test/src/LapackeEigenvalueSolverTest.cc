@@ -1,13 +1,13 @@
-#include "EigenvalueSolverTest.hh"
+#include "LapackeEigenvalueSolverTest.hh"
 
-int EigenvalueSolverTest::TestCase1() const
+int LapackeEigenvalueSolverTest::TestCase1() const
 {
   ///Verify that the solver throws on a non-square matrix.
   CMatrix myMatrix(4,3);
   myMatrix.InitializeAll(ComplexDouble(4, 2));
   try
 	{
-	  EigenInformation myInfo = EigenvalueSolver::Solve(&myMatrix);
+	  EigenInformation myInfo = LapackeEigenvalueSolver::Solve(&myMatrix);
 	}
   catch(RLException & ex)
 	{
@@ -16,13 +16,13 @@ int EigenvalueSolverTest::TestCase1() const
   return 1;
 }
 
-int EigenvalueSolverTest::TestCase2() const
+int LapackeEigenvalueSolverTest::TestCase2() const
 {
   CMatrix myMatrix(3,3);
   myMatrix.InitializeAll(ComplexDouble(0, 0));
   for(int i = 0; i<3; ++i)
 	myMatrix.Element(i, i) = ComplexDouble(i+1, i);
-  EigenInformation myInfo = EigenvalueSolver::Solve(&myMatrix);
+  EigenInformation myInfo = LapackeEigenvalueSolver::Solve(&myMatrix);
   sort(myInfo.Eigenvalues.rbegin(), myInfo.Eigenvalues.rend(), CplexCompare);
 
   for(int i = 0; i<3; ++i)
@@ -42,7 +42,7 @@ int EigenvalueSolverTest::TestCase2() const
   return 0;
 }
 
-int EigenvalueSolverTest::TestCase3() const
+int LapackeEigenvalueSolverTest::TestCase3() const
 {
   CMatrix myMatrix(3, 3);
   myMatrix.InitializeAll(ComplexDouble(0, 0));
@@ -57,7 +57,7 @@ int EigenvalueSolverTest::TestCase3() const
   myMatrix.Element(2, 1) = ComplexDouble(0.097540404999410, 0.800280468888800);
   myMatrix.Element(2, 2) = ComplexDouble(0.957506835434298, 0.915735525189067);
 
-  EigenInformation myInfo = EigenvalueSolver::Solve(&myMatrix);
+  EigenInformation myInfo = LapackeEigenvalueSolver::Solve(&myMatrix);
 
 
   /*
@@ -127,9 +127,9 @@ int EigenvalueSolverTest::TestCase3() const
 }
 
 
-int EigenvalueSolverTest::runUnitTests() const
+int LapackeEigenvalueSolverTest::runUnitTests() const
 {
-  cout << "Running unit tests on EigenvalueSolver...";
+  cout << "Running unit tests on LapackeEigenvalueSolver...";
   cout << flush;
   int code1 = TestCase1();
   if(code1)
@@ -145,7 +145,7 @@ int EigenvalueSolverTest::runUnitTests() const
 }
 
 
-bool EigenvalueSolverTest::CplexCompare(const ComplexDouble & c1, const ComplexDouble & c2)
+bool LapackeEigenvalueSolverTest::CplexCompare(const ComplexDouble & c1, const ComplexDouble & c2)
 {
   if(real(c1) > real(c2))
 	return true;

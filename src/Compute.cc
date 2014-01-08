@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 	}
 
   myPrinter.Print(1, "Solving for eigenvalues and eigenvectors of the Hamiltonian.\n");
-  EigenInformation myInfo = EigenvalueSolver::Solve(HamiltonianMatrix);
+  EigenInformation myInfo = LapackeEigenvalueSolver::Solve(HamiltonianMatrix);
   
   
   myPrinter.Print(2, "Saving results to files.\n");
