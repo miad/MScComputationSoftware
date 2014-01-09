@@ -138,6 +138,16 @@ public:
   void SetCouplingCoefficient(double value
 							  );
 
+  bool GetHarmonicOverride() const;
+  double GetHarmonicAngularFrequency() const;
+  uint GetHarmonicNmax() const;
+  void SetHarmonicOverride(bool value
+						   );
+  void SetHarmonicAngularFrequency(double value
+								   );
+  void SetHarmonicNmax(uint value
+					   );
+
 
 private:
   void ReadOutputFiles(Setting & output
@@ -165,7 +175,8 @@ private:
   void ReadMultiParticleData(Setting & computation
 							 );
 
-
+  void ReadHarmonicOscillator(Setting & computation
+						 );
 private:
 
   vector<ComplexDouble> extraInterestingPoints; ///An extra filtering option for artificially inducing extra InterestingPoints to the output, main use is quality control purposes.
@@ -185,6 +196,12 @@ private:
 
   uint numberOfParticles; ///Number of particles in many-particle case.
   double couplingCoefficient; ///Coupling coefficient for many-particle case.
+
+
+  bool harmonicOverride; ///Harmonic override (use harmonic basis instead)
+  double harmonicAngularFrequency; ///Harmonic angular frequency (use only in case of override)
+  uint harmonicNmax; ///Use only in case of override.
+
 
 
   Potential * potential; ///Potential function. Default: a piecewise potential with 3 nonzero regions.

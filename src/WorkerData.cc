@@ -4,14 +4,15 @@ WorkerData::WorkerData(CMatrix * _HamiltonianMatrix,
 					   ParametrizedCurve * _myCurve,
 					   Potential * _myPotential,
 					   vector<BasisFunction> _myBasisFunctions,
-					   unsigned int _numberOfGLPoints, 
+					   uint _numberOfGLPoints, 
 					   double _hbarTimesLambda, 
 					   double _massOverLambda2, 
 					   double _couplingCoefficient,
-					   unsigned int _m1,
-					   unsigned int _m2,
-					   unsigned int _n1,
-					   unsigned int _n2 
+					   double _harmonicAngularFrequency,
+					   uint _m1,
+					   uint _m2,
+					   uint _n1,
+					   uint _n2 
 					   )
   :HamiltonianMatrix(_HamiltonianMatrix),
    myCurve(_myCurve),
@@ -21,6 +22,7 @@ WorkerData::WorkerData(CMatrix * _HamiltonianMatrix,
    hbarTimesLambda(_hbarTimesLambda),
    massOverLambda2(_massOverLambda2),
    couplingCoefficient(_couplingCoefficient),
+   harmonicAngularFrequency(_harmonicAngularFrequency),
    m1(_m1),m2(_m2),n1(_n1),n2(_n2)
 { 
   // Some basic checks.

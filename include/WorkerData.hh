@@ -24,28 +24,30 @@ public:
 			 ParametrizedCurve * _myCurve, ///Pointer to the ParametrizedCurve in use.
 			 Potential * _myPotential, ///Pointer to the potential in use. NOTE: may not be threadsafe, should be checked (due to underlying function evaluator class).
 			 vector<BasisFunction> _myBasisFunctions, ///Basis functions in use.
-			 unsigned int _numberOfGLPoints, ///Number of GL points in use.
+			 uint _numberOfGLPoints, ///Number of GL points in use.
 			 double _hbarTimesLambda, ///Used for k-E transformation.
 			 double _massOverLambda2, ///Used for k-E transformation.
 			 double _couplingCoefficient, ///Used only in 2-particle computations.
-			 unsigned int _m1, /// Specifies the submatrix to use.
-			 unsigned int _m2, /// Specifies the submatrix to use.
-			 unsigned int _n1, /// Specifies the submatrix to use.
-			 unsigned int _n2 /// Specifies the submatrix to use.
+			 double _harmonicAngularFrequency, ///Used only on harmonic override.
+			 uint _m1, /// Specifies the submatrix to use.
+			 uint _m2, /// Specifies the submatrix to use.
+			 uint _n1, /// Specifies the submatrix to use.
+			 uint _n2 /// Specifies the submatrix to use.
 			 ); ///Constructor, basically initialize all values.
   
   CMatrix * HamiltonianMatrix; ///Pointer to the Hamilton matrix in use.
   ParametrizedCurve * myCurve; ///Pointer to the ParametrizedCurve in use.
   Potential * myPotential; ///Pointer to the potential in use. NOTE: may not be threadsafe, should be checked (due to underlying function evaluator class).
   vector<BasisFunction> myBasisFunctions;
-  unsigned int numberOfGLPoints; ///Number of GL points in use.
+  uint numberOfGLPoints; ///Number of GL points in use.
   double hbarTimesLambda; /// Used for k-E transformation.
   double massOverLambda2; /// Used for k-E transformation.
   double couplingCoefficient; ///The coupling coefficient in 2-particle interactions.
-  unsigned int m1; /// Specifies the submatrix to use.
-  unsigned int m2; /// Specifies the submatrix to use.
-  unsigned int n1; /// Specifies the submatrix to use.
-  unsigned int n2; /// Specifies the submatrix to use.
+  double harmonicAngularFrequency;
+  uint m1; /// Specifies the submatrix to use.
+  uint m2; /// Specifies the submatrix to use.
+  uint n1; /// Specifies the submatrix to use.
+  uint n2; /// Specifies the submatrix to use.
 };
 
 

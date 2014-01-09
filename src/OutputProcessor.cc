@@ -283,11 +283,19 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex() const
 	  ComplexDouble kToPrint = EnergyToKValue(*it);
 
 	  ///Now apply filter rule.
+
+
+	  ///All k-values on the imaginary axis are interesting.
 	  if(imag(kToPrint) > 1E-5 && abs(arg(kToPrint)-PI/2) < 1E-2 )
-		toReturn.push_back(eigenCounter);
+		{
+		  toReturn.push_back(eigenCounter);
+		}
+
+	  ///Right half plane points might be interesting.
 	  else if(real(kToPrint) > 1E-5 )
 		{
 		  bool tooClose = false;
+		  bool tooRight = true; ///Ignore rightmost points: they are never interesting.
 		  for(uint i = 0; i<filterVector.size(); ++i)
 			{
 			  double d1 = abs(filterVector[i] - kToPrint);
@@ -306,8 +314,13 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex() const
 				  tooClose = true;
 				  break;
 				}
+			  if(real(filterVector[i]) > real(kToPrint))
+				{
+				  tooRight = false;
+				}
+
 			}
-		  if(!tooClose)
+		  if(!tooClose && !tooRight)
 			toReturn.push_back(eigenCounter);
 		}
 	  ++eigenCounter;

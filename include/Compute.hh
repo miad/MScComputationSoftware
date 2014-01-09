@@ -44,6 +44,8 @@ void * EvaluateSubMatrixOneParticle(WorkerData w);
 
 void * EvaluateSubMatrixTwoParticles(WorkerData w);
 
+void * EvaluateSubMatrixOneParticleHarmonic(WorkerData w);
+
 
 CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, 
 							   VerbosePrinter & myPrinter);

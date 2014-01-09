@@ -44,18 +44,7 @@ int main(int argc, char *argv[])
   VerbosePrinter myPrinter(myConfiguration.GetVerbosityLevel());
   myPrinter.Print(3, "Initializing...\n");
 
-
-
-
-  vector<BasisFunction> myBasisFunctions = myConfiguration.GetBasisFunctions();
-  myPrinter.Print(5, "Using %d basis functions:", myBasisFunctions.size());
-  for(vector<BasisFunction>::const_iterator it = myBasisFunctions.begin(); it!=myBasisFunctions.end(); ++it)
-	{
-	  myPrinter.Print(5, "%s %s", ((it==myBasisFunctions.begin())?"":","),it->GetName());
-	}
-  myPrinter.Print(5, ".\n");
-
-
+  
   CMatrix * HamiltonianMatrix = ConstructHamiltonian(myConfiguration, myPrinter);
 
   uint nonzero = 0;
@@ -112,13 +101,22 @@ int main(int argc, char *argv[])
 
 CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePrinter & myPrinter)
 {
+  vector<BasisFunction> myBasisFunctions = myConfiguration.GetBasisFunctions();
+  myPrinter.Print(5, "Using %d basis functions:", myBasisFunctions.size());
+  for(vector<BasisFunction>::const_iterator it = myBasisFunctions.begin(); it!=myBasisFunctions.end(); ++it)
+	{
+	  myPrinter.Print(5, "%s %s", ((it==myBasisFunctions.begin())?"":","),it->GetName());
+	}
+  myPrinter.Print(5, ".\n");
+
+
+
+
   uint numberOfParticles = myConfiguration.GetNumberOfParticles();
   if(numberOfParticles < 1 || numberOfParticles > 2)
 	throw RLException("Invalid number of particles.");
   myPrinter.Print(3, "Number of particles: %d\n", numberOfParticles);
   
-  vector<BasisFunction> myBasisFunctions = myConfiguration.GetBasisFunctions();
-
   uint numberOfGLPoints = myConfiguration.GetKCurve()->GetTotalNumberOfGLPoints();
   uint numberOfBasisFunctions =  myBasisFunctions.size();
   uint MatrixSize = numberOfGLPoints * numberOfBasisFunctions;
@@ -174,12 +172,15 @@ CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePri
 										 numberOfGLPoints,
 										 myConfiguration.GetSpecificUnits()->GetHbarTimesLambda(),
 										 myConfiguration.GetSpecificUnits()->GetMassOverLambda2(),
-										 0,
+										 myConfiguration.GetCouplingCoefficient(),
+										 myConfiguration.GetHarmonicAngularFrequency(),
 										 i,
 										 i+1,
-										 myConfiguration.GetCouplingCoefficient(),
-										 MatrixSize)
+										 0,
+										 MatrixSize
+										 )
 							  );
+
 	}
   myMultiTasker->LaunchThreads();
   myMultiTasker->PauseUntilOutputIsGenerated();

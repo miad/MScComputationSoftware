@@ -4,7 +4,8 @@ ComputeConfig::ComputeConfig()
   :numberOfThreads(1), verbosityLevel(0), autoPlotPotential(false), autoPlotKCurve(false),
    autoPlotWavefunctions(false),
    minWavefunctionX(-10), maxWavefunctionX(10), wavefunctionStepsizeX(0.01),
-   numberOfParticles(2), couplingCoefficient(0.0)
+   numberOfParticles(2), couplingCoefficient(0.0),
+   harmonicOverride(false), harmonicAngularFrequency(0.0), harmonicNmax(1)
 {
   outputFilenames.Add("KCurveFile", "KCurve.dat");
   outputFilenames.Add("KFoundFile", "KFound.dat");
@@ -147,6 +148,7 @@ void ComputeConfig::ReadFile(const char * fileName)
 
 
   ReadSpecificUnits(computation);
+  ReadHarmonicOscillator(computation);
   ReadExpectedMatrixType(computation);
 
   ReadBasisFunctions(computation);
@@ -289,6 +291,11 @@ void ComputeConfig::WriteFile(const char * fileName) const
   units.add("MassOverLambda2", Setting::TypeFloat) = specificUnits.GetMassOverLambda2();
   units.add("LengthUnitName", Setting::TypeString) = specificUnits.GetLengthUnitName();
   units.add("EnergyUnitName", Setting::TypeString) = specificUnits.GetEnergyUnitName();
+
+  Setting & oscillator = root["Computation"].add("HarmonicOscillator", Setting::TypeGroup);
+  oscillator.add("Override", Setting::TypeBoolean) = harmonicOverride;
+  oscillator.add("AngularFrequency", Setting::TypeFloat) = harmonicAngularFrequency;
+  oscillator.add("Nmax", Setting::TypeInt) = (int)harmonicNmax;
 
 
   Setting & basFun = root["Computation"].add("BasisFunctions", Setting::TypeArray);
@@ -634,6 +641,30 @@ void ComputeConfig::ReadSpecificUnits(Setting & computation)
   specificUnits = SpecificUnits(hbarTimesLambda, massOverLambda2, lengthUnitName, energyUnitName);
 }
 
+void ComputeConfig::ReadHarmonicOscillator(Setting & computation)
+{
+  if (! computation.exists("HarmonicOscillator") || !computation["HarmonicOscillator"].isGroup())
+	{
+	  throw RLException("HarmonicOscillator group not properly specified in settings file.");
+	}
+  
+  Setting & oscillator = computation["HarmonicOscillator"];
+
+  if( ! oscillator.lookupValue("Override", harmonicOverride) )
+	{
+	  throw RLException("Could not locate harmonic override.");
+	}
+  if( ! oscillator.lookupValue("AngularFrequency", harmonicAngularFrequency ) )
+	{
+	  throw RLException("Could not locate harmonic angular frequency.");
+	}
+  if( ! oscillator.lookupValue("Nmax", harmonicNmax) )
+	{
+	  throw RLException("Could not locate harmonicNmax");
+	}
+}
+
+
 
 void ComputeConfig::ReadPotential(Setting & computation)
 {
@@ -869,4 +900,34 @@ uint ComputeConfig::GetNumberOfParticles() const
 double ComputeConfig::GetCouplingCoefficient() const
 {
   return couplingCoefficient;
+}
+
+bool ComputeConfig::GetHarmonicOverride() const
+{
+  return harmonicOverride;
+}
+
+double ComputeConfig::GetHarmonicAngularFrequency() const
+{
+  return harmonicAngularFrequency;
+}
+
+uint ComputeConfig::GetHarmonicNmax() const
+{
+  return harmonicNmax;
+}
+
+void ComputeConfig::SetHarmonicOverride(bool value)
+{
+  harmonicOverride = value;
+}
+
+void ComputeConfig::SetHarmonicAngularFrequency(double value)
+{
+  harmonicAngularFrequency = value;
+}
+
+void ComputeConfig::SetHarmonicNmax(uint value)
+{
+  harmonicNmax = value;
 }
