@@ -87,11 +87,11 @@ int LapackeEigenvalueSolverTest::TestCase3() const
 			return 3;
 		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][0], ComplexDouble(0.485282228366207, -0.296708052870155)))
 			return 4;
-		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][1], ComplexDouble(0.338848858887965 - 0.308475666349372i)))
+		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][1], ComplexDouble(0.338848858887965, - 0.308475666349372)))
 			{
 			  return 5;
 			}
-		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][2], ComplexDouble(0.683000515588799 + 0.000000000000000i)))
+		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][2], ComplexDouble(0.683000515588799, 0.000000000000000)))
 			return 6;
 		  
 		}

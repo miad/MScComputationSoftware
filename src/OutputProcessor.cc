@@ -205,15 +205,15 @@ void OutputProcessor::WriteInterestingKPointsVerbosely() const
 	{
 	  if(imag(*it) > 1E-5 && abs(arg(*it)-PI/2) < 1E-2 )
 		{
-		  vPrint(1,"Bound state: k = %+6.10lfi [%s]^(-1)    =>   E = %+6.10lf %s \n", imag(*it), config->GetSpecificUnits()->GetLengthUnitName().c_str(), real(KValueToEnergy(*it)), config->GetSpecificUnits()->GetEnergyUnitName().c_str());
+		  vPrint(1,"Bound state: k = %+6.10fi [%s]^(-1)    =>   E = %+6.10f %s \n", imag(*it), config->GetSpecificUnits()->GetLengthUnitName().c_str(), real(KValueToEnergy(*it)), config->GetSpecificUnits()->GetEnergyUnitName().c_str());
 		}
 	  else if((imag(*it) < -1E-6 && arg(*it) < 0.0 && arg(*it) > -1.0*PI/2 ))
 		{
-		  vPrint(1,"Resonant state: k = [ %+6.10lf %+6.10lfi ] [%s]^(-1)    =>    E = [ %+6.10lf %+6.10lfi] %s\n", real(*it), imag(*it), config->GetSpecificUnits()->GetLengthUnitName().c_str(), real(KValueToEnergy(*it)), imag(KValueToEnergy(*it)), config->GetSpecificUnits()->GetEnergyUnitName().c_str());
+		  vPrint(1,"Resonant state: k = [ %+6.10f %+6.10fi ] [%s]^(-1)    =>    E = [ %+6.10f %+6.10fi] %s\n", real(*it), imag(*it), config->GetSpecificUnits()->GetLengthUnitName().c_str(), real(KValueToEnergy(*it)), imag(KValueToEnergy(*it)), config->GetSpecificUnits()->GetEnergyUnitName().c_str());
 		}
 	  else
 		{
-		  vPrint(1,"Other state: k = %+6.10lf %+6.10lfi\n", real(*it), imag(*it));
+		  vPrint(1,"Other state: k = %+6.10f %+6.10fi\n", real(*it), imag(*it));
 		}
 	}
 
@@ -418,7 +418,7 @@ void OutputProcessor::WriteInterestingOneParticleWavefunctionsToFile() const
 		{
 		  sqSum += pow(abs(*ip), 2) * config->GetWavefunctionStepsizeX();
 		}
-	  vPrint(2, "k = %+2.5lf%+2.5lf => Graph area: %+13.10e\n", real(EnergyToKValue(eigenData->Eigenvalues[*it])), imag(EnergyToKValue(eigenData->Eigenvalues[*it])), sqSum);
+	  vPrint(2, "k = %+2.5f%+2.5f => Graph area: %+13.10e\n", real(EnergyToKValue(eigenData->Eigenvalues[*it])), imag(EnergyToKValue(eigenData->Eigenvalues[*it])), sqSum);
 
 	}
 
@@ -429,7 +429,7 @@ void OutputProcessor::WriteInterestingOneParticleWavefunctionsToFile() const
   fprintf(fout, "#x-value");
   for(uint j = 0; j<wavefunctionValues.size(); ++j)
 	{
-	  fprintf(fout, " Real_wave_%d(k=%+2.5lf%+2.5lfi) Imag_wave_%d", j, real(interestingVector[j]), imag(interestingVector[j]),j);
+	  fprintf(fout, " Real_wave_%d(k=%+2.5f%+2.5fi) Imag_wave_%d", j, real(interestingVector[j]), imag(interestingVector[j]),j);
 	}
   fprintf(fout, "\n");
   uint i = -1;
@@ -454,12 +454,12 @@ void OutputProcessor::WriteInterestingOneParticleWavefunctionsToFile() const
 	  double totalSum = -1;
 	  vector<double> basisRatio = GetOneParticleBasisRatio(*it, totalSum);
 
-	  vPrint(3, "Basis element decomposition for k = %+10.6lf%+10.6lfi:\n", real(interestingVector[loopCounter]), imag(interestingVector[loopCounter]));
+	  vPrint(3, "Basis element decomposition for k = %+10.6f%+10.6fi:\n", real(interestingVector[loopCounter]), imag(interestingVector[loopCounter]));
 	  ++loopCounter;
 	  
 	  for(uint i = 0; i<basisRatio.size(); ++i)
 		{
-		  vPrint(3, "\t%s : \t%3.2lf%%\n", myBasisFunctions[i].GetName(), basisRatio[i]*100);
+		  vPrint(3, "\t%s : \t%3.2f%%\n", myBasisFunctions[i].GetName(), basisRatio[i]*100);
 		}
 	  vPrint(3, "Element square sum: %+13.10e\n\n", totalSum);
 	}
@@ -654,7 +654,7 @@ void OutputProcessor::WriteInterestingTwoParticleWavefunctionsToFile() const
 			  sqSum += pow(abs(*iq), 2) * pow(config->GetWavefunctionStepsizeX(),2);
 			}
 		}
-	  vPrint(2, "k = %+2.5lf%+2.5lf => Graph area: %+13.10e\n", real(EnergyToKValue(eigenData->Eigenvalues[*it])), imag(EnergyToKValue(eigenData->Eigenvalues[*it])), sqSum);
+	  vPrint(2, "k = %+2.5f%+2.5f => Graph area: %+13.10e\n", real(EnergyToKValue(eigenData->Eigenvalues[*it])), imag(EnergyToKValue(eigenData->Eigenvalues[*it])), sqSum);
 
 	}
 
@@ -665,7 +665,7 @@ void OutputProcessor::WriteInterestingTwoParticleWavefunctionsToFile() const
   fprintf(fout, "#x1 #x2");
   for(uint j = 0; j<wavefunctionValues.size(); ++j)
 	{
-	  fprintf(fout, " Abs2_wave_%d(k=%+2.5lf%+2.5lfi)", j, real(interestingVector[j]), imag(interestingVector[j]));
+	  fprintf(fout, " Abs2_wave_%d(k=%+2.5f%+2.5fi)", j, real(interestingVector[j]), imag(interestingVector[j]));
 	}
   fprintf(fout, "\n");
   uint i = -1;

@@ -179,12 +179,12 @@ private:
   bool autoPlotKCurve; ///Auto plot K curve .Default: false
   bool autoPlotWavefunctions; ///Auto plot wavefunctions. Default: false
 
-  double minWavefunctionX;
-  double maxWavefunctionX;
-  double wavefunctionStepsizeX;
+  double minWavefunctionX; ///Min wavefunction x.
+  double maxWavefunctionX; ///Max wavefunction x.
+  double wavefunctionStepsizeX; ///Wavefunction stepsize x.
 
-  uint numberOfParticles;
-  double couplingCoefficient;
+  uint numberOfParticles; ///Number of particles in many-particle case.
+  double couplingCoefficient; ///Coupling coefficient for many-particle case.
 
 
   Potential * potential; ///Potential function. Default: a piecewise potential with 3 nonzero regions.
