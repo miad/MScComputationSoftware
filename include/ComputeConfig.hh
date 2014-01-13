@@ -16,6 +16,7 @@
 #include "ParametrizedPotential.hh"
 #include "OutputFilenames.hh"
 #include "SpecificUnits.hh"
+#include "HarmonicBasisFunction.hh"
 
 
 using namespace std;
@@ -75,6 +76,10 @@ public:
   const vector<BasisFunction> & GetBasisFunctions() const;
 
   const vector<ComplexDouble> & GetExtraInterestingPoints() const;
+
+  HarmonicBasisFunction * GetHarmonicBasisFunction() const;
+
+  void SetHarmonicBasisFunction(HarmonicBasisFunction * value);
 
   ExpectedMatrixType GetExpectedMatrixType() const;
 
@@ -139,12 +144,11 @@ public:
 							  );
 
   bool GetHarmonicOverride() const;
-  double GetHarmonicAngularFrequency() const;
   uint GetHarmonicNmax() const;
   void SetHarmonicOverride(bool value
 						   );
-  void SetHarmonicAngularFrequency(double value
-								   );
+
+
   void SetHarmonicNmax(uint value
 					   );
 
@@ -199,10 +203,9 @@ private:
 
 
   bool harmonicOverride; ///Harmonic override (use harmonic basis instead)
-  double harmonicAngularFrequency; ///Harmonic angular frequency (use only in case of override)
   uint harmonicNmax; ///Use only in case of override.
 
-
+  HarmonicBasisFunction * myHarmonicBasisFunction; ///Harmonic basis function. Use is obvious.
 
   Potential * potential; ///Potential function. Default: a piecewise potential with 3 nonzero regions.
   ParametrizedCurve * kCurve; ///KCurve. Default: a somewhat standard Berggren curve.

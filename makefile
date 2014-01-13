@@ -1,6 +1,10 @@
 CC:= g++
 
-CCFLAGS:=  -pthread -Wall -fPIC -O3 -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -ffast-math -fstack-protector-all -std=c++11 -pedantic
+CCFLAGS:=  -pthread -Wall -fPIC -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -fstack-protector-all -std=c++11 -pedantic -g
+
+CCOFLAGS:= -fexpensive-optimizations -fira-loop-pressure 
+
+CCFLAGS+=$(CCOFLAGS)
 
 
 GLOBALDEPEND:= $(wildcard include/*.hpp)

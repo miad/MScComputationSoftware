@@ -8,6 +8,7 @@
 #include <vector>
 #include "BasisFunction.hh"
 #include "RLException.hh"
+#include "HarmonicBasisFunction.hh"
 
 
 using namespace std;
@@ -28,12 +29,14 @@ public:
 			 double _hbarTimesLambda, ///Used for k-E transformation.
 			 double _massOverLambda2, ///Used for k-E transformation.
 			 double _couplingCoefficient, ///Used only in 2-particle computations.
-			 double _harmonicAngularFrequency, ///Used only on harmonic override.
+			 HarmonicBasisFunction * _harmonicBasisFunction,
 			 uint _m1, /// Specifies the submatrix to use.
 			 uint _m2, /// Specifies the submatrix to use.
 			 uint _n1, /// Specifies the submatrix to use.
 			 uint _n2 /// Specifies the submatrix to use.
 			 ); ///Constructor, basically initialize all values.
+
+  ~WorkerData();
   
   CMatrix * HamiltonianMatrix; ///Pointer to the Hamilton matrix in use.
   ParametrizedCurve * myCurve; ///Pointer to the ParametrizedCurve in use.
@@ -43,7 +46,7 @@ public:
   double hbarTimesLambda; /// Used for k-E transformation.
   double massOverLambda2; /// Used for k-E transformation.
   double couplingCoefficient; ///The coupling coefficient in 2-particle interactions.
-  double harmonicAngularFrequency;
+  HarmonicBasisFunction * myHarmonicBasisFunction; ///Harmonic basis function if we are integrating harmonically.
   uint m1; /// Specifies the submatrix to use.
   uint m2; /// Specifies the submatrix to use.
   uint n1; /// Specifies the submatrix to use.

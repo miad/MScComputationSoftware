@@ -9,6 +9,7 @@
 #include <cstring>
 #include <map>
 #include <iostream>
+#include "HermiteEvaluator.hh"
 
 using namespace std;
 
@@ -32,7 +33,7 @@ public:
   
 private:
   FunctionParser_cd fp; ///Function parser used to parse.
-  short type; ///Indicates the type (sin, cos, exp, ...)
+
   string name; ///Contains a string representing the type of basis function. This is the same as was sent to the constructor.
 };
 

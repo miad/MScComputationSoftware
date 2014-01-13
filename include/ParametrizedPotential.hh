@@ -11,6 +11,7 @@
 #include "Globals.hpp"
 #include "Potential.hh"
 #include "LegendreRule.hh"
+#include "BasisFunction.hh"
 
 using namespace std;
 
@@ -55,7 +56,7 @@ public:
 							   ComplexDouble & k1, ///First k-value.
 							   ComplexDouble & k2 ///Second k-value.
 							   ) ; ///Integrate the basis functions over the potential to create V(k1, k2). 
-  
+
   
   unsigned long GetPrecision() const; ///Returns the precision.
 

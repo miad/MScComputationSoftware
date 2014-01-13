@@ -21,7 +21,7 @@ vector<pair<double, double> > LegendreRule::GetRule(unsigned int numberOfPoints,
 
 ///The rest of this file contains functions imported from legendre_rule_fast.cpp
 ///They are authored by the people mentioned.
-///The validity of these algorithms has, this far, not been verified rigorously.
+///The validity of these algorithms has, this far, not been verified rigorously by me.
 /// /Rikard 2013-11-01
 
 
@@ -292,6 +292,9 @@ void LegendreRule::legendre_compute_glr1 ( int n, double *x, double *w )
     x[k] = - x[n-1-k];
     w[k] = w[n-1-k];
   }
+  delete [] u;
+  delete [] up;
+
   return;
 }
 //****************************************************************************80
@@ -388,6 +391,9 @@ void LegendreRule::legendre_compute_glr2 ( double pn0, int n, double *x1, double
     *x1 = *x1 - ts_mult ( u, *x1, m ) / ts_mult ( up, *x1, m-1 );
   }
   *d1 = ts_mult ( up, *x1, m-1 );
+
+  delete [] up;
+  delete [] u;
 
   return;
 }

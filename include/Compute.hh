@@ -5,10 +5,12 @@
 #include <stdlib.h>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 #include <math.h>
 #include <unistd.h>
 
 #include "Potential.hh"
+#include "ParametrizedPotential.hh"
 #include "Globals.hpp"
 #include "Matrix.hpp"
 #include "LapackeEigenvalueSolver.hh"
@@ -26,14 +28,14 @@
 #include "OutputProcessor.hh"
 #include "SpecificUnits.hh"
 #include "ExternalLauncher.hh"
+#include "HermiteEvaluator.hh"
+#include "HarmonicBasisFunction.hh"
 
 
 using namespace std;
 
 
 #define TMP_LIST_STR(n, s) list<string> n; n.push_back(s);
-
-#define DELTA(a, b) ((double)(a==b))
 
 
 int main(int argc, char *argv[]);
@@ -45,7 +47,6 @@ void * EvaluateSubMatrixOneParticle(WorkerData w);
 void * EvaluateSubMatrixTwoParticles(WorkerData w);
 
 void * EvaluateSubMatrixOneParticleHarmonic(WorkerData w);
-
 
 CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, 
 							   VerbosePrinter & myPrinter);

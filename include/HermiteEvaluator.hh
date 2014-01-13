@@ -18,9 +18,9 @@ public:
 
   static void DeInit(); ///Free allocated memory.
 
-  static double HermiteH(uint n,
-						 double x
-						 );
+  static long double HermiteH(uint n,
+							  long double x
+							  );
 
 protected:
   static void FillTable(uint nMax
@@ -30,7 +30,7 @@ protected:
 
 private:
   static bool autoResize; ///Tells if we should automatically expand the coefficient table or throw an exception. Pros of auto-resize: convenience. Cons: not thread safe, the function will have side-effects.
-  static vector<vector<double> > polyCoefficients;
+  static vector<vector<long double> > polyCoefficients;
   HermiteEvaluator() {} ///Prevent instantiation.
 };
 

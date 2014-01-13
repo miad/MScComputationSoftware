@@ -5,7 +5,7 @@ ComputeConfig::ComputeConfig()
    autoPlotWavefunctions(false),
    minWavefunctionX(-10), maxWavefunctionX(10), wavefunctionStepsizeX(0.01),
    numberOfParticles(2), couplingCoefficient(0.0),
-   harmonicOverride(false), harmonicAngularFrequency(0.0), harmonicNmax(1)
+   harmonicOverride(false),harmonicNmax(1)
 {
   outputFilenames.Add("KCurveFile", "KCurve.dat");
   outputFilenames.Add("KFoundFile", "KFound.dat");
@@ -23,6 +23,8 @@ ComputeConfig::ComputeConfig()
   stdPotential->RecomputeLegendreRules();
 
   potential = stdPotential;
+
+  myHarmonicBasisFunction = new HarmonicBasisFunction(0, 1, potential, &specificUnits);
 
   kCurve = new ParametrizedCurve(-1,1);
   kCurve->AddValue(0.0);
@@ -56,6 +58,11 @@ ComputeConfig::~ComputeConfig()
 	{
 	  delete kCurve;
 	  kCurve = NULL;
+	}
+  if(myHarmonicBasisFunction != NULL)
+	{
+	  delete myHarmonicBasisFunction;
+	  myHarmonicBasisFunction = NULL;
 	}
 }
 
@@ -148,13 +155,16 @@ void ComputeConfig::ReadFile(const char * fileName)
 
 
   ReadSpecificUnits(computation);
-  ReadHarmonicOscillator(computation);
   ReadExpectedMatrixType(computation);
 
   ReadBasisFunctions(computation);
   ReadMultiParticleData(computation);
   ReadPotential(computation);
   ReadKCurve(computation);
+
+  ReadHarmonicOscillator(computation);
+
+
   // Read the file. If there is an error, report it and exit.
 }
 
@@ -291,11 +301,13 @@ void ComputeConfig::WriteFile(const char * fileName) const
   units.add("MassOverLambda2", Setting::TypeFloat) = specificUnits.GetMassOverLambda2();
   units.add("LengthUnitName", Setting::TypeString) = specificUnits.GetLengthUnitName();
   units.add("EnergyUnitName", Setting::TypeString) = specificUnits.GetEnergyUnitName();
+  units.add("TimeToHertzFactor", Setting::TypeFloat) = specificUnits.GetTimeToHertzFactor();
 
   Setting & oscillator = root["Computation"].add("HarmonicOscillator", Setting::TypeGroup);
   oscillator.add("Override", Setting::TypeBoolean) = harmonicOverride;
-  oscillator.add("AngularFrequency", Setting::TypeFloat) = harmonicAngularFrequency;
   oscillator.add("Nmax", Setting::TypeInt) = (int)harmonicNmax;
+  oscillator.add("AngularFrequency", Setting::TypeFloat) = myHarmonicBasisFunction->GetOmega();
+  oscillator.add("Xmin", Setting::TypeFloat) = myHarmonicBasisFunction->GetXmin();
 
 
   Setting & basFun = root["Computation"].add("BasisFunctions", Setting::TypeArray);
@@ -620,7 +632,7 @@ void ComputeConfig::ReadSpecificUnits(Setting & computation)
 	}
   
   Setting & units = computation["Units"];
-  double hbarTimesLambda, massOverLambda2;
+  double hbarTimesLambda, massOverLambda2, timeToHertzFactor;
   if( ! units.lookupValue("HbarTimesLambda", hbarTimesLambda) )
 	{
 	  throw RLException("HbarTimesLambda unit not properly specified.");
@@ -629,6 +641,11 @@ void ComputeConfig::ReadSpecificUnits(Setting & computation)
 	{
 	  throw RLException("MassOverLambda2 unit not properly specified.");
 	}
+  if(! units.lookupValue("TimeToHertzFactor", timeToHertzFactor) )
+	{
+	  throw RLException("TimeToHertzFactor undefined.");
+	}
+
   string lengthUnitName, energyUnitName;
   if( ! units.lookupValue("LengthUnitName", lengthUnitName) )
 	{
@@ -638,7 +655,7 @@ void ComputeConfig::ReadSpecificUnits(Setting & computation)
 	{
 	  throw RLException("Could not find EnergyUnitName in config file.");
 	}
-  specificUnits = SpecificUnits(hbarTimesLambda, massOverLambda2, lengthUnitName, energyUnitName);
+  specificUnits = SpecificUnits(hbarTimesLambda, massOverLambda2, lengthUnitName, energyUnitName, timeToHertzFactor);
 }
 
 void ComputeConfig::ReadHarmonicOscillator(Setting & computation)
@@ -654,14 +671,24 @@ void ComputeConfig::ReadHarmonicOscillator(Setting & computation)
 	{
 	  throw RLException("Could not locate harmonic override.");
 	}
-  if( ! oscillator.lookupValue("AngularFrequency", harmonicAngularFrequency ) )
-	{
-	  throw RLException("Could not locate harmonic angular frequency.");
-	}
   if( ! oscillator.lookupValue("Nmax", harmonicNmax) )
 	{
 	  throw RLException("Could not locate harmonicNmax");
 	}
+  double harmonicAngularFrequency, harmonicXMin;
+  if( ! oscillator.lookupValue("AngularFrequency", harmonicAngularFrequency ) )
+	{
+	  throw RLException("Could not locate harmonic angular frequency.");
+	}
+  if( ! oscillator.lookupValue("Xmin", harmonicXMin) )
+	{
+	  throw RLException("Could not locate harmonic Xmin");
+	}
+  if(myHarmonicBasisFunction)
+	{
+	  delete myHarmonicBasisFunction;
+	}
+  myHarmonicBasisFunction = new HarmonicBasisFunction(harmonicXMin, harmonicAngularFrequency, potential, &specificUnits);
 }
 
 
@@ -907,11 +934,6 @@ bool ComputeConfig::GetHarmonicOverride() const
   return harmonicOverride;
 }
 
-double ComputeConfig::GetHarmonicAngularFrequency() const
-{
-  return harmonicAngularFrequency;
-}
-
 uint ComputeConfig::GetHarmonicNmax() const
 {
   return harmonicNmax;
@@ -922,12 +944,17 @@ void ComputeConfig::SetHarmonicOverride(bool value)
   harmonicOverride = value;
 }
 
-void ComputeConfig::SetHarmonicAngularFrequency(double value)
-{
-  harmonicAngularFrequency = value;
-}
-
 void ComputeConfig::SetHarmonicNmax(uint value)
 {
   harmonicNmax = value;
+}
+
+HarmonicBasisFunction * ComputeConfig::GetHarmonicBasisFunction() const
+{
+  return myHarmonicBasisFunction;
+}
+
+void ComputeConfig::SetHarmonicBasisFunction(HarmonicBasisFunction * value)
+{
+  myHarmonicBasisFunction = value;
 }

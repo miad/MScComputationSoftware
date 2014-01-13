@@ -13,6 +13,13 @@
 #include "ComputeConfig.hh"
 #include "EigenInformation.hh"
 #include "Matrix.hpp"
+#include "MultiTasker.hpp"
+#include "WavefunctionTwoParticleWorkerData.hh"
+#include "RLMacros.hpp"
+
+  
+
+
 
 /** This class will process the results from computations, and save it in the correct format in the correct output files. In order to do so it has to do some filtering etc. of points.
 
@@ -38,6 +45,9 @@ public:
 private:
 
 
+  static pair<uint, double> ComputeWavefunctionTwoParticle(WavefunctionTwoParticleWorkerData *workData
+										);
+
 
   // Performs certain portions of the output writing, etc.
   void WritePotentialToFile() const; ///Writes output.
@@ -48,6 +58,7 @@ private:
   void WriteInterestingKPointsToFile() const; ///Writes output.
   void WriteInterestingOneParticleWavefunctionsToFile() const; ///Writes output.
   void WriteInterestingTwoParticleWavefunctionsToFile() const;
+  void WriteInterestingHarmonicOneParticleWavefunctionsToFile() const;
 
 
   // Auxiliary functions.
@@ -56,7 +67,7 @@ private:
 
   vector<ComplexDouble> FindInterestingKPoints() const; ///Returns the interesting K points by value.
 
-  vector<ComplexDouble> GetReshapedEigenvector(uint index ///Index.
+  vector<ComplexDouble> * GetReshapedEigenvector(uint index ///Index.
 											   ) const; ///Normalize the eigenvector with respect to another norm.
 
 

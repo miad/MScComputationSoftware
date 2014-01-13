@@ -15,7 +15,8 @@ public:
   SpecificUnits(double _hbarTimesLambda, ///Value
 				double _massOverLambda2,  ///Value
 				string _lengthUnitName, ///Value 
-				string _energyUnitName ///Value
+				string _energyUnitName, ///Value
+				double timeToHertzFactor ///Value
 				); ///Constructor.
   
   SpecificUnits(); ///Default constructor. 
@@ -26,6 +27,8 @@ public:
   string GetLengthUnitName() const; /// Getter.
   string GetEnergyUnitName() const; /// Getter.
 
+  double GetTimeToHertzFactor() const;
+
 
 private:
   double hbarTimesLambda; ///The value of hbar times a constant, lambda.
@@ -33,6 +36,8 @@ private:
 
   string lengthUnitName; ///Name of length unit.
   string energyUnitName; ///Name of energy unit.
+
+  double timeToHertzFactor;
 };
 
 #endif

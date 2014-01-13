@@ -6,7 +6,10 @@ ParametrizedPotential::ParametrizedPotential(string function, vector<pair<string
   SetPrecision(100);
   for(vector<pair<string, double> >::const_iterator it = parameters.begin(); it!=parameters.end(); ++it)
 	{
-	  fp.AddConstant(it->first, it->second);
+	  if(!fp.AddConstant(it->first, it->second))
+		{
+		  throw RLException("Could not add parameter '%s' with value '%d' to ParametrizedPotential function.", it->first.c_str(), it->second);
+		}
 	}
   int retVal = fp.Parse(function, "x");
   if(retVal != -1)
@@ -98,6 +101,8 @@ double ParametrizedPotential::GetMaxX() const
 
 double ParametrizedPotential::Evaluate(double x) const
 {
+  if(x < minX || x > maxX)
+	return 0;
   return const_cast<FunctionParser*>(&fp)->Eval(&x);
 }
 

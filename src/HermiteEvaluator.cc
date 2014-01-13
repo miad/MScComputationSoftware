@@ -2,7 +2,7 @@
 
 bool HermiteEvaluator::autoResize = false;
 
-vector<vector<double> > HermiteEvaluator::polyCoefficients;
+vector<vector<long double> > HermiteEvaluator::polyCoefficients;
 
 void HermiteEvaluator::Init(uint n, bool _autoResize)
 {
@@ -10,7 +10,7 @@ void HermiteEvaluator::Init(uint n, bool _autoResize)
   FillTable(n);
 }
 
-double HermiteEvaluator::HermiteH(uint n, double x)
+long double HermiteEvaluator::HermiteH(uint n, long double x)
 {
   if(n >= polyCoefficients.size())
 	{
@@ -23,12 +23,11 @@ double HermiteEvaluator::HermiteH(uint n, double x)
 		  throw RLException("No precomputed Hermite polynomial value available for n=%d.", n);
 		}
 	}
-  double toReturn = 0;
-  double xVal = 1;
-  for(uint i = 0; i<polyCoefficients.at(n).size(); ++i)
+  long double toReturn = 0;
+  for(vector<long double>::const_reverse_iterator it = polyCoefficients.at(n).rbegin(); it!= polyCoefficients.at(n).rend(); ++it)
 	{
-	  toReturn += polyCoefficients.at(n).at(i) * xVal;
-	  xVal *= x;
+	  toReturn *= x;
+	  toReturn += *it;
 	}
   return toReturn;
 }
@@ -48,7 +47,7 @@ void HermiteEvaluator::FillTable(uint nMax)
 
   for(uint n = polyCoefficients.size(); n<=nMax; ++n)
 	{
-	  polyCoefficients.push_back(vector<double>());
+	  polyCoefficients.push_back(vector<long double>());
 	  if(n==0)
 		{
 		  polyCoefficients[n].push_back(1);
@@ -62,7 +61,7 @@ void HermiteEvaluator::FillTable(uint nMax)
 		}
 	  for(uint k = 0; k<=n; ++k)
 		{
-		  double coeff = 0;
+		  long double coeff = 0;
 		  coeff += (k>0)?(2.0*polyCoefficients[n-1][k-1]):0;
 		  coeff -= (k+1<n)?((n-1)*2.0*polyCoefficients[n-2][k]):0;
 		  polyCoefficients[n].push_back(coeff);

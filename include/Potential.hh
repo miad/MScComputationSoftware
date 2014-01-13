@@ -30,7 +30,7 @@ public:
   virtual double GetMaxX() const = 0; ///Returns the maximum x value for which the potential is nonzero.
   virtual unsigned long GetPrecision() const = 0; ///Returns the precision with which evaluations are performed. The implementation of this is arbitrary and potential-dependent, but a suggestion is some relation to the number of Gauss-Legendre points used when integrating.
   virtual void SetPrecision(unsigned long value ///The value to set the precision to.
-					) = 0; ///Sets the precision for the integration to Value.
+							) = 0; ///Sets the precision for the integration to Value.
   virtual ComplexDouble BasisIntegrate(BasisFunction & b1, ///First basis function.
 									   BasisFunction & b2, ///Second basis function.
 									   ComplexDouble & k1, ///First k-value.

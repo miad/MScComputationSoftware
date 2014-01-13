@@ -8,7 +8,7 @@ WorkerData::WorkerData(CMatrix * _HamiltonianMatrix,
 					   double _hbarTimesLambda, 
 					   double _massOverLambda2, 
 					   double _couplingCoefficient,
-					   double _harmonicAngularFrequency,
+					   HarmonicBasisFunction * _myHarmonicBasisFunction,
 					   uint _m1,
 					   uint _m2,
 					   uint _n1,
@@ -22,7 +22,7 @@ WorkerData::WorkerData(CMatrix * _HamiltonianMatrix,
    hbarTimesLambda(_hbarTimesLambda),
    massOverLambda2(_massOverLambda2),
    couplingCoefficient(_couplingCoefficient),
-   harmonicAngularFrequency(_harmonicAngularFrequency),
+   myHarmonicBasisFunction(_myHarmonicBasisFunction),
    m1(_m1),m2(_m2),n1(_n1),n2(_n2)
 { 
   // Some basic checks.
@@ -32,4 +32,8 @@ WorkerData::WorkerData(CMatrix * _HamiltonianMatrix,
 	throw RLException("Tried to initialize WorkerData with n1 > n2");
   if(myBasisFunctions.empty())
 	throw RLException("Tried to initialize WorkerData with empty basis function list.");
+}
+
+WorkerData::~WorkerData()
+{
 }

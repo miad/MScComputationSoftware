@@ -40,7 +40,6 @@ private:
   static double rk2_leg ( double t, double tn, double x, int n );
   static double ts_mult ( double *u, double h, int n );
 
-
 };
 
 #endif

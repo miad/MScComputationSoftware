@@ -1,9 +1,13 @@
 #include "BasisFunction.hh"
 
 BasisFunction::BasisFunction(string _name)
-  :type(-1), name(_name)
+  : name(_name)
 {
-  fp.AddConstant("pi", PI);
+
+  if(!fp.AddConstant("pi", PI))
+	{
+	  throw RLException("Could not add constant 'pi' to function parser.");
+	}
   int retVal = fp.Parse(name, "x,k");
   if( retVal != -1 )
 	{
@@ -15,7 +19,6 @@ BasisFunction::BasisFunction(string _name)
 BasisFunction::BasisFunction(const BasisFunction & other)
 {
   fp = other.fp;
-  type = other.type;
   name = other.name;
   fp.ForceDeepCopy(); ///Essential for thread safety.
 }

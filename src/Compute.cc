@@ -24,6 +24,12 @@ int main(int argc, char *argv[])
   ///Read configuration file and act based on that.
 
   string configFile = myInterpreter->ReadFlaggedCommandStrict("configFile").front().c_str();
+
+
+
+  delete myInterpreter;
+
+
   ComputeConfig myConfiguration;
   
   ///If there is no config file, write it and exit. Otherwise, use it.
@@ -78,10 +84,24 @@ int main(int argc, char *argv[])
 		}
 	}
 
+  if(myConfiguration.GetHarmonicOverride())
+	{
+	  myPrinter.Print(1, "Harmonic: Validating reality of matrix.\n");
+	  for(uint i = 0; i<HamiltonianMatrix->Rows(); ++i)
+		{
+		  for(uint j = 0; j<HamiltonianMatrix->Columns(); ++j)
+			{
+			  if(imag(HamiltonianMatrix->Element(i, j)) > 1E-9)
+				throw RLException("Element (%d, %d) had an imaginary part %f, but a real matrix was expected.", i, j, imag(HamiltonianMatrix->Element(i, j)));
+			}
+		}
+	}
+
+
   myPrinter.Print(1, "Solving for eigenvalues and eigenvectors of the Hamiltonian.\n");
   EigenInformation myInfo = LapackeEigenvalueSolver::Solve(HamiltonianMatrix);
   
-  
+
   myPrinter.Print(2, "Saving results to files.\n");
 
   myProcessor.SetEigenInformation(&myInfo);
@@ -101,6 +121,10 @@ int main(int argc, char *argv[])
 
 CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePrinter & myPrinter)
 {
+  if(myConfiguration.GetHarmonicOverride())
+	myPrinter.Print(1, "Harmonic override enabled, some functions will alter behavior.\n");
+
+
   vector<BasisFunction> myBasisFunctions = myConfiguration.GetBasisFunctions();
   myPrinter.Print(5, "Using %d basis functions:", myBasisFunctions.size());
   for(vector<BasisFunction>::const_iterator it = myBasisFunctions.begin(); it!=myBasisFunctions.end(); ++it)
@@ -115,6 +139,10 @@ CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePri
   uint numberOfParticles = myConfiguration.GetNumberOfParticles();
   if(numberOfParticles < 1 || numberOfParticles > 2)
 	throw RLException("Invalid number of particles.");
+
+  if(myConfiguration.GetHarmonicOverride() && numberOfParticles != 1)
+	throw RLException("Currently HarmonicOverride only supports 1 particle.");
+
   myPrinter.Print(3, "Number of particles: %d\n", numberOfParticles);
   
   uint numberOfGLPoints = myConfiguration.GetKCurve()->GetTotalNumberOfGLPoints();
@@ -123,6 +151,9 @@ CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePri
 
   if(numberOfParticles == 2)
 	MatrixSize *= MatrixSize;
+
+  if(myConfiguration.GetHarmonicOverride())
+	MatrixSize = myConfiguration.GetHarmonicNmax() + 1;
 
   myPrinter.Print(5, "Total number of GL points in k-space: %d, Matrix size: %d.\n", numberOfGLPoints, MatrixSize);
 
@@ -143,7 +174,12 @@ CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePri
 
   MultiTasker<WorkerData, void*> * myMultiTasker = NULL;
   ///Generate the Hamiltonian in parallell!
-  if(numberOfParticles == 1)
+  if(myConfiguration.GetHarmonicOverride())
+	{
+	  HermiteEvaluator::Init(myConfiguration.GetHarmonicNmax() + 10);
+	  myMultiTasker = new MultiTasker<WorkerData, void*>(EvaluateSubMatrixOneParticleHarmonic, myConfiguration.GetNumberOfThreads());
+	}
+  else if(numberOfParticles == 1)
 	{
 	  myMultiTasker = new MultiTasker<WorkerData, void*>(EvaluateSubMatrixOneParticle, myConfiguration.GetNumberOfThreads());
 	}
@@ -153,7 +189,7 @@ CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePri
 	}
   else
 	{
-	  throw RLException("Improbable exception, this should never happen.");
+	  throw RLException("Programmer-is-not-so-smart-exception, this should never happen.");
 	}
   if(myMultiTasker == NULL)
 	{
@@ -173,7 +209,7 @@ CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePri
 										 myConfiguration.GetSpecificUnits()->GetHbarTimesLambda(),
 										 myConfiguration.GetSpecificUnits()->GetMassOverLambda2(),
 										 myConfiguration.GetCouplingCoefficient(),
-										 myConfiguration.GetHarmonicAngularFrequency(),
+										 myConfiguration.GetHarmonicBasisFunction(),
 										 i,
 										 i+1,
 										 0,
@@ -258,7 +294,7 @@ void * EvaluateSubMatrixTwoParticles(WorkerData w)
   uint m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
   double couplingCoefficient = w.couplingCoefficient;
   uint N = myBasisFunctions->size() * numberOfGLPoints; ///Number of points in each subspace.
-
+  
 
 
   for(uint i = m1; i<m2; ++i)
@@ -330,3 +366,22 @@ void * EvaluateSubMatrixTwoParticles(WorkerData w)
    return NULL;
 }
 
+
+void * EvaluateSubMatrixOneParticleHarmonic(WorkerData w)
+{
+  CMatrix * HamiltonianMatrix = w.HamiltonianMatrix;
+
+  uint m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
+  for(uint i = m1; i<m2; ++i)
+	{
+	  for(uint j = n1; j<n2; ++j)
+		{
+		  ///Kinetic part.
+		  HamiltonianMatrix->Element(i, j) += w.myHarmonicBasisFunction->KineticTerm(i, j);
+
+		  ///Potential part.
+		  HamiltonianMatrix->Element(i, j) += w.myHarmonicBasisFunction->Integrate(i, j);
+		}
+   }
+  return NULL;
+}
