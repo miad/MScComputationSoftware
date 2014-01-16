@@ -1,3 +1,4 @@
+
 #include "OutputProcessor.hh"
 
 OutputProcessor::OutputProcessor(ComputeConfig * _config)
@@ -17,6 +18,7 @@ OutputProcessor::~OutputProcessor()
 void OutputProcessor::SetEigenInformation(EigenInformation * data)
 {
   eigenData = data;
+  AssureEigenOrthonormality();
 }
 
 
@@ -42,6 +44,37 @@ void OutputProcessor::WritePostOutput() const
   else if(config->GetNumberOfParticles() == 2)
 	{
 	  WriteInterestingTwoParticleWavefunctionsToFile();
+	}
+}
+
+
+void OutputProcessor::AssureEigenOrthonormality()
+{
+  for(uint i = 0; i<eigenData->Eigenvectors.size(); ++i)
+	{
+	  for(uint j = i; j<eigenData->Eigenvectors.size(); ++j)
+		{
+		  ComplexDouble sum = 0.0;
+		  for(uint a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
+			{
+			  sum += eigenData->Eigenvectors[i][a] * eigenData->Eigenvectors[j][a]; 
+			}
+		  if(i != j)
+			{
+			  if(!DBL_EQUAL(sum, 0.0))
+				{
+				  throw RLException("The inner product between eigenvectors %d and %d was %+10.20f%+10.20fi, should have been 0.", i, j, real(sum), imag(sum));
+				}
+			}
+		  else
+			{
+			  ///Rescale eigenvector with our Berggren inner product.
+			  for(uint a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
+				{
+				  eigenData->Eigenvectors[i][a] /= sum;
+				}
+			}
+		}
 	}
 }
 
@@ -207,19 +240,23 @@ void OutputProcessor::WriteInterestingKPointsVerbosely() const
 
   for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
 	{
-	  double RVu = real(KValueToEnergy(*it) - config->GetPotential()->Evaluate(config->GetHarmonicBasisFunction()->GetXmin()));
-	  double RVs = RVu / ( config->GetSpecificUnits()->GetHbarTimesLambda() * 2 * PI * config->GetSpecificUnits()->GetTimeToHertzFactor()) ;
+	  double RVu = real(KValueToEnergy(*it) - config->GetPotential()->Evaluate(config->GetHarmonicBasisFunction()->GetXmin())); ///Energy in custom unit.
+
+	  double RVs = RVu / ( config->GetSpecificUnits()->GetHbarTimesLambda() * 2 * PI * config->GetSpecificUnits()->GetTimeToHertzFactor()) ; ///Energy in hbar * Hz
+	  double IVu = imag(KValueToEnergy(*it)); ///Energy in custom unit. = -Gamma/2
+	  double IVrte = 2.0*abs(IVu) / (config->GetSpecificUnits()->GetHbarTimesLambda() * config->GetSpecificUnits()->GetTimeToHertzFactor()); /// Gamma / hbar 
+
 	  if(imag(*it) > 1E-5 && abs(arg(*it)-PI/2) < 1E-2 )
 		{
 		  vPrint(1,"Bound state: k = %+6.10fi [%s]^(-1)    =>   E = %+6.10f %s  (= %6.10f Hz * h) \n", imag(*it), config->GetSpecificUnits()->GetLengthUnitName().c_str(), RVu, config->GetSpecificUnits()->GetEnergyUnitName().c_str(), RVs);
 		}
 	  else if((imag(*it) < -1E-6 && arg(*it) < 0.0 && arg(*it) > -1.0*PI/2 ))
 		{
-		  vPrint(1,"Resonant state: k = [ %+6.10f %+6.10fi ] [%s]^(-1)    =>    E = [ %+6.10f %+6.10fi] %s\n", real(*it), imag(*it), config->GetSpecificUnits()->GetLengthUnitName().c_str(), real(KValueToEnergy(*it) + config->GetPotential()->Evaluate(config->GetHarmonicBasisFunction()->GetXmin())), imag(KValueToEnergy(*it)), config->GetSpecificUnits()->GetEnergyUnitName().c_str());
+		  vPrint(1,"Resonant state: k = [ %+6.10f %+6.10fi ] [%s]^(-1)    =>    E = [ %+6.10f %+6.10fi] %s  (= %6.10f Hz * h,  decayRate= %6.10f s^{-1})\n", real(*it), imag(*it), config->GetSpecificUnits()->GetLengthUnitName().c_str(), RVu, imag(KValueToEnergy(*it)), config->GetSpecificUnits()->GetEnergyUnitName().c_str(), RVs, IVrte);
 		}
 	  else
 		{
-		  vPrint(1,"Other state: k = %+6.10f %+6.10fi\n", real(*it), imag(*it));
+		  vPrint(1,"Other state: k = [ %+6.10f %+6.10fi ] [%s]^(-1)  =>   E = [ %+6.10f + %6.10fi ] %s (= %6.10f Hz * h,  decayRate= %6.10f s^{-1}) \n", real(*it), imag(*it),config->GetSpecificUnits()->GetEnergyUnitName().c_str(), RVu, IVu, config->GetSpecificUnits()->GetEnergyUnitName().c_str(), RVs, IVrte);
 		}
 	}
 
@@ -280,7 +317,15 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex() const
 		  filterVector.push_back(it->first);
 		}
 	}
+
+
+  double imagScale = 1E-8; ///The maximum imaginary part (without sign)
+  for(uint i = 0; i<filterVector.size(); ++i)
+	{
+	  imagScale = MAX(imagScale, abs(imag(filterVector[i])));
+	}
   
+
   ///Filter out the uninteresting values and return the interesting ones.
   vector<uint> toReturn;
   uint eigenCounter = 0;
@@ -289,6 +334,7 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex() const
 	  ComplexDouble kToPrint = EnergyToKValue(*it);
 
 	  ///Now apply filter rule.
+
 
 
 	  ///All k-values on the imaginary axis are interesting.
@@ -304,22 +350,29 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex() const
 		  bool tooRight = true; ///Ignore rightmost points: they are never interesting.
 		  for(uint i = 0; i<filterVector.size(); ++i)
 			{
-			  double d1 = abs(filterVector[i] - kToPrint);
-			  double d2 = 0;
-			  if(i>0)
-				d2 += abs(filterVector[i-1]-filterVector[i]);
-			  if(i+1<filterVector.size())
-				d2 += abs(filterVector[i+1]-filterVector[i]);
-			  if(i > 0 && i+1 < filterVector.size())
-				d2 /= 2;
-			  if(i +1 < filterVector.size())
-				d2 *= 0.6;
+			  ComplexDouble d1 = filterVector[i] - kToPrint;
+			  ComplexDouble d2 = 0;
 
-			  if(d1 < d2)
+			  if(i>0)
+				{
+				  d2 += filterVector[i]-filterVector[i-1];
+				}
+
+			  if(i+1<filterVector.size())
+				d2 += filterVector[i+1]-filterVector[i];
+			  if(i > 0 && i+1 < filterVector.size())
+				d2 /= 2.0;
+
+			  if(i +1 < filterVector.size())
+				d2 *= 1.1;
+
+
+			  if(abs(real(d1)) < abs(real(d2)) && ((abs(imag(d1)) < abs(imag(d2)))  || abs(imag(d1)) < 0.05 * imagScale) )
 				{
 				  tooClose = true;
 				  break;
 				}
+
 			  if(real(filterVector[i]) > real(kToPrint))
 				{
 				  tooRight = false;

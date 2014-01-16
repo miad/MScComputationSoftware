@@ -153,7 +153,7 @@ CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePri
 	MatrixSize *= MatrixSize;
 
   if(myConfiguration.GetHarmonicOverride())
-	MatrixSize = myConfiguration.GetHarmonicNmax() + 1;
+	MatrixSize = myConfiguration.GetHarmonicNmax() ;
 
   myPrinter.Print(5, "Total number of GL points in k-space: %d, Matrix size: %d.\n", numberOfGLPoints, MatrixSize);
 
