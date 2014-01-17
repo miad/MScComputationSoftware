@@ -18,7 +18,6 @@ OutputProcessor::~OutputProcessor()
 void OutputProcessor::SetEigenInformation(EigenInformation * data)
 {
   eigenData = data;
-  AssureEigenOrthonormality();
 }
 
 
@@ -47,36 +46,6 @@ void OutputProcessor::WritePostOutput() const
 	}
 }
 
-
-void OutputProcessor::AssureEigenOrthonormality()
-{
-  for(uint i = 0; i<eigenData->Eigenvectors.size(); ++i)
-	{
-	  for(uint j = i; j<eigenData->Eigenvectors.size(); ++j)
-		{
-		  ComplexDouble sum = 0.0;
-		  for(uint a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
-			{
-			  sum += eigenData->Eigenvectors[i][a] * eigenData->Eigenvectors[j][a]; 
-			}
-		  if(i != j)
-			{
-			  if(!DBL_EQUAL(sum, 0.0))
-				{
-				  throw RLException("The inner product between eigenvectors %d and %d was %+10.20f%+10.20fi, should have been 0.", i, j, real(sum), imag(sum));
-				}
-			}
-		  else
-			{
-			  ///Rescale eigenvector with our Berggren inner product.
-			  for(uint a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
-				{
-				  eigenData->Eigenvectors[i][a] /= sum;
-				}
-			}
-		}
-	}
-}
 
 void OutputProcessor::WritePotentialToFile() const
 {
@@ -248,15 +217,39 @@ void OutputProcessor::WriteInterestingKPointsVerbosely() const
 
 	  if(imag(*it) > 1E-5 && abs(arg(*it)-PI/2) < 1E-2 )
 		{
-		  vPrint(1,"Bound state: k = %+6.10fi [%s]^(-1)    =>   E = %+6.10f %s  (= %6.10f Hz * h) \n", imag(*it), config->GetSpecificUnits()->GetLengthUnitName().c_str(), RVu, config->GetSpecificUnits()->GetEnergyUnitName().c_str(), RVs);
+		  vPrint(1,"Bound state: k = %+6.10fi [%s]^(-1)    =>   E = %+6.10f %s  (= %6.10f Hz * h) \n", 
+				 imag(*it), 
+				 config->GetSpecificUnits()->GetLengthUnitName().c_str(), 
+				 RVu, 
+				 config->GetSpecificUnits()->GetEnergyUnitName().c_str(), 
+				 RVs
+				 );
 		}
 	  else if((imag(*it) < -1E-6 && arg(*it) < 0.0 && arg(*it) > -1.0*PI/2 ))
 		{
-		  vPrint(1,"Resonant state: k = [ %+6.10f %+6.10fi ] [%s]^(-1)    =>    E = [ %+6.10f %+6.10fi] %s  (= %6.10f Hz * h,  decayRate= %6.10f s^{-1})\n", real(*it), imag(*it), config->GetSpecificUnits()->GetLengthUnitName().c_str(), RVu, imag(KValueToEnergy(*it)), config->GetSpecificUnits()->GetEnergyUnitName().c_str(), RVs, IVrte);
+		  vPrint(1,"Resonant state: k = [ %+6.10f %+6.10fi ] [%s]^(-1)    =>    E = [ %+6.10f %+6.10fi ] %s  (= %6.10f Hz * h,  decayRate= %6.10f s^{-1})\n", 
+				 real(*it), 
+				 imag(*it), 
+				 config->GetSpecificUnits()->GetLengthUnitName().c_str(), 
+				 RVu, 
+				 imag(KValueToEnergy(*it)), 
+				 config->GetSpecificUnits()->GetEnergyUnitName().c_str(), 
+				 RVs, 
+				 IVrte
+				 );
 		}
 	  else
 		{
-		  vPrint(1,"Other state: k = [ %+6.10f %+6.10fi ] [%s]^(-1)  =>   E = [ %+6.10f + %6.10fi ] %s (= %6.10f Hz * h,  decayRate= %6.10f s^{-1}) \n", real(*it), imag(*it),config->GetSpecificUnits()->GetEnergyUnitName().c_str(), RVu, IVu, config->GetSpecificUnits()->GetEnergyUnitName().c_str(), RVs, IVrte);
+		  vPrint(1,"Other state: k = [ %+6.10f %+6.10fi ] [%s]^(-1)  =>   E = [ %+6.10f + %6.10fi ] %s (= %6.10f Hz * h,  decayRate= %6.10f s^{-1}) \n", 
+				 real(*it), 
+				 imag(*it),
+				 config->GetSpecificUnits()->GetEnergyUnitName().c_str(), 
+				 RVu, 
+				 IVu, 
+				 config->GetSpecificUnits()->GetEnergyUnitName().c_str(), 
+				 RVs, 
+				 IVrte
+				 );
 		}
 	}
 

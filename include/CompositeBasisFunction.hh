@@ -14,26 +14,29 @@
 
 using namespace std;
 
-/**
-
+/**Used 
+   
  */
 class CompositeBasisFunction
 {
 public:
   CompositeBasisFunction(vector<BasisFunction> * _functions, ///Basis functions to use.
-						 vector<ComplexDouble> * _params,
-						 vector<vector<ComplexDouble> > * _coefficients);
+						 vector<ComplexDouble> * _parameters, ///Essentially the eigenvalues (converted from energy to k-values of course).
+						 vector<vector<ComplexDouble> > * _coefficients ///The coefficients. Basically 1-particle eigenvectors.
+						 ); ///Constructor. Ownership of the objects are NOT passed, but they may of course NOT be deleted before the deletion of this object.
 
-  ComplexDouble Eval(const ComplexDouble & x, ///The x-value for evaluation.
-					 const ComplexDouble & k = 1.0 ///The k-value for evaluation.
-					 ); ///Evaluate the function with the parameters x and k.
+  ~CompositeBasisFunction(); ///Destructor.
 
-  const char * GetName() const; ///Returns a string representing the function.
+  ComplexDouble Eval(const double & x, ///x-value for evaluation.
+					 uint pIndex ///Basis function index.
+					 ); ///Evaluate the function using parameter x.
+
+  uint GetNumberOfParameters() const; /// = number of eigenvalues, = number of basis states.
   
 private:
-  FunctionParser_cd fp; ///Function parser used to parse.
-
-  string name; ///Contains a string representing the type of basis function. This is the same as was sent to the constructor.
+  vector<BasisFunction> * functions; ///Functions.
+  vector<ComplexDouble> * parameters; ///Parameters.
+  vector<vector<ComplexDouble> > * coefficients; ///Coefficients.
 };
 
 #endif

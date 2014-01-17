@@ -1,20 +1,27 @@
 #include "HarmonicBasisFunction.hh"
 
-HarmonicBasisFunction::HarmonicBasisFunction(double _xmin, double _omega, Potential * _pot, SpecificUnits * _units)
-  : xmin(_xmin), omega(_omega), pot(_pot), units(_units)
+HarmonicBasisFunction::HarmonicBasisFunction(double _xmin, double _omega, vector<Potential *> * _potentials, SpecificUnits * _units, uint precision)
+  : xmin(_xmin), omega(_omega), potentials(_potentials), units(_units)
 {
-  if(pot == NULL)
-	throw RLException("Invalid potential.");
   if(units == NULL)
 	throw RLException("Invalid units.");
   if(omega <= 0)
 	{
 	  throw RLException("Omega must be strictly greater than zero.");
 	}
+  if(potentials == NULL)
+	{
+	  throw RLException("Potential vector pointer cannot be null.");
+	}
+  for(vector<Potential*>::const_iterator it = potentials->begin(); it!=potentials->end(); ++it)
+	{
+	  if(*it == NULL)
+		{
+		  throw RLException("Potential vector cannot contain NULL elements.");
+		}
+	}
   
-  GHpoints = HermiteRule::GetRule(pot->GetPrecision(), xmin, MASS*omega/HBAR);
-
-  //GHpoints = LegendreRule::GetRule(1000, -20, 20); ///TEMP
+  GHpoints = HermiteRule::GetRule(precision, xmin, MASS*omega/HBAR);
 
   InitFactorials();
 }
@@ -32,18 +39,18 @@ void HarmonicBasisFunction::InitFactorials()
 	}
 }
 
-double HarmonicBasisFunction::GetEigenEnergy(uint n) const
+double HarmonicBasisFunction::GetEigenEnergy(uint n, uint pIndex) const
 {
-  return HBAR * omega * (0.5 + n) + pot->Evaluate(xmin);
+  return HBAR * omega * (0.5 + n) + potentials->at(pIndex)->Evaluate(xmin);
 }
 
 HarmonicBasisFunction::~HarmonicBasisFunction()
 {
-  pot = NULL;
+  potentials = NULL;
   units = NULL;
 }
 
-long double HarmonicBasisFunction::Integrate(uint n1, uint n2) const
+long double HarmonicBasisFunction::Integrate(uint n1, uint n2, uint pIndex) const
 {
   if(n1 > MAX_FACTORIALS || n2 > MAX_FACTORIALS)
 	throw RLException("n > %d not implemented", MAX_FACTORIALS);
@@ -54,7 +61,7 @@ long double HarmonicBasisFunction::Integrate(uint n1, uint n2) const
 	{
 	  long double WF1 = EvalNonExponentPart(n1, it->first);
 	  long double WF2 = EvalNonExponentPart(n2, it->first); 
-	  value += it->second * WF1 * WF2 * pot->Evaluate(it->first);
+	  value += it->second * WF1 * WF2 * potentials->at(pIndex)->Evaluate(it->first);
 	}
 
   return value;
@@ -76,7 +83,7 @@ long double HarmonicBasisFunction::KineticTerm(uint n1, uint n2) const
 
 
 
-long double HarmonicBasisFunction::DiffIntegrate(uint n1, uint n2) const
+long double HarmonicBasisFunction::DiffIntegrate(uint n1, uint n2, uint pIndex) const
 {
   if(n1 > MAX_FACTORIALS || n2 > MAX_FACTORIALS)
 	throw RLException("n > %d not implemented", MAX_FACTORIALS);
@@ -88,9 +95,9 @@ long double HarmonicBasisFunction::DiffIntegrate(uint n1, uint n2) const
 	  long double WF1 = EvalNonExponentPart(n1, it->first);
 	  long double WF2 = EvalNonExponentPart(n2, it->first); 
 	  value += it->second * WF1 * WF2 *
-		( pot->Evaluate(it->first) - 
+		( potentials->at(pIndex)->Evaluate(it->first) - 
 		  (  
-		   0.5*MASS*pow(omega,2.0) * pow((it->first - xmin),2.0) + pot->Evaluate(xmin) 
+		   0.5*MASS*pow(omega,2.0) * pow((it->first - xmin),2.0) + potentials->at(pIndex)->Evaluate(xmin) 
 		  ) 
 		) ;
 	}

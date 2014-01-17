@@ -15,17 +15,6 @@ ComputeConfig::ComputeConfig()
   outputFilenames.Add("WavefunctionFile", "Wavefunctions.dat");
   outputFilenames.Add("Matrix", "Matrix.dat");
 
-
-  PiecewiseConstantPotential * stdPotential = new PiecewiseConstantPotential();
-  stdPotential->AddValue(-3, -1, 10);
-  stdPotential->AddValue(-1, 1, -225);
-  stdPotential->AddValue(1, 3, 10);
-  stdPotential->RecomputeLegendreRules();
-
-  potential = stdPotential;
-
-  myHarmonicBasisFunction = new HarmonicBasisFunction(0, 1, potential, &specificUnits);
-
   kCurve = new ParametrizedCurve(-1,1);
   kCurve->AddValue(0.0);
   kCurve->AddValue(ComplexDouble(3., -0.2));
@@ -36,6 +25,7 @@ ComputeConfig::ComputeConfig()
   kCurve->AddGLPoints(30);
   kCurve->ComputeGaussLegendre();
 
+  myHarmonicBasisFunction = new HarmonicBasisFunction(0, 1, &potentials, &specificUnits);
 
   basisFunctions.push_back(BasisFunction("sqrt(2)*sin(k*x)"));
   basisFunctions.push_back(BasisFunction("sqrt(2)*cos(k*x)"));
@@ -49,11 +39,14 @@ ComputeConfig::ComputeConfig(const char * fileName)
 
 ComputeConfig::~ComputeConfig()
 {
-  if(potential != NULL)
+  for(vector<Potential*>::iterator it = potentials.begin(); it!=potentials.end(); ++it)
 	{
-	  delete potential;
-	  potential = NULL;
+	  if(*it != NULL)
+		delete *it;
 	}
+  potentials.clear();
+
+
   if(kCurve != NULL)
 	{
 	  delete kCurve;
@@ -80,8 +73,12 @@ void ComputeConfig::ReadFile(const char * fileName)
 	}
   Setting & root = cfg.getRoot();
 
-  delete potential;
-  potential = NULL;
+  for(vector<Potential*>::iterator it = potentials.begin(); it!=potentials.end(); ++it)
+	{
+	  delete *it;
+	}
+  potentials.clear();
+
 
   kCurve->Clear();
   basisFunctions.clear();
@@ -163,6 +160,13 @@ void ComputeConfig::ReadFile(const char * fileName)
   ReadKCurve(computation);
 
   ReadHarmonicOscillator(computation);
+
+
+
+  if(potentials.size() != numberOfParticles)
+	{
+	  throw RLException("Internal inconsistency in the implementation of ComputeConfig: #potentials and #particles were not the same.");
+	}
 
 
   // Read the file. If there is an error, report it and exit.
@@ -317,20 +321,23 @@ void ComputeConfig::WriteFile(const char * fileName) const
 	}
 
   Setting & poten = root["Computation"].add("PotentialFile", Setting::TypeGroup);
-  if(PiecewiseConstantPotential * locPot = dynamic_cast<PiecewiseConstantPotential*>(potential))
+  if( potentials.size() > 0 )
 	{
-	  poten.add("Type", Setting::TypeString) = "PiecewiseConstant";
-	  poten.add("Precision", Setting::TypeInt) = 100;
-	  Setting & values = poten.add("Values", Setting::TypeList);
-	  
-	  list<Interval> points = locPot->GetPotentialPoints();
-	  for(list<Interval>::const_iterator it = points.begin(); it!= points.end(); ++it)
+	  if(PiecewiseConstantPotential * locPot = dynamic_cast<PiecewiseConstantPotential*>(potentials.at(0)))
 		{
-		  Setting & p0 = values.add(Setting::TypeGroup);
-		  Setting & r0 = p0.add("Interval", Setting::TypeArray);
-		  r0.add(Setting::TypeFloat) = it->x1;
-		  r0.add(Setting::TypeFloat) = it->x2;
-		  p0.add("Value",Setting::TypeFloat) = it->y;
+		  poten.add("Type", Setting::TypeString) = "PiecewiseConstant";
+		  poten.add("Precision", Setting::TypeInt) = 100;
+		  Setting & values = poten.add("Values", Setting::TypeList);
+		  
+		  list<Interval> points = locPot->GetPotentialPoints();
+		  for(list<Interval>::const_iterator it = points.begin(); it!= points.end(); ++it)
+			{
+			  Setting & p0 = values.add(Setting::TypeGroup);
+			  Setting & r0 = p0.add("Interval", Setting::TypeArray);
+			  r0.add(Setting::TypeFloat) = it->x1;
+			  r0.add(Setting::TypeFloat) = it->x2;
+			  p0.add("Value",Setting::TypeFloat) = it->y;
+			}
 		}
 	}
 
@@ -409,18 +416,31 @@ void ComputeConfig::SetAutoPlotWavefunctions(bool value)
 }
 
 
-Potential * ComputeConfig::GetPotential() const
+Potential * ComputeConfig::GetPotential(uint index) const
 {
-  return potential;
+  if(index >= potentials.size())
+	throw RLException("Invalid potential index: %d\n", index);
+  return potentials[index];
 }
 
-void ComputeConfig::SetPotential(Potential * value)
+void ComputeConfig::SetPotential(Potential * value, uint index)
 {
-  ///free stuff.
-  if(potential != NULL)
-	delete potential;
-
-  potential = value;
+  if(index < potentials.size())
+	{
+	  if(potentials.at(index) != NULL)
+		{
+		  delete potentials.at(index);
+		}
+	  potentials.at(index) = value;
+	}
+  else if(index == potentials.size() && numberOfParticles < potentials.size())
+	{
+	  potentials.push_back(value);
+	}
+  else
+	{
+	  throw RLException("Tried to set invalid potential index: %d\n", index);
+	}
 }
 
 ParametrizedCurve * ComputeConfig::GetKCurve() const
@@ -688,13 +708,152 @@ void ComputeConfig::ReadHarmonicOscillator(Setting & computation)
 	{
 	  delete myHarmonicBasisFunction;
 	}
-  myHarmonicBasisFunction = new HarmonicBasisFunction(harmonicXMin, harmonicAngularFrequency, potential, &specificUnits);
+  myHarmonicBasisFunction = new HarmonicBasisFunction(harmonicXMin, harmonicAngularFrequency, &potentials, &specificUnits, potentials.at(0)->GetPrecision());
+}
+
+void ComputeConfig::ReadPiecewiseConstantPotential(Setting & poten)
+{
+  PiecewiseConstantPotential * locPot = new PiecewiseConstantPotential();
+  int potPrec;
+  if( ! poten.lookupValue("Precision", potPrec))
+	{
+	  throw RLException("Could not find precision setting in settings file.");
+	}
+  locPot->SetPrecision(potPrec);
+  
+  if( !poten.exists("Values") || ! poten["Values"].isList())
+	{
+	  throw RLException("Could not find 'Values'.");
+	}
+  
+  Setting & vval = poten["Values"];
+  for(int i = 0; i<vval.getLength(); ++i)
+	{
+	  double x1, x2, y;
+	  if( ! vval[i].exists("Interval") || ! vval[i]["Interval"].isArray() || vval[i]["Interval"].getLength() != 2)
+		{
+		  throw RLException("Potential interval #%d was not set correctly.", i);
+		}
+	  x1 = vval[i]["Interval"][0];
+	  x2 = vval[i]["Interval"][1];
+	  
+	  if( !vval[i].lookupValue("Value", y))
+		{
+		  throw RLException("Potential value in interval #%d was not set correctly.", i);
+		}
+	  locPot->AddValue(x1, x2, y);
+	}
+  locPot->RecomputeLegendreRules();
+  potentials.push_back(locPot);
+}
+
+void ComputeConfig::ReadParametrizedPotential(Setting & poten)
+{
+  int potPrec;
+  if( ! poten.lookupValue("Precision", potPrec))
+	{
+	  throw RLException("Could not find precision setting in settings file.");
+	}
+  
+  if( ! poten.exists("Parameters") || ! poten["Parameters"].isList() )
+	{
+	  throw RLException("Potential parameters not properly specified.");
+	}
+
+
+
+  map<string, vector<double> > variableParameters;
+
+  ///Only populate var-param in case of more than 1 particle. In this case the var-param will superseed corresponding non-var-params.
+  if(numberOfParticles > 1)
+	{
+	  if( ! poten.exists("VariableParameters") || ! poten["VariableParameters"].isList() )
+		{
+		  throw RLException("VariableParameters for potential not properly specified.");
+		}
+	  Setting & vparam = poten["VariableParameters"];
+	  
+	  for(int i = 0; i<vparam.getLength(); ++i)
+		{
+		  string paraStr;
+		  if(!vparam[i].lookupValue("Name", paraStr))
+			{
+			  throw RLException("Variable parameter name #%d was not properly specified.", i);
+			}
+		  variableParameters[paraStr] = vector<double>();
+		  if(! poten.exists("Value") || ! poten["Value"].isArray() || !poten["Value"].getLength() != numberOfParticles )
+			{
+			  throw RLException("Invalid value given for variable parameter '%s'.", paraStr.c_str());
+			}
+		  for(int i = 0; i<poten["Value"].getLength(); ++i)
+			{
+			  variableParameters[paraStr].push_back(poten["Value"][i]);
+			}
+		}
+	}
+
+
+
+
+  Setting & pparam = poten["Parameters"];
+  
+  vector<pair<string, double> > parameters;
+  for(int i = 0; i<pparam.getLength(); ++i)
+	{
+	  string paraStr;
+	  double paraDbl;
+	  if(!pparam[i].lookupValue("Name", paraStr) || !pparam[i].lookupValue("Value", paraDbl))
+		{
+		  throw RLException("Potential parameter #%d was not properly specified.", i);
+		}
+	  if(variableParameters.find(paraStr) == variableParameters.end())
+		parameters.push_back(make_pair(paraStr, paraDbl));
+	}
+  
+  string paraFunction;
+  if(!poten.lookupValue("Function", paraFunction))
+	{
+	  throw RLException("Could not find the 'Function' property in the parametrized potential in the config file.");
+	}
+  string minX, maxX;
+  if(!poten.exists("Interval") || ! poten["Interval"].isArray() || poten["Interval"].getLength() != 2)
+	{
+	  throw RLException("Invalid interval specified for parametrized input potential.");
+	}
+  
+  minX = poten["Interval"][0].c_str();
+  maxX = poten["Interval"][1].c_str();
+  
+
+  for(uint i = 0; i<numberOfParticles; ++i)
+	{
+	  vector<pair<string, double> > fullParam = parameters;
+	  for(map<string, vector<double> >::const_iterator it = variableParameters.begin(); it!=variableParameters.end(); ++it)
+		{
+		  fullParam.push_back(make_pair(it->first, it->second[i]));
+		}
+
+	  ParametrizedPotential * locPot = new ParametrizedPotential(paraFunction,
+																 fullParam, 
+																 minX.c_str(),
+																 maxX.c_str()
+																 );
+	  locPot->SetPrecision(potPrec);
+	  potentials.push_back(locPot);
+	}
 }
 
 
 
 void ComputeConfig::ReadPotential(Setting & computation)
 {
+  for(vector<Potential*>::iterator it = potentials.begin(); it!=potentials.end(); ++it)
+	{
+	  delete *it;
+	}
+  potentials.clear();
+
+
 
   if( !computation.exists("Potential") || !computation["Potential"].isGroup())
 	{
@@ -711,87 +870,11 @@ void ComputeConfig::ReadPotential(Setting & computation)
 
   if(strcmp(temp.c_str(), "PiecewiseConstant") == 0)
 	{
-	  PiecewiseConstantPotential * locPot = new PiecewiseConstantPotential();
-	  int potPrec;
-	  if( ! poten.lookupValue("Precision", potPrec))
-		{
-		  throw RLException("Could not find precision setting in settings file.");
-		}
-	  locPot->SetPrecision(potPrec);
-
-	  if( !poten.exists("Values") || ! poten["Values"].isList())
-		{
-		  throw RLException("Could not find 'Values'.");
-		}
-	  
-	  Setting & vval = poten["Values"];
-	  for(int i = 0; i<vval.getLength(); ++i)
-		{
-		  double x1, x2, y;
-		  if( ! vval[i].exists("Interval") || ! vval[i]["Interval"].isArray() || vval[i]["Interval"].getLength() != 2)
-			{
-			  throw RLException("Potential interval #%d was not set correctly.", i);
-			}
-		  x1 = vval[i]["Interval"][0];
-		  x2 = vval[i]["Interval"][1];
-		  
-		  if( !vval[i].lookupValue("Value", y))
-			{
-			  throw RLException("Potential value in interval #%d was not set correctly.", i);
-			}
-		  locPot->AddValue(x1, x2, y);
-		}
-	  locPot->RecomputeLegendreRules();
-	  potential = locPot;
+	  ReadPiecewiseConstantPotential(poten);
 	}
   else if(strcmp(temp.c_str(), "Parametrized") == 0)
 	{
-	  int potPrec;
-	  if( ! poten.lookupValue("Precision", potPrec))
-		{
-		  throw RLException("Could not find precision setting in settings file.");
-		}
-
-	  if( ! poten.exists("Parameters") || ! poten["Parameters"].isList() )
-		{
-		  throw RLException("Potential parameters not properly specified.");
-		}
-
-	  Setting & pparam = poten["Parameters"];
-
-	  vector<pair<string, double> > parameters;
-	  for(int i = 0; i<pparam.getLength(); ++i)
-		{
-		  string paraStr;
-		  double paraDbl;
-		  if(!pparam[i].lookupValue("Name", paraStr) || !pparam[i].lookupValue("Value", paraDbl))
-			{
-			  throw RLException("Potential parameter #%d was not properly specified.", i);
-			}
-		  parameters.push_back(make_pair(paraStr, paraDbl));
-		}
-	  
-	  string paraFunction;
-	  if(!poten.lookupValue("Function", paraFunction))
-		{
-		  throw RLException("Could not find the 'Function' property in the parametrized potential in the config file.");
-		}
-	  string minX, maxX;
-	  if(!poten.exists("Interval") || ! poten["Interval"].isArray() || poten["Interval"].getLength() != 2)
-		{
-		  throw RLException("Invalid interval specified for parametrized input potential.");
-		}
-	  
-	  minX = poten["Interval"][0].c_str();
-	  maxX = poten["Interval"][1].c_str();
-
-	  ParametrizedPotential * locPot = new ParametrizedPotential(paraFunction,
-																 parameters, 
-																 minX.c_str(),
-																 maxX.c_str()
-																 );
-	  locPot->SetPrecision(potPrec);
-	  potential = locPot;
+	  ReadParametrizedPotential(poten);
 	}
   else
 	{

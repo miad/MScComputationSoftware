@@ -69,13 +69,15 @@ public:
   const SpecificUnits * GetSpecificUnits() const;
   
 
-  Potential * GetPotential() const;
+  Potential * GetPotential(uint index = 0 ///Index of particle.
+						   ) const;
 
   ParametrizedCurve * GetKCurve() const;
 
   const vector<BasisFunction> & GetBasisFunctions() const;
 
   const vector<ComplexDouble> & GetExtraInterestingPoints() const;
+
 
   HarmonicBasisFunction * GetHarmonicBasisFunction() const;
 
@@ -112,7 +114,8 @@ public:
   void SetSpecificUnits(const SpecificUnits & value
 						);
   
-  void SetPotential(Potential * value
+  void SetPotential(Potential * value,
+					uint index ///Index of particle.
 					);
   void SetKCurve(ParametrizedCurve * value
 				 );
@@ -178,9 +181,18 @@ private:
 
   void ReadMultiParticleData(Setting & computation
 							 );
-
+  
   void ReadHarmonicOscillator(Setting & computation
-						 );
+							  );
+
+
+  void ReadPiecewiseConstantPotential(Setting & poten
+									  );
+
+  void ReadParametrizedPotential(Setting & poten
+								 );
+
+
 private:
 
   vector<ComplexDouble> extraInterestingPoints; ///An extra filtering option for artificially inducing extra InterestingPoints to the output, main use is quality control purposes.
@@ -205,11 +217,13 @@ private:
   bool harmonicOverride; ///Harmonic override (use harmonic basis instead)
   uint harmonicNmax; ///Use only in case of override.
 
-  HarmonicBasisFunction * myHarmonicBasisFunction; ///Harmonic basis function. Use is obvious.
 
-  Potential * potential; ///Potential function. Default: a piecewise potential with 3 nonzero regions.
+  vector<Potential*> potentials; ///One for each particle...
+
+  HarmonicBasisFunction * myHarmonicBasisFunction;
+
   ParametrizedCurve * kCurve; ///KCurve. Default: a somewhat standard Berggren curve.
-  vector<BasisFunction> basisFunctions; ///Basis functions. Default: two functions, "expi+" and "expi-"
+  vector<BasisFunction> basisFunctions; ///Basis functions. 
 
   OutputFilenames outputFilenames; ///The output filenames.
   SpecificUnits specificUnits; /// Units to use in computation.

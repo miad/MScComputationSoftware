@@ -21,7 +21,11 @@ using namespace std;
 class LapackeEigenvalueSolver
 {
 public:
-  static EigenInformation Solve(CMatrix * toSolve);
+  static EigenInformation * Solve(CMatrix * toSolve, 
+								bool assureEigenOrthonormality = true
+								);
+  static double AssureEigenOrthonormality(EigenInformation * eigenData
+										  ); ///Returns maximum deviation in square.
 private:
   LapackeEigenvalueSolver() {}
 };

@@ -41,9 +41,6 @@ public:
 				  ) const; ///Write the matrix to predetermined file.
 
 
-  void AssureEigenOrthonormality();
-
-
 
 private:
 

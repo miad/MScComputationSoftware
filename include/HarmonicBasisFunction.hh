@@ -38,16 +38,23 @@ class HarmonicBasisFunction
 public:
   HarmonicBasisFunction(double _xmin,
 						double _omega,
-						Potential * _pot,
-						SpecificUnits * _units
+						vector<Potential *> * _potentials,
+						SpecificUnits * _units,
+						uint precision = 300
 						);
 						
   ~HarmonicBasisFunction();
 
 
-  long double DiffIntegrate(uint n1, uint n2) const;
+  long double DiffIntegrate(uint n1, 
+							uint n2,
+							uint pIndex = 0
+							) const;
 
-  long double Integrate(uint n1, uint n2) const;
+  long double Integrate(uint n1, 
+						uint n2,
+						uint pIndex = 0
+						) const;
 
   long double NormalizationConstant(uint n) const;
 
@@ -55,13 +62,16 @@ public:
 
   long double EvalNonExponentPart(uint n, double x) const;
 
-  long double KineticTerm(uint n1, uint n2) const;
+  long double KineticTerm(uint n1, 
+						  uint n2
+						  ) const;
   
-  double GetEigenEnergy(uint n) const;
+  double GetEigenEnergy(uint n,
+						uint pIndex = 0
+						) const;
 
   double GetXmin() const;
   double GetOmega() const;
-
 
 private:
 
@@ -71,7 +81,7 @@ private:
   vector<pair<double, double> > GHpoints;
   double xmin;
   double omega;
-  Potential * pot;
+  vector<Potential *> * potentials;
   SpecificUnits * units;
 };
 

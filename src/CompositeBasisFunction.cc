@@ -1,41 +1,48 @@
-#include "BasisFunction.hh"
+#include "CompositeBasisFunction.hh"
 
-BasisFunction::BasisFunction(string _name)
-  : name(_name)
+CompositeBasisFunction::CompositeBasisFunction(vector<BasisFunction> * _functions, vector<ComplexDouble> *_parameters, vector<vector<ComplexDouble> > * _coefficients)
+  : functions(_functions), parameters(_parameters), coefficients(_coefficients)
 {
-
-  if(!fp.AddConstant("pi", PI))
+  if(functions == NULL || parameters == NULL || coefficients == NULL)
 	{
-	  throw RLException("Could not add constant 'pi' to function parser.");
+	  throw RLException("Not allowed to use NULL argument for a CompositeBasisFunction constructor.");
 	}
-  int retVal = fp.Parse(name, "x,k");
-  if( retVal != -1 )
+  if(coefficients->size() != parameters->size() || coefficients->size() % functions->size() != 0)
 	{
-	  throw RLException("Failed to parse the basis function '%s' at character %d.", name.c_str(), retVal);
+	  throw RLException("Invalid input array size for composite basis function.");
 	}
-  fp.Optimize();
 }
 
-BasisFunction::BasisFunction(const BasisFunction & other)
+CompositeBasisFunction::~CompositeBasisFunction()
 {
-  fp = other.fp;
-  name = other.name;
-  fp.ForceDeepCopy(); ///Essential for thread safety.
+  ///Don't delete since we don't have ownership.
+  functions = NULL;
+  parameters = NULL;
+  coefficients = NULL;
 }
 
-ComplexDouble BasisFunction::Eval(const ComplexDouble & x, const ComplexDouble & k)
+
+ComplexDouble CompositeBasisFunction::Eval(const double & x, uint pIndex)
 {
-  ComplexDouble toEval[2]; toEval[0] = x; toEval[1] = k;
-  ComplexDouble toReturn = fp.Eval(&toEval[0]);
-  int err = fp.EvalError();
-  if(err)
+  if(pIndex >= parameters->size())
 	{
-	  throw RLException("Function evaluation error: %d\n", err);
+	  throw RLException("Invalid p-index.");
 	}
-  return toReturn;
+
+  uint bConvert = coefficients->size() / functions->size();
+  
+  ComplexDouble sum = 0.0;
+
+  for(uint i = 0; i<coefficients->at(pIndex).size(); ++i)
+	{
+	  uint basisPointer = i/bConvert;
+	  sum += coefficients->at(pIndex).at(i) * functions->at(basisPointer).Eval(x, parameters->at(pIndex));
+	}
+
+  return sum;
 }
 
-const char * BasisFunction::GetName() const
+uint CompositeBasisFunction::GetNumberOfParameters() const
 {
-  return name.c_str();
+  return parameters->size();
 }

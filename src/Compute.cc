@@ -25,8 +25,6 @@ int main(int argc, char *argv[])
 
   string configFile = myInterpreter->ReadFlaggedCommandStrict("configFile").front().c_str();
 
-
-
   delete myInterpreter;
 
 
@@ -49,23 +47,68 @@ int main(int argc, char *argv[])
   
   VerbosePrinter myPrinter(myConfiguration.GetVerbosityLevel());
   myPrinter.Print(3, "Initializing...\n");
-
-  
-  CMatrix * HamiltonianMatrix = ConstructHamiltonian(myConfiguration, myPrinter);
-
-  uint nonzero = 0;
-  for(uint i = 0; i<HamiltonianMatrix->Rows(); ++i)
-	{
-	  for(uint j = 0; j<HamiltonianMatrix->Columns(); ++j)
-		{
-		  nonzero += !DBL_EQUAL(HamiltonianMatrix->Element(i, j),0.0);
-		}
-	}
-  myPrinter.Print(3, "Number of nonzero Hamiltonian elements: %d\n", nonzero);
-
   OutputProcessor myProcessor(&myConfiguration);
   myProcessor.RegisterListener(&myPrinter);
-  myProcessor.SaveMatrix(HamiltonianMatrix);
+
+
+  ///Solve problem and save data.
+  PerformSolution(myConfiguration, myPrinter, myProcessor);
+  
+
+  ///Launch plotters if we should do so.
+  myPrinter.Print(2, "Launching plotters.\n");
+  ExternalLauncher myLauncher(&myConfiguration);
+  myLauncher.Launch();
+
+
+  myPrinter.Print(2, "Done, exiting.\n");
+  return 0;
+}
+
+
+
+
+void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter, OutputProcessor & myProcessor)
+{  
+  if(myConfiguration.GetNumberOfParticles() == 1)
+	{
+	  CMatrix * HamiltonianMatrix = ConstructOneParticleHamiltonian(myConfiguration, myPrinter);
+	  PrintNumberOfNonzeroElements(HamiltonianMatrix, myPrinter);
+	  myProcessor.SaveMatrix(HamiltonianMatrix);
+	  
+	  myPrinter.Print(1, "Solving for eigenvalues and eigenvectors of the Hamiltonian.\n");
+	  EigenInformation * myInfo = LapackeEigenvalueSolver::Solve(HamiltonianMatrix);
+	  
+	  myPrinter.Print(2, "Saving results to files.\n");
+	  
+	  myProcessor.SetEigenInformation(myInfo);
+	  myProcessor.WritePostOutput();
+	  delete HamiltonianMatrix;
+	  delete myInfo;
+	}
+  else if(myConfiguration.GetNumberOfParticles() == 2)
+	{
+	  for(uint i = 0; i<2; ++i)
+		{
+		  myPrinter.Print(1, "Constructing Hamiltonian for particle %d.\n", 0);
+		  CMatrix * OneBodyHamiltonian = ConstructOneParticleHamiltonian(myConfiguration, myPrinter, 0);
+		  myPrinter.Print(1, "Finding eigenvalues for particle %d.\n", 0);
+		  EigenInformation * myInfo = LapackeEigenvalueSolver::Solve(OneBodyHamiltonian);
+		}
+
+	  
+
+
+	}
+  else
+	{
+	  throw RLException("Invalid number of particles: %d", myConfiguration.GetNumberOfParticles());
+	}
+}
+
+
+void VerifyMatrixBasicProperties(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter, CMatrix * HamiltonianMatrix)
+{
   ///Validate some basic properties of the Hamilton matrix, if they are expected.
   if(myConfiguration.GetExpectedMatrixType() == SymmetricMatrix)
 	{
@@ -98,59 +141,50 @@ int main(int argc, char *argv[])
 	}
 
 
-  myPrinter.Print(1, "Solving for eigenvalues and eigenvectors of the Hamiltonian.\n");
-  EigenInformation myInfo = LapackeEigenvalueSolver::Solve(HamiltonianMatrix);
-  
-
-  myPrinter.Print(2, "Saving results to files.\n");
-
-  myProcessor.SetEigenInformation(&myInfo);
-  myProcessor.WritePostOutput();
-
-  delete HamiltonianMatrix;
-
-  myPrinter.Print(2, "Launching plotters.\n");
-  
-  ExternalLauncher myLauncher(&myConfiguration);
-  myLauncher.Launch();
-
-  myPrinter.Print(2, "Done, exiting.\n");
-  return 0;
 }
 
 
-CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePrinter & myPrinter)
-{
-  if(myConfiguration.GetHarmonicOverride())
-	myPrinter.Print(1, "Harmonic override enabled, some functions will alter behavior.\n");
 
+void PrintNumberOfNonzeroElements(CMatrix * HamiltonianMatrix, VerbosePrinter & myPrinter)
+{
+  uint nonzero = 0;
+  for(uint i = 0; i<HamiltonianMatrix->Rows(); ++i)
+	{
+	  for(uint j = 0; j<HamiltonianMatrix->Columns(); ++j)
+		{
+		  nonzero += !DBL_EQUAL(HamiltonianMatrix->Element(i, j),0.0);
+		}
+	}
+  myPrinter.Print(3, "Number of nonzero Hamiltonian elements: %d\n", nonzero);
+}
+
+
+CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration, VerbosePrinter & myPrinter, uint particleID)
+{
 
   vector<BasisFunction> myBasisFunctions = myConfiguration.GetBasisFunctions();
-  myPrinter.Print(5, "Using %d basis functions:", myBasisFunctions.size());
+  if(myConfiguration.GetHarmonicOverride())
+	myPrinter.Print(1, "Harmonic override enabled, some functions will alter behavior.\n");
+  else
+	myPrinter.Print(5, "Using %d basis functions:", myBasisFunctions.size());
+
   for(vector<BasisFunction>::const_iterator it = myBasisFunctions.begin(); it!=myBasisFunctions.end(); ++it)
 	{
 	  myPrinter.Print(5, "%s %s", ((it==myBasisFunctions.begin())?"":","),it->GetName());
 	}
   myPrinter.Print(5, ".\n");
 
-
-
-
   uint numberOfParticles = myConfiguration.GetNumberOfParticles();
-  if(numberOfParticles < 1 || numberOfParticles > 2)
-	throw RLException("Invalid number of particles.");
+  if(particleID >= numberOfParticles)
+	{
+	  throw RLException("ConstructOneParticleHamiltonian called with invalid particle ID: %d", particleID);
+	}
 
-  if(myConfiguration.GetHarmonicOverride() && numberOfParticles != 1)
-	throw RLException("Currently HarmonicOverride only supports 1 particle.");
-
-  myPrinter.Print(3, "Number of particles: %d\n", numberOfParticles);
+  myPrinter.Print(3, "Creating 1-particle Hamiltonian for particle : %d\n", particleID);
   
   uint numberOfGLPoints = myConfiguration.GetKCurve()->GetTotalNumberOfGLPoints();
   uint numberOfBasisFunctions =  myBasisFunctions.size();
   uint MatrixSize = numberOfGLPoints * numberOfBasisFunctions;
-
-  if(numberOfParticles == 2)
-	MatrixSize *= MatrixSize;
 
   if(myConfiguration.GetHarmonicOverride())
 	MatrixSize = myConfiguration.GetHarmonicNmax() ;
@@ -179,26 +213,18 @@ CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePri
 	  HermiteEvaluator::Init(myConfiguration.GetHarmonicNmax() + 10);
 	  myMultiTasker = new MultiTasker<WorkerData, void*>(EvaluateSubMatrixOneParticleHarmonic, myConfiguration.GetNumberOfThreads());
 	}
-  else if(numberOfParticles == 1)
+  else
 	{
 	  myMultiTasker = new MultiTasker<WorkerData, void*>(EvaluateSubMatrixOneParticle, myConfiguration.GetNumberOfThreads());
 	}
-  else if(numberOfParticles == 2)
-	{
-	  myMultiTasker = new MultiTasker<WorkerData, void*>(EvaluateSubMatrixTwoParticles, myConfiguration.GetNumberOfThreads());
-	}
-  else
-	{
-	  throw RLException("Programmer-is-not-so-smart-exception, this should never happen.");
-	}
+
   if(myMultiTasker == NULL)
 	{
-	  throw RLException("Equally improbable.");
+	  throw RLException("This should never happen.");
 	}
-	
-
+  
   myMultiTasker->RegisterListener(&myPrinter);
-
+  
   for(uint i = 0; i<MatrixSize; ++i)
 	{
 	  myMultiTasker->AddInput(WorkerData(HamiltonianMatrix,
@@ -216,12 +242,13 @@ CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, VerbosePri
 										 MatrixSize
 										 )
 							  );
-
+	  
 	}
   myMultiTasker->LaunchThreads();
   myMultiTasker->PauseUntilOutputIsGenerated();
   myMultiTasker->DestroyThreads();
-  delete myMultiTasker; myMultiTasker = NULL;
+  delete myMultiTasker; 
+  myMultiTasker = NULL;
 
   return HamiltonianMatrix;
 }

@@ -7,7 +7,8 @@ int LapackeEigenvalueSolverTest::TestCase1() const
   myMatrix.InitializeAll(ComplexDouble(4, 2));
   try
 	{
-	  EigenInformation myInfo = LapackeEigenvalueSolver::Solve(&myMatrix);
+	  EigenInformation * myInfo = LapackeEigenvalueSolver::Solve(&myMatrix);
+	  delete myInfo;
 	}
   catch(RLException & ex)
 	{
@@ -22,12 +23,12 @@ int LapackeEigenvalueSolverTest::TestCase2() const
   myMatrix.InitializeAll(ComplexDouble(0, 0));
   for(int i = 0; i<3; ++i)
 	myMatrix.Element(i, i) = ComplexDouble(i+1, i);
-  EigenInformation myInfo = LapackeEigenvalueSolver::Solve(&myMatrix);
-  sort(myInfo.Eigenvalues.rbegin(), myInfo.Eigenvalues.rend(), CplexCompare);
+  EigenInformation * myInfo = LapackeEigenvalueSolver::Solve(&myMatrix);
+  sort(myInfo->Eigenvalues.rbegin(), myInfo->Eigenvalues.rend(), CplexCompare);
 
   for(int i = 0; i<3; ++i)
 	{
-	  if(!DBL_EQUAL(myInfo.Eigenvalues[i], ComplexDouble(i+1, i)))
+	  if(!DBL_EQUAL(myInfo->Eigenvalues[i], ComplexDouble(i+1, i)))
 		return i+1;
 	}
 
@@ -35,10 +36,11 @@ int LapackeEigenvalueSolverTest::TestCase2() const
 	{
 	  for(int i = 0; i<3; ++i)
 		{
-		  if(!DBL_EQUAL(myInfo.Eigenvectors[i][j], ComplexDouble((i==j),0) ))
+		  if(!DBL_EQUAL(myInfo->Eigenvectors[i][j], ComplexDouble((i==j),0) ))
 			return 10+10*i+j;
 		}
 	}
+  delete myInfo;
   return 0;
 }
 
@@ -57,17 +59,17 @@ int LapackeEigenvalueSolverTest::TestCase3() const
   myMatrix.Element(2, 1) = ComplexDouble(0.097540404999410, 0.800280468888800);
   myMatrix.Element(2, 2) = ComplexDouble(0.957506835434298, 0.915735525189067);
 
-  EigenInformation myInfo = LapackeEigenvalueSolver::Solve(&myMatrix);
+  EigenInformation * myInfo = LapackeEigenvalueSolver::Solve(&myMatrix, false);
 
 
   /*
   cout << endl;  
   for(int i = 0; i<3; ++i)
 	{
-	  printf("λ = %+1.4lf%+1.4lf → V = [", real(myInfo.Eigenvalues[i]), imag(myInfo.Eigenvalues[i]));
+	  printf("λ = %+1.4lf%+1.4lf → V = [", real(myInfo->Eigenvalues[i]), imag(myInfo->Eigenvalues[i]));
 	  for(int j = 0; j<3; ++j)
 		{
-		  printf("%+1.4lf%+1.4lf", real(myInfo.Eigenvectors[i][j]), imag(myInfo.Eigenvectors[i][j]));
+		  printf("%+1.4lf%+1.4lf", real(myInfo->Eigenvectors[i][j]), imag(myInfo->Eigenvectors[i][j]));
 		  if(j<2)
 			printf(", ");
 		}
@@ -75,46 +77,46 @@ int LapackeEigenvalueSolverTest::TestCase3() const
 	}
   */
 
-  if(myInfo.Eigenvalues.size() != 3)
+  if(myInfo->Eigenvalues.size() != 3)
 	return 1;
-  if(myInfo.Eigenvectors.size() != 3)
+  if(myInfo->Eigenvectors.size() != 3)
 	return 2;
   for(int i = 0; i<3; ++i)
 	{
-	  if(DBL_EQUAL(myInfo.Eigenvalues[i],  ComplexDouble(1.879212794739092, 1.903170649787818)))
+	  if(DBL_EQUAL(myInfo->Eigenvalues[i],  ComplexDouble(1.879212794739092, 1.903170649787818)))
 		{
-		  if(myInfo.Eigenvectors[i].size() != 3)
+		  if(myInfo->Eigenvectors[i].size() != 3)
 			return 3;
-		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][0], ComplexDouble(0.485282228366207, -0.296708052870155)))
+		  if(!EIGEN_EQUAL(myInfo->Eigenvectors[i][0], ComplexDouble(0.485282228366207, -0.296708052870155)))
 			return 4;
-		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][1], ComplexDouble(0.338848858887965, - 0.308475666349372)))
+		  if(!EIGEN_EQUAL(myInfo->Eigenvectors[i][1], ComplexDouble(0.338848858887965, - 0.308475666349372)))
 			{
 			  return 5;
 			}
-		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][2], ComplexDouble(0.683000515588799, 0.000000000000000)))
+		  if(!EIGEN_EQUAL(myInfo->Eigenvectors[i][2], ComplexDouble(0.683000515588799, 0.000000000000000)))
 			return 6;
 		  
 		}
-	  else if(DBL_EQUAL(myInfo.Eigenvalues[i], ComplexDouble(-0.293596624026318, 0.186556816736693)))
+	  else if(DBL_EQUAL(myInfo->Eigenvalues[i], ComplexDouble(-0.293596624026318, 0.186556816736693)))
 		{
-		  if(myInfo.Eigenvectors[i].size() != 3)
+		  if(myInfo->Eigenvectors[i].size() != 3)
 			return 7;
-		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][0], ComplexDouble(-0.673526180545294, - 0.162803324616888)))
+		  if(!EIGEN_EQUAL(myInfo->Eigenvectors[i][0], ComplexDouble(-0.673526180545294, - 0.162803324616888)))
 			return 8;
-		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][1], ComplexDouble(0.710590551892770, 0.000000000000000)))
+		  if(!EIGEN_EQUAL(myInfo->Eigenvectors[i][1], ComplexDouble(0.710590551892770, 0.000000000000000)))
 			return 9;
-		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][2], ComplexDouble(-0.047837784181806, + 0.112384053935867)))
+		  if(!EIGEN_EQUAL(myInfo->Eigenvectors[i][2], ComplexDouble(-0.047837784181806, + 0.112384053935867)))
 			return 10;
 		}
-	  else if(DBL_EQUAL(myInfo.Eigenvalues[i], ComplexDouble(0.818973597340112, + 0.276272242586674)))
+	  else if(DBL_EQUAL(myInfo->Eigenvalues[i], ComplexDouble(0.818973597340112, + 0.276272242586674)))
 		{
-		  if(myInfo.Eigenvectors[i].size() != 3)
+		  if(myInfo->Eigenvectors[i].size() != 3)
 			return 11;
-		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][0], ComplexDouble(-0.464235641088859, - 0.209300657923136)))
+		  if(!EIGEN_EQUAL(myInfo->Eigenvectors[i][0], ComplexDouble(-0.464235641088859, - 0.209300657923136)))
 			return 12;
-		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][1], ComplexDouble(-0.080089459524766, + 0.308785039594677)))
+		  if(!EIGEN_EQUAL(myInfo->Eigenvectors[i][1], ComplexDouble(-0.080089459524766, + 0.308785039594677)))
 			return 13;
-		  if(!EIGEN_EQUAL(myInfo.Eigenvectors[i][2], ComplexDouble(0.799322201575374, + 0.000000000000000)))
+		  if(!EIGEN_EQUAL(myInfo->Eigenvectors[i][2], ComplexDouble(0.799322201575374, + 0.000000000000000)))
 			return 14;
 		}
 	  else
@@ -123,6 +125,7 @@ int LapackeEigenvalueSolverTest::TestCase3() const
 		}
 
 	}
+  delete myInfo;
   return 0;
 }
 

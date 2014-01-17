@@ -38,18 +38,44 @@ using namespace std;
 #define TMP_LIST_STR(n, s) list<string> n; n.push_back(s);
 
 
-int main(int argc, char *argv[]);
+int main(int argc, 
+		 char *argv[]
+		 );
+
+
+void PerformSolution(ComputeConfig & myConfiguration, 
+					 VerbosePrinter & myPrinter, 
+					 OutputProcessor & myProcessor
+					 );
+
+void VerifyMatrixBasicProperties(ComputeConfig & myConfiguration, 
+								 VerbosePrinter & myPrinter, 
+								 CMatrix * HamiltonianMatrix
+								 );
 
 CommandLineInterpreter * InitInterpreter();///Returns a command line interpreter with defined commands.
 
-void * EvaluateSubMatrixOneParticle(WorkerData w);
+void PrintNumberOfNonzeroElements(CMatrix * HamiltonianMatrix, 
+								  VerbosePrinter & myPrinter
+								  );
 
-void * EvaluateSubMatrixTwoParticles(WorkerData w);
+void * EvaluateSubMatrixOneParticle(WorkerData w
+									);
 
-void * EvaluateSubMatrixOneParticleHarmonic(WorkerData w);
+void * EvaluateSubMatrixTwoParticles(WorkerData w
+									 );
 
-CMatrix * ConstructHamiltonian(const ComputeConfig & myConfiguration, 
-							   VerbosePrinter & myPrinter);
+void * EvaluateSubMatrixOneParticleHarmonic(WorkerData w
+											);
+
+CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration, 
+										  VerbosePrinter & myPrinter,
+										  uint particleID = 0
+										  );
+
+CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
+										  VerbosePrinter & myPrinter
+										  );
 
 
 #endif

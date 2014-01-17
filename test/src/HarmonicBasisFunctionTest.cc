@@ -13,7 +13,9 @@ int HarmonicBasisFunctionTest::TestCase1() const
   
   ParametrizedPotential myPotential("x", vector<pair<string, double> >(), -5, 5);
 
-  HarmonicBasisFunction basis(xmin, omega, &myPotential, &myUnits);
+  vector<Potential*> potV; potV.push_back(&myPotential);
+
+  HarmonicBasisFunction basis(xmin, omega, &potV, &myUnits);
 
   vector<pair<double, double> > rule = LegendreRule::GetRule(300, -20, 25);
 
@@ -55,9 +57,10 @@ int HarmonicBasisFunctionTest::TestCase2() const
   
   
   ParametrizedPotential myPotential("0.5*mass*pow(omega, 2)*pow(x-xmin,2)", args, -50000, 50000);
+  vector<Potential*> potV; potV.push_back(&myPotential);
 
 
-  HarmonicBasisFunction basis(xmin, omega, &myPotential, &myUnits);
+  HarmonicBasisFunction basis(xmin, omega, &potV, &myUnits);
 
   vector<pair<double, double> > rule = HermiteRule::GetRule(300, xmin, mass*omega/hbar); //myUnits.GetMassOverLambda2()*omega/(myUnits.GetHbarTimesLambda()));
   for(uint n = 0; n<NMAX_CERT_TWO; ++n)
@@ -99,9 +102,10 @@ int HarmonicBasisFunctionTest::TestCase3() const
   
   
   ParametrizedPotential myPotential("0.5*mass*pow(omega, 2.0)*pow((x-xmin),2.0)", args, -50000, 50000);
+  vector<Potential*> potV; potV.push_back(&myPotential);
 
 
-  HarmonicBasisFunction basis(xmin, omega, &myPotential, &myUnits);
+  HarmonicBasisFunction basis(xmin, omega, &potV, &myUnits);
 
   vector<pair<double, double> > rule = HermiteRule::GetRule(300, xmin, mass*omega/hbar);
   for(uint n = 0; n<NMAX_CERT; ++n)
@@ -147,9 +151,10 @@ int HarmonicBasisFunctionTest::TestCase4() const
   
   
   ParametrizedPotential myPotential("0.5*mass*pow(omega, 2.0)*pow((x-xmin),2.0)-1.0", args, -50000, 50000);
+  vector<Potential*> potV; potV.push_back(&myPotential);
 
 
-  HarmonicBasisFunction basis(xmin, omega, &myPotential, &myUnits);
+  HarmonicBasisFunction basis(xmin, omega, &potV, &myUnits);
 
   vector<pair<double, double> > rule = HermiteRule::GetRule(300, xmin, mass*omega/hbar);
   for(uint n = 0; n<NMAX_CERT; ++n)
@@ -180,9 +185,10 @@ int HarmonicBasisFunctionTest::TestCase5() const
   
   
   ParametrizedPotential myPotential("0.5*mass*pow(omega, 2.0)*pow((x-xmin),2.0) - 1.0", args, -50000, 50000);
+  vector<Potential*> potV; potV.push_back(&myPotential);
 
 
-  HarmonicBasisFunction basis(xmin, omega, &myPotential, &myUnits);
+  HarmonicBasisFunction basis(xmin, omega, &potV, &myUnits);
 
   vector<pair<double, double> > rule = HermiteRule::GetRule(300, xmin, mass*omega/hbar);
   for(uint n = 0; n<NMAX_CERT; ++n)
