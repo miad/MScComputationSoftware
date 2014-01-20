@@ -2,9 +2,6 @@
 
 int main(int argc, char *argv[])
 {
-  
-  ///Initialization: read command line and act based on that.
-  
   CommandLineInterpreter * myInterpreter = InitInterpreter(); 
   try
 	{
@@ -66,13 +63,13 @@ int main(int argc, char *argv[])
 }
 
 
-
-
 void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter, OutputProcessor & myProcessor)
 {  
   if(myConfiguration.GetNumberOfParticles() == 1)
 	{
 	  CMatrix * HamiltonianMatrix = ConstructOneParticleHamiltonian(myConfiguration, myPrinter);
+	  VerifyMatrixBasicProperties(myConfiguration, myPrinter, HamiltonianMatrix);
+
 	  PrintNumberOfNonzeroElements(HamiltonianMatrix, myPrinter);
 	  myProcessor.SaveMatrix(HamiltonianMatrix);
 	  
@@ -88,16 +85,47 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 	}
   else if(myConfiguration.GetNumberOfParticles() == 2)
 	{
+	  vector<CompositeBasisFunction * > myBasisFunctions;
 	  for(uint i = 0; i<2; ++i)
 		{
 		  myPrinter.Print(1, "Constructing Hamiltonian for particle %d.\n", 0);
-		  CMatrix * OneBodyHamiltonian = ConstructOneParticleHamiltonian(myConfiguration, myPrinter, 0);
+		  CMatrix * OneBodyHamiltonian = ConstructOneParticleHamiltonian(myConfiguration, myPrinter, i);
+		  VerifyMatrixBasicProperties(myConfiguration, myPrinter, OneBodyHamiltonian);
 		  myPrinter.Print(1, "Finding eigenvalues for particle %d.\n", 0);
-		  EigenInformation * myInfo = LapackeEigenvalueSolver::Solve(OneBodyHamiltonian);
+		  EigenInformation * myEigenInfo = LapackeEigenvalueSolver::Solve(OneBodyHamiltonian);
+		  myBasisFunctions.push_back(new CompositeBasisFunction(
+																myConfiguration.GetBasisFunctions(),
+																myEigenInfo,
+																myConfiguration.GetSpecificUnits()
+																)
+									 );
+		  delete myEigenInfo;
+		  delete OneBodyHamiltonian;
+																
 		}
 
 	  
+	  myPrinter.Print(2, "Precomputing interaction terms...");
+	  PrecomputedInteractionEvaluator myPrecomputedInteractionEvaluator(&myBasisFunctions, myConfiguration.GetInteractionProperties());
+	  myPrinter.Print(2, "done\n");
 
+
+	  CMatrix * TwoBodyHamiltonian = ConstructTwoParticleHamiltonian(myConfiguration, myPrinter, myPrecomputedInteractionEvaluator);
+	  VerifyMatrixBasicProperties(myConfiguration, myPrinter, TwoBodyHamiltonian);
+
+	  myPrinter.Print(1, "Finding eigenvalues for the two-body system.\n");
+	  EigenInformation * TwoBodyEigenInfo = LapackeEigenvalueSolver::Solve(TwoBodyHamiltonian);
+
+
+	  myProcessor.SaveMatrix(TwoBodyHamiltonian);
+	  
+	  myProcessor.SetEigenInformation(TwoBodyEigenInfo);
+	  myProcessor.WritePostOutput();
+	  
+
+	  /// finally...
+	  delete TwoBodyHamiltonian;
+	  delete TwoBodyEigenInfo;
 
 	}
   else
@@ -159,6 +187,8 @@ void PrintNumberOfNonzeroElements(CMatrix * HamiltonianMatrix, VerbosePrinter & 
 }
 
 
+
+
 CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration, VerbosePrinter & myPrinter, uint particleID)
 {
 
@@ -202,20 +232,20 @@ CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration,
   
 
   ParametrizedCurve * myCurve = myConfiguration.GetKCurve();
-  Potential * myPotential = myConfiguration.GetPotential();
+  Potential * myPotential = myConfiguration.GetPotential(particleID);
 
   myPrinter.Print(3, "Potential: minX %13.10e maxX %13.10e\n", myPotential->GetMinX(), myPotential->GetMaxX());
 
-  MultiTasker<WorkerData, void*> * myMultiTasker = NULL;
+  MultiTasker<OneParticleWorkerData, void*> * myMultiTasker = NULL;
   ///Generate the Hamiltonian in parallell!
   if(myConfiguration.GetHarmonicOverride())
 	{
 	  HermiteEvaluator::Init(myConfiguration.GetHarmonicNmax() + 10);
-	  myMultiTasker = new MultiTasker<WorkerData, void*>(EvaluateSubMatrixOneParticleHarmonic, myConfiguration.GetNumberOfThreads());
+	  myMultiTasker = new MultiTasker<OneParticleWorkerData, void*>(EvaluateSubMatrixOneParticleHarmonic, myConfiguration.GetNumberOfThreads());
 	}
   else
 	{
-	  myMultiTasker = new MultiTasker<WorkerData, void*>(EvaluateSubMatrixOneParticle, myConfiguration.GetNumberOfThreads());
+	  myMultiTasker = new MultiTasker<OneParticleWorkerData, void*>(EvaluateSubMatrixOneParticle, myConfiguration.GetNumberOfThreads());
 	}
 
   if(myMultiTasker == NULL)
@@ -227,14 +257,13 @@ CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration,
   
   for(uint i = 0; i<MatrixSize; ++i)
 	{
-	  myMultiTasker->AddInput(WorkerData(HamiltonianMatrix,
+	  myMultiTasker->AddInput(OneParticleWorkerData(HamiltonianMatrix,
 										 myCurve,
 										 myPotential,
 										 myBasisFunctions,
 										 numberOfGLPoints,
 										 myConfiguration.GetSpecificUnits()->GetHbarTimesLambda(),
 										 myConfiguration.GetSpecificUnits()->GetMassOverLambda2(),
-										 myConfiguration.GetCouplingCoefficient(),
 										 myConfiguration.GetHarmonicBasisFunction(),
 										 i,
 										 i+1,
@@ -255,6 +284,65 @@ CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration,
 
 
 
+
+CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration, VerbosePrinter & myPrinter, PrecomputedInteractionEvaluator & myPrecomputedInteractionEvaluator)
+{
+
+  myPrinter.Print(3, "Creating 2-particle Hamiltonian\n");
+  
+  uint MatrixSize = myPrecomputedInteractionEvaluator.GetBasisElements(0) * myPrecomputedInteractionEvaluator.GetBasisElements(1);
+
+  CMatrix * HamiltonianMatrix = new CMatrix(MatrixSize, MatrixSize);
+  HamiltonianMatrix->InitializeAll(0.);
+
+
+
+  MultiTasker<TwoParticleWorkerData, void*> * myMultiTasker = NULL;
+  ///Generate the Hamiltonian in parallell!
+  if(myConfiguration.GetHarmonicOverride())
+	{
+	  throw RLException("Not implemented yet.");
+	}
+  else
+	{
+	  myMultiTasker = new MultiTasker<TwoParticleWorkerData, void*>(EvaluateSubMatrixTwoParticles, myConfiguration.GetNumberOfThreads());
+	}
+
+  if(myMultiTasker == NULL)
+	{
+	  throw RLException("This should never happen.");
+	}
+  
+  myMultiTasker->RegisterListener(&myPrinter);
+  
+
+  for(uint i = 0; i<MatrixSize; ++i)
+	{
+	  myMultiTasker->AddInput(TwoParticleWorkerData(HamiltonianMatrix,
+													&myPrecomputedInteractionEvaluator,
+													i,
+													i+1,
+													0,
+													MatrixSize
+													)
+							  );
+	  
+	}
+  myMultiTasker->LaunchThreads();
+  myMultiTasker->PauseUntilOutputIsGenerated();
+  myMultiTasker->DestroyThreads();
+  delete myMultiTasker; 
+  myMultiTasker = NULL;
+
+
+  myPrinter.Print(3, "Done, returning Hamiltonian.\n");
+  return HamiltonianMatrix;
+}
+
+
+
+
+
 CommandLineInterpreter * InitInterpreter()
 {
   CommandLineInterpreter * myInterpreter = new CommandLineInterpreter();
@@ -269,7 +357,7 @@ CommandLineInterpreter * InitInterpreter()
   return myInterpreter;
 }
 
-void * EvaluateSubMatrixOneParticle(WorkerData w)
+void * EvaluateSubMatrixOneParticle(OneParticleWorkerData w)
 {
   CMatrix * HamiltonianMatrix = w.HamiltonianMatrix;
   ParametrizedCurve * myCurve = w.myCurve;
@@ -309,92 +397,41 @@ void * EvaluateSubMatrixOneParticle(WorkerData w)
 }
 
 
-void * EvaluateSubMatrixTwoParticles(WorkerData w)
+void * EvaluateSubMatrixTwoParticles(TwoParticleWorkerData w)
 {
   CMatrix * HamiltonianMatrix = w.HamiltonianMatrix;
-  ParametrizedCurve * myCurve = w.myCurve;
-  Potential * myPotential = w.myPotential;
-  vector<BasisFunction> * myBasisFunctions = &w.myBasisFunctions;
-  uint numberOfGLPoints = w.numberOfGLPoints;
-  double hbarTimesLambda = w.hbarTimesLambda;
-  double massOverLambda2 = w.massOverLambda2;
+  const PrecomputedInteractionEvaluator * myPrecomputedInteractionEvaluator = w.myPrecomputedInteractionEvaluator;
   uint m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
-  double couplingCoefficient = w.couplingCoefficient;
-  uint N = myBasisFunctions->size() * numberOfGLPoints; ///Number of points in each subspace.
-  
+  uint N1 = myPrecomputedInteractionEvaluator->GetBasisElements(0);
+  uint N2 = myPrecomputedInteractionEvaluator->GetBasisElements(1);
 
 
   for(uint i = m1; i<m2; ++i)
 	{
-	  uint a = i/N;
-	  uint b = i % N;
+	  uint a = i/N1;
+	  uint b = i % N1;
 
-	  uint curvePointerA = a % numberOfGLPoints;
-	  uint basisPointerA = a / numberOfGLPoints;
-	  uint curveSegmentA = myCurve->SegmentIndexFromGLNumber(curvePointerA);
-	  
-	  ComplexDouble kA = myCurve->GetRuleValue(curveSegmentA, curvePointerA);
-	  ComplexDouble wA = myCurve->GetRuleWeight(curveSegmentA, curvePointerA);
-
-
-	  uint curvePointerB = b % numberOfGLPoints;
-	  uint basisPointerB = b / numberOfGLPoints;
-	  uint curveSegmentB = myCurve->SegmentIndexFromGLNumber(curvePointerB);
-	  
-	  ComplexDouble kB = myCurve->GetRuleValue(curveSegmentB, curvePointerB);
-	  ComplexDouble wB = myCurve->GetRuleWeight(curveSegmentB, curvePointerB);
-
-	  
 	  for(uint j = n1; j<n2; ++j)
 		{
-		  uint c = j / N;
-		  uint d = j % N;
-
-		  if(c != d && a != b) //To speed things up.
-			continue;
-
-		  uint curvePointerC = c % numberOfGLPoints;
-		  uint basisPointerC = c / numberOfGLPoints;
-		  uint curveSegmentC = myCurve->SegmentIndexFromGLNumber(curvePointerC);
+		  uint c = j / N2;
+		  uint d = j % N2;
 		  
-		  ComplexDouble kC = myCurve->GetRuleValue(curveSegmentC, curvePointerC);
-		  ComplexDouble wC = myCurve->GetRuleWeight(curveSegmentC, curvePointerC);
-
-		  uint curvePointerD = d % numberOfGLPoints;
-		  uint basisPointerD = d / numberOfGLPoints;
-		  uint curveSegmentD = myCurve->SegmentIndexFromGLNumber(curvePointerD);
+		  if(a==c && b==d)
+			{
+			  HamiltonianMatrix->Element(i, j) += myPrecomputedInteractionEvaluator->GetEnergy(0, a);
+			  HamiltonianMatrix->Element(i, j) += myPrecomputedInteractionEvaluator->GetEnergy(1, b);
+			}
 		  
-		  ComplexDouble kD = myCurve->GetRuleValue(curveSegmentD, curvePointerD);
-		  ComplexDouble wD = myCurve->GetRuleWeight(curveSegmentD, curvePointerD);
-
-		  if(b==d) //2nd term
-			{
-			  HamiltonianMatrix->Element(i, j) += 
-				sqrt(wA*wC) * myPotential->BasisIntegrate((*myBasisFunctions)[basisPointerA], 
-														   (*myBasisFunctions)[basisPointerC], 
-														   kA, kC);
-			}
-
-		  if(a==c) //3rd term
-			{
-			  HamiltonianMatrix->Element(i, j) += 
-				sqrt(wB*wD) * myPotential->BasisIntegrate((*myBasisFunctions)[basisPointerB], 
-														   (*myBasisFunctions)[basisPointerD], 
-														   kB, kD);
-			}
-
-		  if(a==c && b==d) //1st term
-			{
-			  HamiltonianMatrix->Element(i, j) += 
-				pow(hbarTimesLambda,2)/(2.*massOverLambda2) * (pow(kA,2) + pow(kB,2) + couplingCoefficient);
-			}
+		  ///Here we have to be very careful not to cause any double-addings. 
+		  HamiltonianMatrix->Element(i, j) += myPrecomputedInteractionEvaluator->GetElement(a, b, c, d);
+			  
 		}
-   }
-   return NULL;
+	}
+  return NULL;
 }
 
 
-void * EvaluateSubMatrixOneParticleHarmonic(WorkerData w)
+void * EvaluateSubMatrixOneParticleHarmonic(OneParticleWorkerData w)
 {
   CMatrix * HamiltonianMatrix = w.HamiltonianMatrix;
 

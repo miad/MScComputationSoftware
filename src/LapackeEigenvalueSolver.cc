@@ -40,6 +40,8 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool assure
 	{
 	  AssureEigenOrthonormality(toReturn);
 	}
+
+
   return toReturn;
 }
 

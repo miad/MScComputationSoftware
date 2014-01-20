@@ -40,3 +40,24 @@ double SpecificUnits::GetTimeToHertzFactor() const
 {
   return timeToHertzFactor;
 }
+
+
+
+ComplexDouble SpecificUnits::EnergyToKValue(const ComplexDouble & energy) const
+{
+  ///If numerical stability is mean to us, then rotate.
+  ComplexDouble toReturn = sqrt(energy * 2. * massOverLambda2) / hbarTimesLambda;
+  
+  if( (abs(imag(toReturn)) > 1E2*abs(real(toReturn))  && imag(toReturn) < 0))
+	{
+	  toReturn *= -1.0;
+	}
+
+  return toReturn;
+}
+
+ComplexDouble SpecificUnits::KValueToEnergy(const ComplexDouble & kValue) const
+{
+  return pow(kValue * hbarTimesLambda, 2.0) / (2.0 * massOverLambda2);
+}
+

@@ -8,7 +8,7 @@ ExternalLauncher::ExternalLauncher(ComputeConfig * _config)
 
 void ExternalLauncher::Launch() const
 {
-  if(config->GetAutoPlotPotential())
+  if(config->GetAutoPlotPotential() && config->GetOutputFilenames()->Get("PotentialFile").length() > 1)
 	{
 	  char buffer[4000];
 	  sprintf(buffer, "gnuplot/./PotentialPlot.sh \"%s\" \"%s\" \"%s\" \"%s\"", 
@@ -19,7 +19,7 @@ void ExternalLauncher::Launch() const
 			  );
 	  system(buffer);
 	}
-  if(config->GetAutoPlotKCurve())
+  if(config->GetAutoPlotKCurve() && config->GetOutputFilenames()->Get("KCurveFile").length() > 1)
 	{
 	  char buffer[4000];
 	  sprintf(buffer, "gnuplot/./KPlot.sh \"%s\" \"%s\" \"%s\"", 
@@ -31,7 +31,7 @@ void ExternalLauncher::Launch() const
 	  system(buffer);
 	}
 
-  if(config->GetAutoPlotWavefunctions())
+  if(config->GetAutoPlotWavefunctions() && config->GetOutputFilenames()->Get("WavefunctionsFile").length() > 1)
 	{
 	  char buffer[4000];
 	  sprintf(buffer, "gnuplot/./WFplot.sh \"%s\" \"%s\" ", 

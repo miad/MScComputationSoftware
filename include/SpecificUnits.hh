@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 
+#include "RLMacros.hpp"
+
 using namespace std;
 
 /**
@@ -28,6 +30,15 @@ public:
   string GetEnergyUnitName() const; /// Getter.
 
   double GetTimeToHertzFactor() const;
+  
+
+  ComplexDouble EnergyToKValue(const ComplexDouble & energy ///The energy.
+							   ) const; ///Converts an energy to a wave vector using the supplied internal unit system.
+
+  ComplexDouble KValueToEnergy(const ComplexDouble & kValue ///The value to convert.
+							   ) const; ///Converts a wave vector to an energy using the supplied internal unit system.
+
+
 
 
 private:

@@ -3,14 +3,16 @@
 
 #include "Globals.hpp"
 #include "RLException.hh"
-#include "fparser.hh"
 #include <stdio.h>
 #include <ctype.h>
 #include <cstring>
 #include <map>
 #include <iostream>
+#include <algorithm>
 #include "HermiteEvaluator.hh"
 #include "BasisFunction.hh"
+#include "SpecificUnits.hh"
+#include "EigenInformation.hh"
 
 using namespace std;
 
@@ -20,10 +22,10 @@ using namespace std;
 class CompositeBasisFunction
 {
 public:
-  CompositeBasisFunction(vector<BasisFunction> * _functions, ///Basis functions to use.
-						 vector<ComplexDouble> * _parameters, ///Essentially the eigenvalues (converted from energy to k-values of course).
-						 vector<vector<ComplexDouble> > * _coefficients ///The coefficients. Basically 1-particle eigenvectors.
-						 ); ///Constructor. Ownership of the objects are NOT passed, but they may of course NOT be deleted before the deletion of this object.
+  CompositeBasisFunction(vector<BasisFunction> _functions, ///Basis functions to use.
+						 EigenInformation * myInformation, ///Eigeninformation. Ownership is not taken. May be deleted after constructor call.
+						 const SpecificUnits * units ///Used when constructing.
+						 ); ///Constructor. Ownership of the objects are NOT passed, and they are NOT used after the constructor.
 
   ~CompositeBasisFunction(); ///Destructor.
 
@@ -31,12 +33,17 @@ public:
 					 uint pIndex ///Basis function index.
 					 ); ///Evaluate the function using parameter x.
 
+  ComplexDouble GetK(uint pIndex) const;
+
+  ComplexDouble GetE(uint pIndex) const;
+
   uint GetNumberOfParameters() const; /// = number of eigenvalues, = number of basis states.
-  
+
 private:
-  vector<BasisFunction> * functions; ///Functions.
-  vector<ComplexDouble> * parameters; ///Parameters.
-  vector<vector<ComplexDouble> > * coefficients; ///Coefficients.
+  vector<BasisFunction> functions; ///Basis functions.
+  vector<ComplexDouble> KValues; ///K-values.
+  vector<ComplexDouble> Energies; ///Energies.
+  vector<vector<ComplexDouble> > coefficients; ///Coefficients.
 };
 
 #endif

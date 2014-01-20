@@ -17,8 +17,6 @@
 #include "WavefunctionTwoParticleWorkerData.hh"
 #include "RLMacros.hpp"
 
-  
-
 
 
 /** This class will process the results from computations, and save it in the correct format in the correct output files. In order to do so it has to do some filtering etc. of points.
@@ -73,12 +71,6 @@ private:
 
   static FILE * AssuredFopen(const string filename ///File to open.
 							 ); ///Opens a file FOR WRITING and returns the handle, throws exception if the open failed. Ownership passed on.
-
-  ComplexDouble EnergyToKValue(const ComplexDouble & energy ///The energy.
-							   ) const; ///Converts an energy to a wave vector using the supplied internal unit system.
-
-  ComplexDouble KValueToEnergy(const ComplexDouble & kValue ///The value to convert.
-							   ) const; ///Converts a wave vector to an energy using the supplied internal unit system.
 
 
   vector<double> GetOneParticleBasisRatio(uint eigenIndex, ///Index of wavevector to compute ratio for.

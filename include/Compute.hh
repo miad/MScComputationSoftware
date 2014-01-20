@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <math.h>
 #include <unistd.h>
+#include <algorithm>
 
 #include "Potential.hh"
 #include "ParametrizedPotential.hh"
@@ -30,6 +31,7 @@
 #include "ExternalLauncher.hh"
 #include "HermiteEvaluator.hh"
 #include "HarmonicBasisFunction.hh"
+#include "CompositeBasisFunction.hh"
 
 
 using namespace std;
@@ -59,13 +61,13 @@ void PrintNumberOfNonzeroElements(CMatrix * HamiltonianMatrix,
 								  VerbosePrinter & myPrinter
 								  );
 
-void * EvaluateSubMatrixOneParticle(WorkerData w
+void * EvaluateSubMatrixOneParticle(OneParticleWorkerData w
 									);
 
-void * EvaluateSubMatrixTwoParticles(WorkerData w
+void * EvaluateSubMatrixTwoParticles(TwoParticleWorkerData w
 									 );
 
-void * EvaluateSubMatrixOneParticleHarmonic(WorkerData w
+void * EvaluateSubMatrixOneParticleHarmonic(OneParticleWorkerData w
 											);
 
 CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration, 
@@ -74,7 +76,9 @@ CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration,
 										  );
 
 CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
-										  VerbosePrinter & myPrinter
+										  VerbosePrinter & myPrinter, 
+										  PrecomputedInteractionEvaluator & myPrecomputedInteractionEvaluator
+										  
 										  );
 
 

@@ -4,7 +4,7 @@ ComputeConfig::ComputeConfig()
   :numberOfThreads(1), verbosityLevel(0), autoPlotPotential(false), autoPlotKCurve(false),
    autoPlotWavefunctions(false),
    minWavefunctionX(-10), maxWavefunctionX(10), wavefunctionStepsizeX(0.01),
-   numberOfParticles(2), couplingCoefficient(0.0),
+   numberOfParticles(2),
    harmonicOverride(false),harmonicNmax(1)
 {
   outputFilenames.Add("KCurveFile", "KCurve.dat");
@@ -156,6 +156,7 @@ void ComputeConfig::ReadFile(const char * fileName)
 
   ReadBasisFunctions(computation);
   ReadMultiParticleData(computation);
+  ReadInteractionProperties(computation);
   ReadPotential(computation);
   ReadKCurve(computation);
 
@@ -186,15 +187,40 @@ void ComputeConfig::ReadMultiParticleData(Setting & computation)
 	{
 	  throw RLException("Unsupported # particles.");
 	}
+}
 
-  if (! computation.exists("CouplingCoefficient"))
+void ComputeConfig::ReadInteractionProperties(Setting & computation)
+{
+  if( ! computation.exists("Interaction") || ! computation["Interaction"].isGroup() )
+	{
+	  throw RLException("Interaction group not properly specified in config file.");
+	}
+  Setting & inter = computation["Interaction"];
+
+  if (! inter.exists("CouplingCoefficient"))
 	{
 	  throw RLException("CouplingCoefficient not properly specified.");
 	}
-  if(! computation.lookupValue("CouplingCoefficient", couplingCoefficient))
+  double cpCoeff;
+  if(! inter.lookupValue("CouplingCoefficient", cpCoeff))
 	{
 	  throw RLException("Could not lookup coupling coefficient.");
 	}
+  myInteractionProperties.SetCouplingCoefficient(cpCoeff);
+
+  if(!inter.exists("IntegrationLimits") || !inter["IntegrationLimits"].isArray() || inter["IntegrationLimits"].getLength() != 2)
+	{
+	  throw RLException("IntegrationLimits not properly specified in config file.");
+	}
+  myInteractionProperties.SetLowerIntegrationLimit(inter["IntegrationLimits"][0]);
+  myInteractionProperties.SetUpperIntegrationLimit(inter["IntegrationLimits"][1]);
+
+  int prec;
+  if(! inter.lookupValue("Precision", prec) )
+	{
+	  throw RLException("Could not find interaction precision in config file.");
+	}
+  myInteractionProperties.SetPrecision(prec);
 
 }
 
@@ -241,8 +267,6 @@ void ComputeConfig::ReadExtraInteresting(Setting & outputSpecifics)
 		  }
 	  extraInterestingPoints.push_back(ComplexDouble(extraInteresting[i][0], extraInteresting[i][1]));
 	}
-
-  
 }
 
 
@@ -297,7 +321,12 @@ void ComputeConfig::WriteFile(const char * fileName) const
 	matType = "Symmetric";
   root["Computation"].add("ExpectedMatrixType", Setting::TypeString) = matType;
   root["Computation"].add("NumberOfParticles", Setting::TypeInt) = (int)numberOfParticles;
-  root["Computation"].add("CouplingCoefficient", Setting::TypeFloat) = couplingCoefficient;
+  Setting & inter = root["Computation"].add("Interaction", Setting::TypeGroup);
+  inter.add("CouplingCoefficient", Setting::TypeFloat) = myInteractionProperties.GetCouplingCoefficient();
+  Setting & ilim = inter.add("IntegrationLimits", Setting::TypeArray);
+  ilim.add(Setting::TypeFloat) = myInteractionProperties.GetLowerIntegrationLimit();
+  ilim.add(Setting::TypeFloat) = myInteractionProperties.GetUpperIntegrationLimit();
+  ilim.add(Setting::TypeInt) = (int)myInteractionProperties.GetPrecision();
 	
 
   Setting & units = root["Computation"].add("Units", Setting::TypeGroup);
@@ -781,13 +810,13 @@ void ComputeConfig::ReadParametrizedPotential(Setting & poten)
 			  throw RLException("Variable parameter name #%d was not properly specified.", i);
 			}
 		  variableParameters[paraStr] = vector<double>();
-		  if(! poten.exists("Value") || ! poten["Value"].isArray() || !poten["Value"].getLength() != numberOfParticles )
+		  if(! vparam[i].exists("Value") || ! vparam[i]["Value"].isArray() || vparam[i]["Value"].getLength() != (int)numberOfParticles )
 			{
 			  throw RLException("Invalid value given for variable parameter '%s'.", paraStr.c_str());
 			}
-		  for(int i = 0; i<poten["Value"].getLength(); ++i)
+		  for(int j = 0; j<vparam[i]["Value"].getLength(); ++j)
 			{
-			  variableParameters[paraStr].push_back(poten["Value"][i]);
+			  variableParameters[paraStr].push_back(vparam[i]["Value"][j]);
 			}
 		}
 	}
@@ -997,19 +1026,20 @@ void ComputeConfig::SetNumberOfParticles(uint value)
   numberOfParticles = value;
 }
 
-void ComputeConfig::SetCouplingCoefficient(double value)
+void ComputeConfig::SetInteractionProperties(InteractionProperties value)
 {
-  couplingCoefficient = value;
+  myInteractionProperties = value;
 }
+
 
 uint ComputeConfig::GetNumberOfParticles() const
 {
   return numberOfParticles;
 }
 
-double ComputeConfig::GetCouplingCoefficient() const
+const InteractionProperties * ComputeConfig::GetInteractionProperties() const
 {
-  return couplingCoefficient;
+  return &myInteractionProperties;
 }
 
 bool ComputeConfig::GetHarmonicOverride() const

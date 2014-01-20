@@ -17,6 +17,7 @@
 #include "OutputFilenames.hh"
 #include "SpecificUnits.hh"
 #include "HarmonicBasisFunction.hh"
+#include "InteractionProperties.hh"
 
 
 using namespace std;
@@ -91,8 +92,8 @@ public:
   double GetWavefunctionStepsizeX() const;
 
   uint GetNumberOfParticles() const;
-  double GetCouplingCoefficient() const;
 
+  const InteractionProperties * GetInteractionProperties() const;
 
   ///Setters
 
@@ -143,6 +144,9 @@ public:
   void SetNumberOfParticles(uint value
 							);
   
+  void SetInteractionProperties(InteractionProperties value
+								);
+
   void SetCouplingCoefficient(double value
 							  );
 
@@ -192,6 +196,9 @@ private:
   void ReadParametrizedPotential(Setting & poten
 								 );
 
+  void ReadInteractionProperties(Setting & computation
+								 );
+
 
 private:
 
@@ -211,7 +218,6 @@ private:
   double wavefunctionStepsizeX; ///Wavefunction stepsize x.
 
   uint numberOfParticles; ///Number of particles in many-particle case.
-  double couplingCoefficient; ///Coupling coefficient for many-particle case.
 
 
   bool harmonicOverride; ///Harmonic override (use harmonic basis instead)
@@ -229,6 +235,8 @@ private:
   SpecificUnits specificUnits; /// Units to use in computation.
 
   ExpectedMatrixType matrixType; ///The expected matrix type.
+
+  InteractionProperties myInteractionProperties;
 };
 
 #endif

@@ -30,15 +30,19 @@ void OutputProcessor::WritePostOutput() const
   WritePotentialPrecisionToFile();
   WriteKCurveToFile();
   WriteKFoundToFile();
-  WriteInterestingKPointsVerbosely();
-  if(config->GetHarmonicOverride())
+
+  if(config->GetNumberOfParticles() == 1)
 	{
-	  WriteInterestingHarmonicOneParticleWavefunctionsToFile();
-	}
-  else if(config->GetNumberOfParticles() == 1)
-	{
-	  WriteInterestingKPointsToFile();
-	  WriteInterestingOneParticleWavefunctionsToFile();
+	  WriteInterestingKPointsVerbosely();
+	  if(config->GetHarmonicOverride())
+		{
+		  WriteInterestingHarmonicOneParticleWavefunctionsToFile();
+		}
+	  else
+		{
+		  WriteInterestingKPointsToFile();
+		  WriteInterestingOneParticleWavefunctionsToFile();
+		}
 	}
   else if(config->GetNumberOfParticles() == 2)
 	{
@@ -165,7 +169,7 @@ void OutputProcessor::WriteKFoundToFile() const
 
   for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
 	{
-	  ComplexDouble kToPrint = EnergyToKValue(*it);
+	  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(*it);
 
 	  ///If numerical stability is mean to us, then rotate.
 	  if( (abs(imag(kToPrint)) > 1E2*abs(real(kToPrint))  && imag(kToPrint) < 0))
@@ -180,27 +184,6 @@ void OutputProcessor::WriteKFoundToFile() const
   vPrint(4, "done\n");
 }
 
-ComplexDouble OutputProcessor::EnergyToKValue(const ComplexDouble & energy) const
-{
-  ///If numerical stability is mean to us, then rotate.
-  ComplexDouble toReturn = sqrt(energy * 2. * (config->GetSpecificUnits()->GetMassOverLambda2())) / 
-	(config->GetSpecificUnits()->GetHbarTimesLambda());
-  
-  if( (abs(imag(toReturn)) > 1E2*abs(real(toReturn))  && imag(toReturn) < 0))
-	{
-	  toReturn *= -1.0;
-	}
-
-  return toReturn;
-}
-
-ComplexDouble OutputProcessor::KValueToEnergy(const ComplexDouble & kValue) const
-{
-  return pow(kValue * (config->GetSpecificUnits()->GetHbarTimesLambda()), 2.0) /
-	(2.0 * (config->GetSpecificUnits()->GetMassOverLambda2()) );
-}
-
-
 
 
 void OutputProcessor::WriteInterestingKPointsVerbosely() const
@@ -209,10 +192,10 @@ void OutputProcessor::WriteInterestingKPointsVerbosely() const
 
   for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
 	{
-	  double RVu = real(KValueToEnergy(*it) - config->GetPotential()->Evaluate(config->GetHarmonicBasisFunction()->GetXmin())); ///Energy in custom unit.
+	  double RVu = real(config->GetSpecificUnits()->KValueToEnergy(*it) - config->GetPotential()->Evaluate(config->GetHarmonicBasisFunction()->GetXmin()) ); ///Energy in custom unit.
 
 	  double RVs = RVu / ( config->GetSpecificUnits()->GetHbarTimesLambda() * 2 * PI * config->GetSpecificUnits()->GetTimeToHertzFactor()) ; ///Energy in hbar * Hz
-	  double IVu = imag(KValueToEnergy(*it)); ///Energy in custom unit. = -Gamma/2
+	  double IVu = imag(config->GetSpecificUnits()->KValueToEnergy(*it)); ///Energy in custom unit. = -Gamma/2
 	  double IVrte = 2.0*abs(IVu) / (config->GetSpecificUnits()->GetHbarTimesLambda() * config->GetSpecificUnits()->GetTimeToHertzFactor()); /// Gamma / hbar 
 
 	  if(imag(*it) > 1E-5 && abs(arg(*it)-PI/2) < 1E-2 )
@@ -232,7 +215,7 @@ void OutputProcessor::WriteInterestingKPointsVerbosely() const
 				 imag(*it), 
 				 config->GetSpecificUnits()->GetLengthUnitName().c_str(), 
 				 RVu, 
-				 imag(KValueToEnergy(*it)), 
+				 imag(config->GetSpecificUnits()->KValueToEnergy(*it)), 
 				 config->GetSpecificUnits()->GetEnergyUnitName().c_str(), 
 				 RVs, 
 				 IVrte
@@ -324,7 +307,7 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex() const
   uint eigenCounter = 0;
   for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
 	{
-	  ComplexDouble kToPrint = EnergyToKValue(*it);
+	  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(*it);
 
 	  ///Now apply filter rule.
 
@@ -392,7 +375,7 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex() const
 	  uint loopCount = 0;
 	  for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
 		{
-		  ComplexDouble kToPrint = EnergyToKValue(*it);
+		  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(*it);
 		  double locDist = abs(kToPrint-*ip);
 		  if(minDistance > locDist)
 			{
@@ -419,7 +402,7 @@ vector<ComplexDouble> OutputProcessor::FindInterestingKPoints() const
 	{
 	  if(*it >= eigenData->Eigenvalues.size())
 		throw RLException("Consistency error: interesting index was larger than eigenvalue vector size.");
-	  toReturn.push_back(EnergyToKValue(eigenData->Eigenvalues[*it]));
+	  toReturn.push_back(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[*it]));
 	}
 
   return toReturn;
@@ -484,7 +467,7 @@ void OutputProcessor::WriteInterestingOneParticleWavefunctionsToFile() const
 		{
 		  sqSum += pow(abs(*ip), 2) * config->GetWavefunctionStepsizeX();
 		}
-	  vPrint(2, "k = %+2.5f%+2.5f => Graph area: %+13.10e\n", real(EnergyToKValue(eigenData->Eigenvalues[*it])), imag(EnergyToKValue(eigenData->Eigenvalues[*it])), sqSum);
+	  vPrint(2, "k = %+2.5f%+2.5f => Graph area: %+13.10e\n", real(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[*it])), imag(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[*it])), sqSum);
 
 	}
 
@@ -583,7 +566,7 @@ void OutputProcessor::WriteInterestingHarmonicOneParticleWavefunctionsToFile() c
 		{
 		  sqSum += pow(abs(*ip), 2) * config->GetWavefunctionStepsizeX();
 		}
-	  vPrint(2, "k = %+2.5f%+2.5f => Graph area: %+13.10e\n", real(EnergyToKValue(eigenData->Eigenvalues[*it])), imag(EnergyToKValue(eigenData->Eigenvalues[*it])), sqSum);
+	  vPrint(2, "k = %+2.5f%+2.5f => Graph area: %+13.10e\n", real(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[*it])), imag(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[*it])), sqSum);
 
 	}
 
@@ -764,7 +747,7 @@ void OutputProcessor::WriteInterestingTwoParticleWavefunctionsToFile() const
 	{
 	  pair<uint, double> val = myMultiTasker->GetOutput();
 
-	  vPrint(2, "k = %+2.5f%+2.5f => Graph area: %+13.10e\n", real(EnergyToKValue(eigenData->Eigenvalues[val.first])), imag(EnergyToKValue(eigenData->Eigenvalues[val.first])), val.second);
+	  vPrint(2, "k = %+2.5f%+2.5f => Graph area: %+13.10e\n", real(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[val.first])), imag(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[val.first])), val.second);
 
 	}
 
