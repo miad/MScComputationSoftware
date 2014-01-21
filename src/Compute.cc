@@ -105,9 +105,9 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 		}
 
 	  
-	  myPrinter.Print(2, "Precomputing interaction terms...");
-	  PrecomputedInteractionEvaluator myPrecomputedInteractionEvaluator(&myBasisFunctions, myConfiguration.GetInteractionProperties());
-	  myPrinter.Print(2, "done\n");
+	  myPrinter.Print(2, "Precomputing interaction terms:\n");
+	  PrecomputedInteractionEvaluator myPrecomputedInteractionEvaluator(&myBasisFunctions, myConfiguration.GetInteractionProperties(), myConfiguration.GetHarmonicBasisFunction(), myConfiguration.GetSpecificUnits(), &myPrinter);
+	  myPrinter.Print(2, "Done precomputing.\n");
 
 
 	  CMatrix * TwoBodyHamiltonian = ConstructTwoParticleHamiltonian(myConfiguration, myPrinter, myPrecomputedInteractionEvaluator);

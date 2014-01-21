@@ -208,12 +208,12 @@ void ComputeConfig::ReadInteractionProperties(Setting & computation)
 	}
   myInteractionProperties.SetCouplingCoefficient(cpCoeff);
 
-  if(!inter.exists("IntegrationLimits") || !inter["IntegrationLimits"].isArray() || inter["IntegrationLimits"].getLength() != 2)
+  int nmax;
+  if(! inter.lookupValue("Nmax", nmax) )
 	{
-	  throw RLException("IntegrationLimits not properly specified in config file.");
+	  throw RLException("Could not look up nmax for interaction.");
 	}
-  myInteractionProperties.SetLowerIntegrationLimit(inter["IntegrationLimits"][0]);
-  myInteractionProperties.SetUpperIntegrationLimit(inter["IntegrationLimits"][1]);
+  myInteractionProperties.SetNMax(nmax);
 
   int prec;
   if(! inter.lookupValue("Precision", prec) )
@@ -323,10 +323,8 @@ void ComputeConfig::WriteFile(const char * fileName) const
   root["Computation"].add("NumberOfParticles", Setting::TypeInt) = (int)numberOfParticles;
   Setting & inter = root["Computation"].add("Interaction", Setting::TypeGroup);
   inter.add("CouplingCoefficient", Setting::TypeFloat) = myInteractionProperties.GetCouplingCoefficient();
-  Setting & ilim = inter.add("IntegrationLimits", Setting::TypeArray);
-  ilim.add(Setting::TypeFloat) = myInteractionProperties.GetLowerIntegrationLimit();
-  ilim.add(Setting::TypeFloat) = myInteractionProperties.GetUpperIntegrationLimit();
-  ilim.add(Setting::TypeInt) = (int)myInteractionProperties.GetPrecision();
+  inter.add("Nmax", Setting::TypeInt) = (int)myInteractionProperties.GetNMax(); 
+  inter.add(Setting::TypeInt) = (int)myInteractionProperties.GetPrecision();
 	
 
   Setting & units = root["Computation"].add("Units", Setting::TypeGroup);

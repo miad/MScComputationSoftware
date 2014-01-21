@@ -78,9 +78,9 @@ double LapackeEigenvalueSolver::AssureEigenOrthonormality(EigenInformation * eig
 		  maxDeviation = MAX(maxDeviation, abs(sum-(double)(i==j)));
 		}
 	}
-  if(maxDeviation > 1E-7) ///If it's worse than this, it's probably so bad that we should throw() on it.
+  if(maxDeviation > 1E-6) ///If it's worse than this, it's probably so bad that we should throw() on it.
 	{
-	  throw RLException("Too large eigenvector deviation. Investigate this.");
+	  throw RLException("Too large eigenvector deviation: %+13.10e\n Investigate this.", maxDeviation);
 	}
   return maxDeviation;
 }
