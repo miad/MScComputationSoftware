@@ -71,7 +71,8 @@ protected:
 						   uint d
 						   ); ///Count number of permutations.
 
-  PrecomputedInteractionEvaluator() {};
+  PrecomputedInteractionEvaluator() ///For debugging purposes.
+  {};
 
 
 private:

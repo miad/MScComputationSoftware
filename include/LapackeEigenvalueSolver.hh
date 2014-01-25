@@ -16,8 +16,8 @@
 
 using namespace std;
 
-
-
+/**Eigenvalue solver using LAPACKe
+ */
 class LapackeEigenvalueSolver
 {
 public:
@@ -26,6 +26,10 @@ public:
 								);
   static double AssureEigenOrthonormality(EigenInformation * eigenData
 										  ); ///Returns maximum deviation in square.
+
+  static void RescaleEigenvectors(EigenInformation * eigenData
+									);
+
 private:
   LapackeEigenvalueSolver() {}
 };

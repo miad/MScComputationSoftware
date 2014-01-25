@@ -1,27 +1,28 @@
 #include "CompositeBasisFunction.hh"
 
-CompositeBasisFunction::CompositeBasisFunction(vector<BasisFunction> _functions, EigenInformation * myInformation, const SpecificUnits * units)
-  : functions(_functions)
+CompositeBasisFunction::CompositeBasisFunction(vector<BasisFunction> _functions, EigenInformation * _myInformation, const ParametrizedCurve * _KCurve)
+  : functions(_functions), myHarmonicBasisFunction(NULL), myInformation(_myInformation), KCurve(_KCurve)
 {
-  if(myInformation == NULL || units == NULL)
+  if(myInformation == NULL || KCurve == NULL || functions.empty())
 	{
-	  throw RLException("CompositeBasisFunction: tried to call with NULL EigenInformation or units object.");
+	  throw RLException("CompositeBasisFunction: tried to initialize with too empty input parameters.");
 	}
 
-  Energies = vector<ComplexDouble>(myInformation->Eigenvalues);
-  for(vector<ComplexDouble>::const_iterator it = Energies.begin(); it!=Energies.end(); ++it)
+  if(myInformation->Eigenvalues.size() % functions.size() != 0)
 	{
-	  KValues.push_back(units->EnergyToKValue(*it));
+	  throw RLException("CompositeBasisFunction: Invalid input dimensions.");
 	}
-
-  coefficients = vector<vector<ComplexDouble> >(myInformation->Eigenvectors);
-
-
-if(coefficients.size() != KValues.size() || coefficients.size() % functions.size() != 0)
-  {
-	throw RLException("Invalid input array size for composite basis function.");
-  }
 }
+
+CompositeBasisFunction::CompositeBasisFunction(const HarmonicBasisFunction * _myHarmonicBasisFunction, EigenInformation * _myInformation)
+  : myHarmonicBasisFunction(_myHarmonicBasisFunction), myInformation(_myInformation), KCurve(NULL)
+{
+  if(myInformation == NULL || myHarmonicBasisFunction == NULL)
+	{
+	  throw RLException("CompositeBasisFunction: tried to call with NULL EigenInformation or HarmonicBasisFunction object.");
+	}
+}
+
 
 CompositeBasisFunction::~CompositeBasisFunction()
 {
@@ -30,37 +31,65 @@ CompositeBasisFunction::~CompositeBasisFunction()
 
 ComplexDouble CompositeBasisFunction::GetE(uint pIndex) const
 {
-  return Energies.at(pIndex);
-}
-
-ComplexDouble CompositeBasisFunction::GetK(uint pIndex) const
-{
-  return KValues.at(pIndex);
+  return myInformation->Eigenvalues.at(pIndex);
 }
 
 
 ComplexDouble CompositeBasisFunction::Eval(const double & x, uint pIndex)
 {
-  if(pIndex >= KValues.size())
+  if(pIndex >= myInformation->Eigenvectors.size())
 	{
 	  throw RLException("Invalid p-index.");
 	}
+
+  if(myHarmonicBasisFunction != NULL)
+	return HarmonicEval(x, pIndex);
+  return KEval(x, pIndex);
   
-  uint bConvert = coefficients.size() / functions.size();
-  
-  ComplexDouble sum = 0.0;
-  
-  for(uint i = 0; i<coefficients.at(pIndex).size(); ++i)
+}
+
+ComplexDouble CompositeBasisFunction::KEval(const double & x, uint pIndex)
+{
+  uint N = KCurve->GetTotalNumberOfGLPoints();
+  ComplexDouble sum = 0;
+
+  for(uint i = 0; i<myInformation->Eigenvectors.at(pIndex).size(); ++i)
 	{
-	  uint basisPointer = i/bConvert;
-	  sum += coefficients.at(pIndex).at(i) * functions.at(basisPointer).Eval(x, KValues.at(pIndex));
+	  ///By convention (when creating the Hamiltonian)
+	  uint curvePointer = i % N;
+	  uint basisPointer = i / N;
+	  ComplexDouble kVal = KCurve->GetRuleValue(curvePointer);
+	  ComplexDouble kWeight = KCurve->GetRuleWeight(curvePointer);
+	  
+	  sum += myInformation->Eigenvectors.at(pIndex).at(i) * 
+		sqrt(kWeight) * functions.at(basisPointer).Eval(x, kVal);
 	}
-
-
   return sum;
 }
 
-uint CompositeBasisFunction::GetNumberOfParameters() const
+
+
+double CompositeBasisFunction::HarmonicEval(const double & x, uint pIndex) const
 {
-  return KValues.size();
+  long double sum = 0;
+  for(uint n = 0; n<myInformation->Eigenvectors.at(pIndex).size(); ++n)
+	{
+	  ComplexDouble coefficient = myInformation->Eigenvectors.at(pIndex).at(n);
+	  if(imag(coefficient) > 1E-9)
+		throw RLException("Complex coefficient (imag part %+13.10f ) for harmonic oscillator basis: something is wrong here.", imag(coefficient));
+
+	  sum += real(coefficient) * myHarmonicBasisFunction->Eval(n, x);
+	}
+  return (double)sum;
+}
+
+uint CompositeBasisFunction::GetSize() const
+{
+  return myInformation->Eigenvalues.size();
+}
+
+
+bool CompositeBasisFunction::IsHarmonic() const
+{
+  return myHarmonicBasisFunction != NULL;
 }

@@ -15,7 +15,7 @@ ParametrizedCurve::~ParametrizedCurve()
 
 }
 
-unsigned int ParametrizedCurve::GetTotalNumberOfGLPoints()
+unsigned int ParametrizedCurve::GetTotalNumberOfGLPoints() const
 {
   return totalNumberOfGLPoints;
 }
@@ -198,9 +198,19 @@ ComplexDouble ParametrizedCurve::GetRuleValue(unsigned int segment, unsigned int
   return GetRulePoint(segment, GLpoint)->first;
 }
 
+ComplexDouble ParametrizedCurve::GetRuleValue(uint GLpoint) const
+{
+  return GetRuleValue(SegmentIndexFromGLNumber(GLpoint), GLpoint);
+}
+
 ComplexDouble ParametrizedCurve::GetRuleWeight(unsigned int segment, unsigned int GLpoint) const
 {
   return GetRulePoint(segment, GLpoint)->second;
+}
+
+ComplexDouble ParametrizedCurve::GetRuleWeight(unsigned int GLpoint) const
+{
+  return GetRuleWeight(SegmentIndexFromGLNumber(GLpoint), GLpoint);
 }
 
 double ParametrizedCurve::GetStart() const

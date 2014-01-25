@@ -45,8 +45,7 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool assure
   return toReturn;
 }
 
-
-double LapackeEigenvalueSolver::AssureEigenOrthonormality(EigenInformation * eigenData)
+void LapackeEigenvalueSolver::RescaleEigenvectors(EigenInformation * eigenData)
 {
   ///First rescale all eigenvectors to norm 1.
   for(uint i = 0; i<eigenData->Eigenvectors.size(); ++i)
@@ -62,9 +61,16 @@ double LapackeEigenvalueSolver::AssureEigenOrthonormality(EigenInformation * eig
 		  eigenData->Eigenvectors[i][a] /= sqRoot;
 		}	  
 	}
+}
+
+
+double LapackeEigenvalueSolver::AssureEigenOrthonormality(EigenInformation * eigenData)
+{
+  RescaleEigenvectors(eigenData);
 
 
   double maxDeviation = 0;
+  pair<uint, uint> maxP;
   ///Now verify orthonormality and throw if fail.
   for(uint i = 0; i<eigenData->Eigenvectors.size(); ++i)
 	{
@@ -75,12 +81,17 @@ double LapackeEigenvalueSolver::AssureEigenOrthonormality(EigenInformation * eig
 			{
 			  sum += eigenData->Eigenvectors[i][a] * eigenData->Eigenvectors[j][a]; 
 			}
-		  maxDeviation = MAX(maxDeviation, abs(sum-(double)(i==j)));
+		  double d = abs(sum-(double)(i==j));
+		  if(d > maxDeviation)
+			{
+			  maxDeviation = d;
+			  maxP = make_pair(i, j);
+			}
 		}
 	}
   if(maxDeviation > 1E-6) ///If it's worse than this, it's probably so bad that we should throw() on it.
 	{
-	  throw RLException("Too large eigenvector deviation: %+13.10e\n Investigate this.", maxDeviation);
+	  throw RLException("Too large eigenvector deviation: %+13.10e between eigenvectors %d and %d with eigenvalues %+13.10f%+13.10fi and %+13.10f%+13.10fi respectively. Investigate this.", maxDeviation, maxP.first, maxP.second, real(eigenData->Eigenvalues[maxP.first]), imag(eigenData->Eigenvalues[maxP.first]), real(eigenData->Eigenvalues[maxP.second]), imag(eigenData->Eigenvalues[maxP.second]));
 	}
   return maxDeviation;
 }

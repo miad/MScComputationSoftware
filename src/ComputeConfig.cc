@@ -14,6 +14,8 @@ ComputeConfig::ComputeConfig()
   outputFilenames.Add("InterestingPointsFile", "InterestingPoints.dat");
   outputFilenames.Add("WavefunctionFile", "Wavefunctions.dat");
   outputFilenames.Add("Matrix", "Matrix.dat");
+  outputFilenames.Add("EnergyFile", "Energies.dat");
+  outputFilenames.Add("ProductWavefunctionFile", "ProductWavefunction.dat");
 
   kCurve = new ParametrizedCurve(-1,1);
   kCurve->AddValue(0.0);
@@ -304,6 +306,8 @@ void ComputeConfig::WriteFile(const char * fileName) const
   output.add("PotentialPrecision", Setting::TypeString) = outputFilenames.Get("PotentialPrecisionFile");
   output.add("InterestingPoints", Setting::TypeString) = outputFilenames.Get("InterestingPointsFile");
   output.add("Wavefunctions", Setting::TypeString) = outputFilenames.Get("WavefunctionFile");
+  output.add("EnergyFile", Setting::TypeString) = outputFilenames.Get("EnergyFile");
+  output.add("ProductWavefunction", Setting::TypeString) = outputFilenames.Get("ProductWavefunction");
   output.add("Matrix", Setting::TypeString) = outputFilenames.Get("MatrixFile");
   Setting & outputSpecifics = root.add("OutputSpecifics", Setting::TypeGroup);
   Setting & wavePrecision = outputSpecifics.add("WavefunctionProperties", Setting::TypeGroup);
@@ -630,6 +634,25 @@ void ComputeConfig::ReadOutputFiles(Setting & output)
 	{
 	  throw RLException("The value 'Wavefunctions' was not set appropriately.");
 	}
+
+  if( output.lookupValue("EnergyFile", temp) )
+	{
+	  outputFilenames.Add("EnergyFile", temp);
+	}
+  else
+	{
+	  throw RLException("The value 'EnergyFile' was not set appropriately.");
+	}
+
+  if( output.lookupValue("ProductWavefunction", temp) )
+	{
+	  outputFilenames.Add("ProductWavefunction", temp);
+	}
+   else
+	{
+	  throw RLException("The value 'ProductWavefunction' was not set appropriately.");
+	}
+
 
   if( output.lookupValue("Matrix", temp) )
 	{

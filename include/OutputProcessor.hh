@@ -16,6 +16,7 @@
 #include "MultiTasker.hpp"
 #include "WavefunctionTwoParticleWorkerData.hh"
 #include "RLMacros.hpp"
+#include "CompositeBasisFunction.hh"
 
 
 
@@ -38,13 +39,15 @@ public:
   void SaveMatrix(CMatrix * toSave ///The matrix.
 				  ) const; ///Write the matrix to predetermined file.
 
+  void SetCompositeBasisFunctions(vector<CompositeBasisFunction * > * value
+								  );
+
 
 
 private:
 
+  static bool ComplexCompare(const ComplexDouble & d1, const ComplexDouble & d2);
 
-  static pair<uint, double> ComputeWavefunctionTwoParticle(WavefunctionTwoParticleWorkerData *workData
-										);
 
 
   // Performs certain portions of the output writing, etc.
@@ -52,11 +55,15 @@ private:
   void WritePotentialPrecisionToFile() const; ///Writes output. 
   void WriteKCurveToFile() const; ///Writes output.
   void WriteKFoundToFile() const; ///Writes output.
+  void WriteEnergiesToFile() const; ///Writes output.
   void WriteInterestingKPointsVerbosely() const; ///Writes output.
   void WriteInterestingKPointsToFile() const; ///Writes output.
   void WriteInterestingOneParticleWavefunctionsToFile() const; ///Writes output.
+
+
   void WriteInterestingTwoParticleWavefunctionsToFile() const;
-  void WriteInterestingHarmonicOneParticleWavefunctionsToFile() const;
+  void WriteInterestingRelativeTwoParticleWavefunctionsToFile() const;
+  void WriteProductTwoParticleWavefunctionToFile() const;
 
 
   // Auxiliary functions.
@@ -78,18 +85,16 @@ private:
 										  ) const; ///Returns a vector with entries corresponding to the relative dominance (all sum up to 1) of each basis vector
 
 
+  static double SquareSum(const vector<ComplexDouble> & toSum 
+						  );
+
 
 
   
 private:
   ComputeConfig * config;
   EigenInformation * eigenData;
-
-
-  
-
-
-
+  vector<CompositeBasisFunction * > * myCompositeBasisFunctions;
 
 };
 

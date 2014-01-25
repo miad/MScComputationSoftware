@@ -1,8 +1,7 @@
-
 #include "OutputProcessor.hh"
 
 OutputProcessor::OutputProcessor(ComputeConfig * _config)
-  :config(_config), eigenData(NULL)
+  :config(_config), eigenData(NULL), myCompositeBasisFunctions(NULL)
 {
   if(config == NULL)
 	{
@@ -20,6 +19,11 @@ void OutputProcessor::SetEigenInformation(EigenInformation * data)
   eigenData = data;
 }
 
+void OutputProcessor::SetCompositeBasisFunctions(vector<CompositeBasisFunction*> * value)
+{
+  myCompositeBasisFunctions = value;
+}
+
 
 void OutputProcessor::WritePostOutput() const
 {
@@ -30,23 +34,19 @@ void OutputProcessor::WritePostOutput() const
   WritePotentialPrecisionToFile();
   WriteKCurveToFile();
   WriteKFoundToFile();
+  WriteEnergiesToFile();
 
   if(config->GetNumberOfParticles() == 1)
 	{
-	  WriteInterestingKPointsVerbosely();
-	  if(config->GetHarmonicOverride())
-		{
-		  WriteInterestingHarmonicOneParticleWavefunctionsToFile();
-		}
-	  else
-		{
-		  WriteInterestingKPointsToFile();
-		  WriteInterestingOneParticleWavefunctionsToFile();
-		}
+	  WriteInterestingOneParticleWavefunctionsToFile();
+
+	  WriteInterestingKPointsVerbosely(); ///Auto-ID:ed by filter algorithm
+	  WriteInterestingKPointsToFile(); ///Auto-ID:ed by filter algorithm.
 	}
   else if(config->GetNumberOfParticles() == 2)
 	{
-	  WriteInterestingTwoParticleWavefunctionsToFile();
+	  WriteInterestingRelativeTwoParticleWavefunctionsToFile();
+	  WriteProductTwoParticleWavefunctionToFile();
 	}
 }
 
@@ -157,7 +157,7 @@ void OutputProcessor::WriteKFoundToFile() const
 {
   string fileName = config->GetOutputFilenames()->Get("KFoundFile");
 
-  if(fileName.empty() )
+  if( fileName.empty() )
 	{
 	  vPrint(4, "Empty KFound filename, not saving.\n");
 	  return;
@@ -167,7 +167,10 @@ void OutputProcessor::WriteKFoundToFile() const
 
   FILE * fout = AssuredFopen(fileName);
 
-  for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
+  vector<ComplexDouble> sorted = eigenData->Eigenvalues;
+  sort(sorted.begin(), sorted.end(), ComplexCompare);
+
+  for(vector<ComplexDouble>::const_iterator it = sorted.begin(); it!=sorted.end(); ++it)
 	{
 	  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(*it);
 
@@ -177,6 +180,42 @@ void OutputProcessor::WriteKFoundToFile() const
 		  kToPrint *= -1.0;
 		}
 	  fprintf(fout, "%+13.10e %+13.10e\n", real(kToPrint), imag(kToPrint));
+	}
+  
+  fclose(fout);
+  fout = NULL;
+  vPrint(4, "done\n");
+}
+
+bool OutputProcessor::ComplexCompare(const ComplexDouble & d1, const ComplexDouble & d2)
+{
+  if(real(d1) != real(d2))
+	return real(d1) < real(d2);
+  return imag(d1) < imag(d2);
+}
+
+
+void OutputProcessor::WriteEnergiesToFile() const
+{
+  string fileName = config->GetOutputFilenames()->Get("EnergyFile");
+
+  if(fileName.empty() )
+	{
+	  vPrint(4, "Empty Energy filename, not saving.\n");
+	  return;
+	}
+
+  vPrint(4, "Saving found eigenvalues (energies)...");
+
+  FILE * fout = AssuredFopen(fileName);
+
+
+  vector<ComplexDouble> sorted = eigenData->Eigenvalues;
+  sort(sorted.begin(), sorted.end(), ComplexCompare);
+
+  for(vector<ComplexDouble>::const_iterator it = sorted.begin(); it!=sorted.end(); ++it)
+	{
+	  fprintf(fout, "%+13.10e %+13.10e\n", real(*it), imag(*it));
 	}
   
   fclose(fout);
@@ -251,29 +290,13 @@ void OutputProcessor::WriteInterestingKPointsToFile() const
   vPrint(4, "Saving interesting k-points...");
 
   vector<ComplexDouble> printVector = FindInterestingKPoints();
-  vector<uint> interestingIndexes = FindInterestingKPointIndex();
 
-  FILE * fout = AssuredFopen(fileName);
-  
-  
-  if(printVector.size() != interestingIndexes.size())
-	{
-	  throw RLException("There were %d print vectors but %d interestingIndexes, they should match.\n", printVector.size(), interestingIndexes.size());
-	}
-  
+  FILE * fout = AssuredFopen(fileName);  
   for(uint i = 0; i<printVector.size(); ++i)
 	{
-	  fprintf(fout,"%+13.10e %+13.10e", real(printVector[i]), imag(printVector[i]));
-	  double sum = -1;
-	  vector<double> ratio = GetOneParticleBasisRatio(interestingIndexes[i], sum);
-	  for(vector<double>::const_iterator it = ratio.begin(); it!=ratio.end(); ++it)
-		{
-		  fprintf(fout, " %+13.10e", *it);
-		}
-	  fprintf(fout, " %+13.10e\n", sum);
+	  fprintf(fout,"%+13.10e %+13.10e\n", real(printVector[i]), imag(printVector[i]));
 	}
 
-  
   fclose(fout);
   fout = NULL;
   vPrint(4, "done\n");
@@ -284,85 +307,90 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex() const
 {
     ///Retrieve k-points corresponding to the basis: those are the "filter", which means that
   ///points too close to them are considered "uninteresting".
-  vector<ComplexDouble> filterVector;
-  for(uint i = 0; i<config->GetKCurve()->GetNumberOfSegments(); ++i)
-	{
-	  const vector<pair<ComplexDouble, ComplexDouble> > * rule = config->GetKCurve()->GetSegmentRule(i);
-	  for(vector<pair<ComplexDouble, ComplexDouble> >::const_iterator it = rule->begin(); it != rule->end(); ++it)
-		{
-		  filterVector.push_back(it->first);
-		}
-	}
-
-
-  double imagScale = 1E-8; ///The maximum imaginary part (without sign)
-  for(uint i = 0; i<filterVector.size(); ++i)
-	{
-	  imagScale = MAX(imagScale, abs(imag(filterVector[i])));
-	}
-  
-
-  ///Filter out the uninteresting values and return the interesting ones.
+  ///Filtering only enabled for 1 particle case however, otherwise they must be explicitly specified in the config file.
   vector<uint> toReturn;
-  uint eigenCounter = 0;
-  for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
+
+  if(config->GetNumberOfParticles() == 1)
 	{
-	  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(*it);
-
-	  ///Now apply filter rule.
-
-
-
-	  ///All k-values on the imaginary axis are interesting.
-	  if(imag(kToPrint) > 1E-5 && abs(arg(kToPrint)-PI/2) < 1E-2 )
+	  vector<ComplexDouble> filterVector;
+	  for(uint i = 0; i<config->GetKCurve()->GetNumberOfSegments(); ++i)
 		{
-		  toReturn.push_back(eigenCounter);
-		}
-
-	  ///Right half plane points might be interesting.
-	  else if(real(kToPrint) > 1E-5 )
-		{
-		  bool tooClose = false;
-		  bool tooRight = true; ///Ignore rightmost points: they are never interesting.
-		  for(uint i = 0; i<filterVector.size(); ++i)
+		  const vector<pair<ComplexDouble, ComplexDouble> > * rule = config->GetKCurve()->GetSegmentRule(i);
+		  for(vector<pair<ComplexDouble, ComplexDouble> >::const_iterator it = rule->begin(); it != rule->end(); ++it)
 			{
-			  ComplexDouble d1 = filterVector[i] - kToPrint;
-			  ComplexDouble d2 = 0;
-
-			  if(i>0)
-				{
-				  d2 += filterVector[i]-filterVector[i-1];
-				}
-
-			  if(i+1<filterVector.size())
-				d2 += filterVector[i+1]-filterVector[i];
-			  if(i > 0 && i+1 < filterVector.size())
-				d2 /= 2.0;
-
-			  if(i +1 < filterVector.size())
-				d2 *= 1.1;
-
-
-			  if(abs(real(d1)) < abs(real(d2)) && ((abs(imag(d1)) < abs(imag(d2)))  || abs(imag(d1)) < 0.05 * imagScale) )
-				{
-				  tooClose = true;
-				  break;
-				}
-
-			  if(real(filterVector[i]) > real(kToPrint))
-				{
-				  tooRight = false;
-				}
-
+			  filterVector.push_back(it->first);
 			}
-		  if(!tooClose && !tooRight)
-			toReturn.push_back(eigenCounter);
 		}
-	  ++eigenCounter;
+	  
+	  
+	  double imagScale = 1E-8; ///The maximum imaginary part (without sign)
+	  for(uint i = 0; i<filterVector.size(); ++i)
+		{
+		  imagScale = MAX(imagScale, abs(imag(filterVector[i])));
+		}
+	  
+	  
+	  ///Filter out the uninteresting values and return the interesting ones.
+	  uint eigenCounter = 0;
+	  for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
+		{
+		  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(*it);
+		  
+		  ///Now apply filter rule.
+		  
+		  
+		  
+		  ///All k-values on the imaginary axis are interesting.
+		  if(imag(kToPrint) > 1E-5 && abs(arg(kToPrint)-PI/2) < 1E-2 )
+			{
+			  toReturn.push_back(eigenCounter);
+			}
+		  
+		  ///Right half plane points might be interesting.
+		  else if(real(kToPrint) > 1E-5 )
+			{
+			  bool tooClose = false;
+			  bool tooRight = true; ///Ignore rightmost points: they are never interesting.
+			  for(uint i = 0; i<filterVector.size(); ++i)
+				{
+				  ComplexDouble d1 = filterVector[i] - kToPrint;
+				  ComplexDouble d2 = 0;
+				  
+				  if(i>0)
+					{
+					  d2 += filterVector[i]-filterVector[i-1];
+					}
+				  
+				  if(i+1<filterVector.size())
+					d2 += filterVector[i+1]-filterVector[i];
+				  if(i > 0 && i+1 < filterVector.size())
+					d2 /= 2.0;
+				  
+				  if(i +1 < filterVector.size())
+					d2 *= 1.1;
+				  
+				  
+				  if(abs(real(d1)) < abs(real(d2)) && ((abs(imag(d1)) < abs(imag(d2)))  || abs(imag(d1)) < 0.05 * imagScale) )
+					{
+					  tooClose = true;
+					  break;
+					}
+				  
+				  if(real(filterVector[i]) > real(kToPrint))
+					{
+					  tooRight = false;
+					}
+				  
+				}
+			  if(!tooClose && !tooRight)
+				toReturn.push_back(eigenCounter);
+			}
+		  ++eigenCounter;
+		}
+	  if(eigenCounter != eigenData->Eigenvalues.size() )
+		throw RLException("Consistency error: invalid number of eigenvalues.");
 	}
-  if(eigenCounter != eigenData->Eigenvalues.size() )
-	throw RLException("Consistency error: invalid number of eigenvalues.");
-  
+
   vector<ComplexDouble> extraInterestingPoints = config->GetExtraInterestingPoints();
 
   ///Append some other points that are "enforced interesting".
@@ -428,226 +456,76 @@ void OutputProcessor::WriteInterestingOneParticleWavefunctionsToFile() const
   vector<uint> interestingIndexes = FindInterestingKPointIndex();
   vector<ComplexDouble> interestingVector = FindInterestingKPoints();
 
-  vector<BasisFunction> myBasisFunctions = config->GetBasisFunctions();
-  uint numberOfGLPoints = eigenData->Eigenvalues.size() / config->GetBasisFunctions().size();
-  if(eigenData->Eigenvalues.size() % config->GetBasisFunctions().size() != 0)
-	{
-	  throw RLException("Eigenvalue number was not divisible by basis number size.");
-	}
 
+  CompositeBasisFunction * myCompositeBasisFunction = NULL;
+
+
+  if(! config->GetHarmonicOverride())
+	{
+	  myCompositeBasisFunction = new CompositeBasisFunction(config->GetBasisFunctions(), 
+															eigenData, 
+															config->GetKCurve());
+	}
+  else
+	{
+	  myCompositeBasisFunction = new CompositeBasisFunction(config->GetHarmonicBasisFunction(), 
+															eigenData
+															);
+	}
+  
+  vector<double> xValues;
+  for(double x = config->GetMinWavefunctionX(); x <= config->GetMaxWavefunctionX(); x += config->GetWavefunctionStepsizeX())
+	xValues.push_back(x);
 
   ///Compute the wavefunctions : this is where the magic is.
-  vector<vector<ComplexDouble> > wavefunctionValues;
-  for(vector<uint>::const_iterator it = interestingIndexes.begin(); it!=interestingIndexes.end(); ++it)
+  vector<vector<ComplexDouble> > wavefunctionValues(interestingIndexes.size(), vector<ComplexDouble>(xValues.size(), 0.0));
+  for(uint iPtr = 0; iPtr < interestingVector.size(); ++iPtr)
 	{
-	  wavefunctionValues.push_back(vector<ComplexDouble>());
-	  vector<ComplexDouble> * eigVect = GetReshapedEigenvector(*it);
-	  for(double x = config->GetMinWavefunctionX(); x <= config->GetMaxWavefunctionX(); x += config->GetWavefunctionStepsizeX())
+	  for(uint i = 0; i<xValues.size(); ++i)
 		{
-		  wavefunctionValues.back().push_back(ComplexDouble(0.0,0.0));
-		  for(uint i = 0; i<eigVect->size(); ++i)
-			{
-			  uint curvePointer = i % numberOfGLPoints;
-			  uint basisPointer = i / numberOfGLPoints;
-			  uint curveSegment = config->GetKCurve()->SegmentIndexFromGLNumber(curvePointer);
-			  ComplexDouble kVal = config->GetKCurve()->GetRuleValue(curveSegment, curvePointer);
-			  ComplexDouble wK = config->GetKCurve()->GetRuleWeight(curveSegment, curvePointer);
-			  
-			  wavefunctionValues.back().back() += 
-				((*eigVect)[i] * sqrt(wK) * 
-				 myBasisFunctions[basisPointer].Eval(x, kVal)
-				 );
-			}
+		  wavefunctionValues.at(iPtr).at(i) += myCompositeBasisFunction->Eval(xValues.at(i), interestingIndexes.at(iPtr));
 		}
-	  delete eigVect; eigVect = NULL;
-
+	  
 	  //As a verification, compute the integral of the wavefunction and print it.
-	  double sqSum = 0;
-	  for(vector<ComplexDouble>::const_iterator ip = wavefunctionValues.back().begin(); ip!=wavefunctionValues.back().end(); ++ip)
-		{
-		  sqSum += pow(abs(*ip), 2) * config->GetWavefunctionStepsizeX();
-		}
-	  vPrint(2, "k = %+2.5f%+2.5f => Graph area: %+13.10e\n", real(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[*it])), imag(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[*it])), sqSum);
-
+	  double sqSum = SquareSum(wavefunctionValues.at(iPtr));
+	  vPrint(2, "k = %+2.5f%+2.5f => Graph area: %+13.10e\n", real(interestingVector.at(iPtr)), imag(interestingVector.at(iPtr)), sqSum * config->GetWavefunctionStepsizeX());
 	}
-
 
   ///Save to file.
   FILE * fout = AssuredFopen(fileName);
-  
+
   fprintf(fout, "#x-value");
   for(uint j = 0; j<wavefunctionValues.size(); ++j)
 	{
 	  fprintf(fout, " Real_wave_%d(k=%+2.5f%+2.5fi) Imag_wave_%d", j, real(interestingVector[j]), imag(interestingVector[j]),j);
 	}
   fprintf(fout, "\n");
-  uint i = -1;
-  for(double x = config->GetMinWavefunctionX(); x <= config->GetMaxWavefunctionX(); x += config->GetWavefunctionStepsizeX())
+  for(uint i = 0; i<xValues.size(); ++i)
 	{
-	  ++i;
-	  fprintf(fout, "%+13.10e", x);
+	  fprintf(fout, "%+13.10e", xValues.at(i));
 	  for(uint j = 0; j < wavefunctionValues.size(); ++j)
 		{
-		  fprintf(fout, " %+13.10e %+13.10e", real(wavefunctionValues.at(j).at(i)), imag(wavefunctionValues.at(j).at(i)));
+		  fprintf(fout, " %+13.10e %+13.10e", 
+				  real(wavefunctionValues.at(j).at(i)), 
+				  imag(wavefunctionValues.at(j).at(i))
+				  );
 		}
 	  fprintf(fout, "\n");
 	}
-  fclose(fout);
-  fout = NULL;
-
-
-  ///Compute basis element decomposition and print it.
-  int loopCounter = 0;
-  for(vector<uint>::const_iterator it = interestingIndexes.begin(); it!=interestingIndexes.end(); ++it)
-	{
-	  double totalSum = -1;
-	  vector<double> basisRatio = GetOneParticleBasisRatio(*it, totalSum);
-
-	  vPrint(3, "Basis element decomposition for k = %+10.6f%+10.6fi:\n", real(interestingVector[loopCounter]), imag(interestingVector[loopCounter]));
-	  ++loopCounter;
-	  
-	  for(uint i = 0; i<basisRatio.size(); ++i)
-		{
-		  vPrint(3, "\t%s : \t%3.2f%%\n", myBasisFunctions[i].GetName(), basisRatio[i]*100);
-		}
-	  vPrint(3, "Element square sum: %+13.10e\n\n", totalSum);
-	}
-  
-  vPrint(4, "Saving wavefunctions...done\n");
-}
-
-
-
-
-
-
-void OutputProcessor::WriteInterestingHarmonicOneParticleWavefunctionsToFile() const
-{
-  string fileName = config->GetOutputFilenames()->Get("WavefunctionsFile");
-
-  if(fileName.empty() )
-	{
-	  vPrint(4, "Empty Wavefunctions filename, not saving.\n");
-	  return;
-	}
-
-  vPrint(4, "Saving harmonic wavefunctions...\n");
-
-  ///Some setup.
-  vector<uint> interestingIndexes = FindInterestingKPointIndex();
-  vector<ComplexDouble> interestingVector = FindInterestingKPoints();
-
-  ///Compute the wavefunctions : this is where the magic is.
-  vector<vector<double> > wavefunctionValues;
-  for(vector<uint>::const_iterator it = interestingIndexes.begin(); it!=interestingIndexes.end(); ++it)
-	{
-	  wavefunctionValues.push_back(vector<double>());
-	  vector<ComplexDouble> * eigVect = GetReshapedEigenvector(*it);
-
-	  for(double x = config->GetMinWavefunctionX(); x <= config->GetMaxWavefunctionX(); x += config->GetWavefunctionStepsizeX())
-		{
-		  wavefunctionValues.back().push_back(0);
-		  for(uint i = 0; i<eigVect->size(); ++i)
-			{
-			  
-			  wavefunctionValues.back().back() += 
-				(real((*eigVect)[i]) * 
-				 config->GetHarmonicBasisFunction()->Eval(i, x));
-			  if(imag((*eigVect)[i]) > 1E-7)
-				throw RLException("WarningException: too large imaginary part.");
-			}
-		}
-
-	  delete eigVect; eigVect = NULL;
-
-	  //As a verification, compute the integral of the wavefunction and print it.
-	  double sqSum = 0;
-	  for(vector<double>::const_iterator ip = wavefunctionValues.back().begin(); ip!=wavefunctionValues.back().end(); ++ip)
-		{
-		  sqSum += pow(abs(*ip), 2) * config->GetWavefunctionStepsizeX();
-		}
-	  vPrint(2, "k = %+2.5f%+2.5f => Graph area: %+13.10e\n", real(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[*it])), imag(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[*it])), sqSum);
-
-	}
-
-
-  ///Save to file.
-  FILE * fout = AssuredFopen(fileName);
-  
-  fprintf(fout, "#x-value");
-  for(uint j = 0; j<wavefunctionValues.size(); ++j)
-	{
-	  fprintf(fout, " Wave_%d(k=%+2.5f%+2.5fi) zero-padding", j, real(interestingVector[j]), imag(interestingVector[j]));
-	}
-  fprintf(fout, "\n");
-  uint i = -1;
-  for(double x = config->GetMinWavefunctionX(); x <= config->GetMaxWavefunctionX(); x += config->GetWavefunctionStepsizeX())
-	{
-	  ++i;
-	  fprintf(fout, "%+13.10e", x);
-	  for(uint j = 0; j < wavefunctionValues.size(); ++j)
-		{
-		  fprintf(fout, " %+13.10e 0.0000000", wavefunctionValues.at(j).at(i));
-		}
-	  fprintf(fout, "\n");
-	}
-  fclose(fout);
-  fout = NULL;
+  fclose(fout); fout = NULL;
 
   vPrint(4, "Saving wavefunctions...done\n");
 }
 
 
-
-
-
-
-
-
-vector<double> OutputProcessor::GetOneParticleBasisRatio(uint eigenIndex, double & totalSum) const
+double OutputProcessor::SquareSum( const vector<ComplexDouble> & toSum)
 {
-  totalSum = 0;
-  if(eigenIndex > eigenData->Eigenvectors.size())
+  double sqSum = 0;
+  for(vector<ComplexDouble>::const_iterator ip = toSum.begin(); ip!=toSum.end(); ++ip)
 	{
-	  throw RLException("Too large eigenIndex used.");
+	  sqSum += pow(abs(*ip), 2.0);
 	}
-
-  uint numberOfBasisVectors = config->GetBasisFunctions().size();
-
-  uint numberOfGLPoints = config->GetKCurve()->GetTotalNumberOfGLPoints();
-
-
-  if(eigenData->Eigenvectors[eigenIndex].size() % numberOfBasisVectors != 0)
-	{
-	  throw RLException("Vector length and # basis vectors does not match.");
-	}
-
-  vector<double> basisRatio;
-  for(uint i = 0; i<numberOfBasisVectors; ++i)
-	{
-	  basisRatio.push_back(0);
-	}
-  for(uint i = 0; i<eigenData->Eigenvectors[eigenIndex].size(); ++i)
-	{
-	  uint curvePointer = i % numberOfGLPoints;
-	  uint basisPointer = i / numberOfGLPoints;
-	  uint curveSegment = config->GetKCurve()->SegmentIndexFromGLNumber(curvePointer);
-	  basisRatio.at(basisPointer) += 
-		abs(config->GetKCurve()->GetRuleWeight(curveSegment, curvePointer))*
-		pow(abs(eigenData->Eigenvectors.at(eigenIndex).at(i) * config->GetKCurve()->GetRuleWeight(curveSegment, curvePointer)),2);
-	}
-  
-
-  
-  for(uint i = 0; i<basisRatio.size(); ++i)
-	{
-	  totalSum += basisRatio.at(i);
-	}
-  for(uint i = 0; i<basisRatio.size(); ++i)
-	{
-	  basisRatio.at(i) /= totalSum;
-	}
-  return basisRatio;
+  return sqSum;
 }
 
 
@@ -704,9 +582,7 @@ void OutputProcessor::SaveMatrix(CMatrix * toSave) const
 
 
 
-
-
-void OutputProcessor::WriteInterestingTwoParticleWavefunctionsToFile() const
+void OutputProcessor::WriteInterestingRelativeTwoParticleWavefunctionsToFile() const
 {
   string fileName = config->GetOutputFilenames()->Get("WavefunctionsFile");
 
@@ -716,135 +592,182 @@ void OutputProcessor::WriteInterestingTwoParticleWavefunctionsToFile() const
 	  return;
 	}
 
+  vPrint(4, "Saving relative wavefunctions...\n");
+
+  if(myCompositeBasisFunctions == NULL)
+	{
+	  throw RLException("Must set CompositeBasisFunctions for OutputProcessor before writing to file.");
+	}
+
   ///Some setup.
   vector<uint> interestingIndexes = FindInterestingKPointIndex();
   vector<ComplexDouble> interestingVector = FindInterestingKPoints();
 
+
+  vector<double> xrelValues;
+
+  for(double x = config->GetMinWavefunctionX(); x <= config->GetMaxWavefunctionX(); x += config->GetWavefunctionStepsizeX())
+    xrelValues.push_back(x);
+
+
+  vector<pair<double, double> > wflRule = 
+	LegendreRule::GetRule(xrelValues.size(), 
+						  config->GetMinWavefunctionX(),
+	                      config->GetMaxWavefunctionX());
+
+
+
   ///Compute the wavefunctions : this is where the magic is.
-  vector<vector<vector<ComplexDouble> > > wavefunctionValues(interestingIndexes.size());
-  
-  MultiTasker<WavefunctionTwoParticleWorkerData*, pair<uint, double> > * myMultiTasker = 
-	new MultiTasker<WavefunctionTwoParticleWorkerData*, pair<uint, double> > (ComputeWavefunctionTwoParticle, config->GetNumberOfThreads());
+  vector<vector<double> > wavefunctionValues(interestingIndexes.size(), vector<double>(xrelValues.size(), 0.0));
 
-  myMultiTasker->RegisterListener(myPrinter);
+  uint N1 = myCompositeBasisFunctions->at(0)->GetSize();
+  uint N2 = myCompositeBasisFunctions->at(1)->GetSize();
 
 
-  vPrint(3,"Computing wavefunctions...\n");
   for(uint i = 0; i<interestingIndexes.size(); ++i)
-	{
-	  myMultiTasker->
-		AddInput(new WavefunctionTwoParticleWorkerData(
-													   GetReshapedEigenvector(interestingIndexes[i]),
-													   &wavefunctionValues[i],
-													   config,
-													   interestingIndexes[i]
-													   )
-				 );
+  {
+	vPrint(4, "Wavefunction # %d (of %d)\n", i, interestingIndexes.size());
+	vPrint(4, "Progress: 00.00%%");
+
+	for(uint j = 0; j<xrelValues.size(); ++j)
+		{
+		  vPrint(4, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\033[K");
+		  vPrint(4, "Progress: %04.02f%%", (double)100*((double)j/xrelValues.size()));
+		  double wval = 0;
+		  for(uint xabsP = 0; xabsP < wflRule.size(); ++xabsP)
+			{
+			  ComplexDouble sum = 0.0;			  
+			  double xabs = wflRule.at(xabsP).first;
+			  double weight = wflRule.at(xabsP).second;
+
+			  for(uint k = 0; k<eigenData->Eigenvectors.at(interestingIndexes.at(i)).size(); ++k)
+				{
+				  double xrel = xrelValues.at(j);
+
+				  
+				  uint a = k / N1;
+				  uint b = k % N2;
+				  
+				  sum += 
+					eigenData->Eigenvectors.at(interestingIndexes.at(i)).at(k) *
+					myCompositeBasisFunctions->at(0)->Eval((xabs-xrel)/sqrt(2.0), a) *
+					myCompositeBasisFunctions->at(1)->Eval((xabs+xrel)/sqrt(2.0), b);
+				}
+			  wval += pow(abs(sum), 2.0) * weight;
+			}
+		  wavefunctionValues.at(i).at(j) += wval;
+		}
+	double totalSum = 0;
+	for(uint a = 0; a<xrelValues.size(); ++a)
+	  {
+		totalSum += wavefunctionValues.at(i).at(a);
+	  }
+	vPrint(2, "Total rel-graph area: %+13.6e\n", totalSum * (config->GetMaxWavefunctionX() - config->GetMinWavefunctionX()) / xrelValues.size());
 	}
-
-  myMultiTasker->LaunchThreads();
-  while(myMultiTasker->GetInputMinusOutput())
-	{
-	  pair<uint, double> val = myMultiTasker->GetOutput();
-
-	  vPrint(2, "k = %+2.5f%+2.5f => Graph area: %+13.10e\n", real(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[val.first])), imag(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[val.first])), val.second);
-
-	}
-
-  myMultiTasker->DestroyThreads();
-  delete myMultiTasker; myMultiTasker = NULL;
-
-
-
-
 
 
   ///Save to file.
   FILE * fout = AssuredFopen(fileName);
   
-  fprintf(fout, "#x1 #x2");
+  fprintf(fout, "#x-value");
   for(uint j = 0; j<wavefunctionValues.size(); ++j)
 	{
-	  fprintf(fout, " Abs2_wave_%d(k=%+2.5f%+2.5fi)", j, real(interestingVector[j]), imag(interestingVector[j]));
+	  fprintf(fout, " WaveABS_%d(k=%+2.5f%+2.5fi) zero-padding", j, real(interestingVector[j]), imag(interestingVector[j]));
 	}
   fprintf(fout, "\n");
-  uint i = -1;
-  for(double x1 = config->GetMinWavefunctionX(); x1 <= config->GetMaxWavefunctionX(); x1 += config->GetWavefunctionStepsizeX())
+  for(uint i = 0; i<xrelValues.size(); ++i)
 	{
-	  ++i;
-	  uint j = -1;
-	  for(double x2 = config->GetMinWavefunctionX(); x2 <= config->GetMaxWavefunctionX(); x2 += config->GetWavefunctionStepsizeX())
+	  fprintf(fout, "%+13.10e", xrelValues[i]);
+	  for(uint j = 0; j < wavefunctionValues.size(); ++j)
 		{
-		  ++j;
-		  fprintf(fout, "%+13.10e %13.10e", x1, x2);
-		  for(uint k = 0; k < wavefunctionValues.size(); ++k)
-			{
-			  //			  printf("%d %d %d\n", k, i, j);
-			  //			  printf("sz %ld\n", wavefunctionValues.at(k).at(i).size());
- 			  fprintf(fout, " %+13.10e", pow(abs(wavefunctionValues.at(k).at(i).at(j)),2));
-			}
-		  fprintf(fout, "\n");
+		  fprintf(fout, " %+13.10e 0.0000000", sqrt(wavefunctionValues.at(j).at(i)));
 		}
+	  fprintf(fout, "\n");
 	}
   fclose(fout);
   fout = NULL;
-  vPrint(4, "Saving wavefunctions...done\n");
+
+
+  vPrint(4, "Saving relative wavefunctions...done\n");
 }
 
 
 
-pair<uint, double> OutputProcessor::ComputeWavefunctionTwoParticle(WavefunctionTwoParticleWorkerData * workData)
+
+void OutputProcessor::WriteProductTwoParticleWavefunctionToFile() const
 {
-  ComputeConfig * config = workData->config;
-  
-  vector<BasisFunction> myBasisFunctions = config->GetBasisFunctions();
-  uint numberOfGLPoints = config->GetKCurve()->GetTotalNumberOfGLPoints();
 
-  uint N = myBasisFunctions.size() * numberOfGLPoints; //Subspace dimension.
+  string fileName = config->GetOutputFilenames()->Get("ProductWavefunction");
 
-
-  for(double x1 = config->GetMinWavefunctionX(); x1 <= config->GetMaxWavefunctionX(); x1 += config->GetWavefunctionStepsizeX())
+  if(fileName.empty() )
 	{
-	  workData->wavefunctionValues->push_back(vector<ComplexDouble>() );
-	  for(double x2 = config->GetMinWavefunctionX(); x2 <= config->GetMaxWavefunctionX(); x2 += config->GetWavefunctionStepsizeX())
+	  vPrint(4, "Empty ProductWavefunction filename, not saving.\n");
+	  return;
+	}
+
+  FILE * fout = AssuredFopen(fileName);
+
+  vPrint(4, "Saving most interesting product wavefunction...\n");
+
+  vector<double> xrelValues;
+  
+  for(double x = config->GetMinWavefunctionX(); x <= config->GetMaxWavefunctionX(); x += config->GetWavefunctionStepsizeX())
+    xrelValues.push_back(x);
+
+  vector<vector<double> > mesh(xrelValues.size(), vector<double>(xrelValues.size(), 0.0));
+  
+  vector<uint> interestingIndexes = FindInterestingKPointIndex();
+  if(interestingIndexes.empty())
+	return;
+ 
+  
+  uint N1 = myCompositeBasisFunctions->at(0)->GetSize();
+  uint N2 = myCompositeBasisFunctions->at(1)->GetSize();
+
+  if(eigenData->Eigenvectors.size() != N1 * N2)
+	{
+	  throw RLException("Size mismatch: N1 = %d, N2 = %d but there are %d eigenvectors.", N1, N2, eigenData->Eigenvectors.size());
+	}
+  
+  double area = 0;
+  vPrint(4, "Progress: 00.00%%");
+  for(uint ux1 = 0; ux1 < xrelValues.size(); ++ux1)
+	{
+	  vPrint(4, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\033[K");
+	  vPrint(4, "Progress: %04.02f%%", (double)100*((double)ux1/xrelValues.size()));
+	  for(uint ux2 = 0; ux2 < xrelValues.size(); ++ux2)
 		{
-		  workData->wavefunctionValues->back().push_back(ComplexDouble(0.0,0.0));
-		  for(uint i = 0; i<workData->eigVect->size(); ++i)
+		  for(uint i = 0; i<eigenData->Eigenvectors.size(); ++i)
 			{
-			  
-			  uint a = i/N;
-			  uint b = i % N;
-			  
-			  uint curvePointerA = a % numberOfGLPoints;
-			  uint basisPointerA = a / numberOfGLPoints;
-			  uint curveSegmentA = config->GetKCurve()->SegmentIndexFromGLNumber(curvePointerA);
-			  
-			  ComplexDouble kA = config->GetKCurve()->GetRuleValue(curveSegmentA, curvePointerA);
-			  ComplexDouble wA = config->GetKCurve()->GetRuleWeight(curveSegmentA, curvePointerA);
-			  
-			  uint curvePointerB = b % numberOfGLPoints;
-			  uint basisPointerB = b / numberOfGLPoints;
-			  uint curveSegmentB = config->GetKCurve()->SegmentIndexFromGLNumber(curvePointerB);
-			  
-			  ComplexDouble kB = config->GetKCurve()->GetRuleValue(curveSegmentB, curvePointerB);
-			  ComplexDouble wB = config->GetKCurve()->GetRuleWeight(curveSegmentB, curvePointerB);
-			  
-			  workData->wavefunctionValues->back().back() += 
-				workData->eigVect->at(i) * sqrt(wA)* sqrt(wB) * 
-				myBasisFunctions.at(basisPointerA).Eval(x1, kA) * myBasisFunctions.at(basisPointerB).Eval(x2, kB);
+			  uint a = i / N1;
+			  uint b = i % N2;
+			  double x1 = xrelValues[ux1];
+			  double x2 = xrelValues[ux2];
+			  mesh.at(ux1).at(ux2) += real(
+										     myCompositeBasisFunctions->at(0)->Eval(x1, a) 
+										   * myCompositeBasisFunctions->at(1)->Eval(x2, b) 
+										   * eigenData->Eigenvectors.at(interestingIndexes.front()).at(i)
+										   );
 			  
 			}
+		  area += pow(abs(mesh.at(ux1).at(ux2)), 2.0) * pow(abs(config->GetWavefunctionStepsizeX()), 2.0);
 		}
+	}
+  vPrint(2, "2D probability area: %+13.10e\n", area);
+
+  
+  for(uint a = 0; a<xrelValues.size(); ++a)
+	{
+	  for(uint b = 0; b<xrelValues.size(); ++b)
+		{
+		  fprintf(fout, "%13.10e ", mesh[a][b]);
+		}
+	  fprintf(fout, "\n");
 	}
   
-  //As a verification, compute the integral of the wavefunction and print it.
-  double sqSum = 0;
-  for(vector<vector<ComplexDouble> >::const_iterator ip = workData->wavefunctionValues->begin(); ip!=workData->wavefunctionValues->end(); ++ip)
-	{
-	  for(vector<ComplexDouble>::const_iterator iq = ip->begin(); iq != ip->end(); ++iq)
-		{
-		  sqSum += pow(abs(*iq), 2) * pow(config->GetWavefunctionStepsizeX(),2);
-		}
-	}
-  return make_pair(workData->eigenIndex, sqSum);
+  
+  fclose(fout); fout = NULL;
+
+  vPrint(4, "Saving most interesting product wavefunction...done\n");
+
 }

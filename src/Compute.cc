@@ -85,6 +85,7 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 	}
   else if(myConfiguration.GetNumberOfParticles() == 2)
 	{
+	  vector<EigenInformation *> OneParticleEigenData;
 	  vector<CompositeBasisFunction * > myBasisFunctions;
 	  for(uint i = 0; i<2; ++i)
 		{
@@ -93,13 +94,24 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 		  VerifyMatrixBasicProperties(myConfiguration, myPrinter, OneBodyHamiltonian);
 		  myPrinter.Print(1, "Finding eigenvalues for particle %d.\n", 0);
 		  EigenInformation * myEigenInfo = LapackeEigenvalueSolver::Solve(OneBodyHamiltonian);
-		  myBasisFunctions.push_back(new CompositeBasisFunction(
-																myConfiguration.GetBasisFunctions(),
-																myEigenInfo,
-																myConfiguration.GetSpecificUnits()
-																)
-									 );
-		  delete myEigenInfo;
+		  if(myConfiguration.GetHarmonicOverride())
+			{
+			  myBasisFunctions.push_back(new CompositeBasisFunction(
+																	myConfiguration.GetHarmonicBasisFunction(),
+																	myEigenInfo
+																	)
+										 );
+			}
+		  else
+			{
+			  myBasisFunctions.push_back(new CompositeBasisFunction(
+																	myConfiguration.GetBasisFunctions(),
+																	myEigenInfo,
+																	myConfiguration.GetKCurve()
+																	)
+										 );
+			}
+		  OneParticleEigenData.push_back(myEigenInfo);  ///Must be retained in memory and deleted later.
 		  delete OneBodyHamiltonian;
 																
 		}
@@ -113,19 +125,31 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 	  CMatrix * TwoBodyHamiltonian = ConstructTwoParticleHamiltonian(myConfiguration, myPrinter, myPrecomputedInteractionEvaluator);
 	  VerifyMatrixBasicProperties(myConfiguration, myPrinter, TwoBodyHamiltonian);
 
-	  myPrinter.Print(1, "Finding eigenvalues for the two-body system.\n");
-	  EigenInformation * TwoBodyEigenInfo = LapackeEigenvalueSolver::Solve(TwoBodyHamiltonian);
-
 
 	  myProcessor.SaveMatrix(TwoBodyHamiltonian);
-	  
+
+	  myPrinter.Print(1, "Finding eigenvalues for the two-body system.\n");
+
+	  ///NOTE: I have disabled the throw() on non-orthogonal eigenvectors because the eigenvectors are NOT orthogonal any more...
+	  EigenInformation * TwoBodyEigenInfo = LapackeEigenvalueSolver::Solve(TwoBodyHamiltonian, false);
+
+	  LapackeEigenvalueSolver::RescaleEigenvectors(TwoBodyEigenInfo);
+
 	  myProcessor.SetEigenInformation(TwoBodyEigenInfo);
+
+	  myProcessor.SetCompositeBasisFunctions(&myBasisFunctions);
+
+
+
+
 	  myProcessor.WritePostOutput();
 	  
 
 	  /// finally...
 	  delete TwoBodyHamiltonian;
 	  delete TwoBodyEigenInfo;
+	  for(vector<EigenInformation * >::iterator it = OneParticleEigenData.begin(); it!=OneParticleEigenData.end(); ++it)
+		delete *it;
 
 	}
   else
@@ -204,8 +228,7 @@ CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration,
 	}
   myPrinter.Print(5, ".\n");
 
-  uint numberOfParticles = myConfiguration.GetNumberOfParticles();
-  if(particleID >= numberOfParticles)
+  if(particleID >= myConfiguration.GetNumberOfParticles())
 	{
 	  throw RLException("ConstructOneParticleHamiltonian called with invalid particle ID: %d", particleID);
 	}
@@ -298,21 +321,10 @@ CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
 
 
   MultiTasker<TwoParticleWorkerData, void*> * myMultiTasker = NULL;
-  ///Generate the Hamiltonian in parallell!
-  if(myConfiguration.GetHarmonicOverride())
-	{
-	  throw RLException("Not implemented yet.");
-	}
-  else
-	{
-	  myMultiTasker = new MultiTasker<TwoParticleWorkerData, void*>(EvaluateSubMatrixTwoParticles, myConfiguration.GetNumberOfThreads());
-	}
 
-  if(myMultiTasker == NULL)
-	{
-	  throw RLException("This should never happen.");
-	}
-  
+  ///Generate the Hamiltonian in parallell!
+  myMultiTasker = new MultiTasker<TwoParticleWorkerData, void*>(EvaluateSubMatrixTwoParticles, myConfiguration.GetNumberOfThreads());
+
   myMultiTasker->RegisterListener(&myPrinter);
   
 
@@ -408,12 +420,12 @@ void * EvaluateSubMatrixTwoParticles(TwoParticleWorkerData w)
 
   for(uint i = m1; i<m2; ++i)
 	{
-	  uint a = i/N1;
-	  uint b = i % N1;
+	  uint a = i / N1;
+	  uint b = i % N2;
 
 	  for(uint j = n1; j<n2; ++j)
 		{
-		  uint c = j / N2;
+		  uint c = j / N1;
 		  uint d = j % N2;
 		  
 		  if(a==c && b==d)

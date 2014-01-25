@@ -18,18 +18,14 @@ PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(vector<Composit
   ///Precompute a cache.
   for(uint i = 0; i<myBasisFunctions->size(); ++i)
 	{
-	  Energies.at(i).resize(myBasisFunctions->at(i)->GetNumberOfParameters());
-	  for(uint j = 0; j<myBasisFunctions->at(i)->GetNumberOfParameters(); ++j)
+	  Energies.at(i).resize(myBasisFunctions->at(i)->GetSize());
+	  for(uint j = 0; j<myBasisFunctions->at(i)->GetSize(); ++j)
 		{
 		  Energies[i][j] = myBasisFunctions->at(i)->GetE(j);
 		}
 	}
 
 
-
-  vector<vector<vector<vector<double> > > >  Vnnnn;
-  ///from outer to inner vectors: n1, n2, n3, n4.
-  ///value: integral Psi_n1 Psi_n2 Psi_n1' Psi_n2' \dd x
 
   vector<vector<vector<ComplexDouble > > > PsiB;
   ///Outermost: composite basis function number.
@@ -55,25 +51,25 @@ PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(vector<Composit
 	HermiteRule::GetRule(myInteractionProperties->GetPrecision(),
 						 myHarmonicBasisFunction->GetXmin(), bFactor / 2.0);
 
-///Here we can probably speed up things by using an intermediate cache to build up the solution in two steps. If required.
-
-ulong ele = 2 * myBasisFunctions->at(0)->GetNumberOfParameters() * myBasisFunctions->at(1)->GetNumberOfParameters() * nmax;
-
+  ///Here we can probably speed up things by using an intermediate cache to build up the solution in two steps. If required.
+  
+  ulong ele = 2 * myBasisFunctions->at(0)->GetSize() * myBasisFunctions->at(1)->GetSize() * nmax;
+  
   if(myPrinter != NULL)
 	{
 	  myPrinter->Print(3, "Interaction: Precomputing H-Psi values: %ld values to compute.\n", ele);
 	  myPrinter->Print(4, "Progress: 00%%");
 	}
-   
+  
   PsiB.resize(myBasisFunctions->size());
-
-uint pSteps1 = myBasisFunctions->at(0)->GetNumberOfParameters() +  myBasisFunctions->at(1)->GetNumberOfParameters();
-uint step = 0;
+  
+  uint pSteps1 = myBasisFunctions->at(0)->GetSize() +  myBasisFunctions->at(1)->GetSize();
+  uint step = 0;
 
   for(uint i = 0; i<myBasisFunctions->size(); ++i)
 	{
-	  PsiB[i].resize(myBasisFunctions->at(i)->GetNumberOfParameters());
-	  for(uint j = 0; j<myBasisFunctions->at(i)->GetNumberOfParameters(); ++j)
+	  PsiB[i].resize(myBasisFunctions->at(i)->GetSize());
+	  for(uint j = 0; j<myBasisFunctions->at(i)->GetSize(); ++j)
 		{
 		  if(myPrinter != NULL)
 			{
@@ -85,7 +81,7 @@ uint step = 0;
 		  for(uint n = 0; n<nmax; ++n)
 			{
 			  ///Summation should be done using extended precision.
-			  complex<long double> sum;
+			  complex<long double> sum = 0.0;
 			  for(vector<pair<double, double> > ::const_iterator it = myHalfHermiteRule.begin(); it!=myHalfHermiteRule.end(); ++it)
 				{
 				  ComplexDouble s = myBasisFunctions->at(i)->Eval(it->first, j);
@@ -112,7 +108,13 @@ uint step = 0;
 	  myPrinter->Print(4, "Progress: 00%%");
 	}
 
-  Vnnnn.resize(nmax, vector<vector<vector<double> > >(nmax, vector<vector<double> >(nmax, vector<double>(nmax, 0) ) ) );
+
+
+  vector<vector<vector<vector<double> > > >  Vnnnn(nmax, vector<vector<vector<double> > >(nmax, vector<vector<double> >(nmax, vector<double>(nmax, 0.0) ) ) );
+  ///from outer to inner vectors: n1, n2, n3, n4.
+  ///value: integral Psi_n1 Psi_n2 Psi_n1' Psi_n2' \dd x
+
+  
   for(uint n1 = 0; n1 < nmax; ++n1)
 	{
 	  for(uint n2 = n1; n2 < nmax; ++n2)
@@ -147,13 +149,13 @@ uint step = 0;
 	    myPrinter->Print(4, "\b\b\b\b\b\b\b\b\b\b\b\b\b\033[K");
     }
 
-  elements.resize(myBasisFunctions->at(0)->GetNumberOfParameters(),
-				  vector< vector< vector< ComplexDouble > > > (myBasisFunctions->at(1)->GetNumberOfParameters(),
-															   vector<vector<ComplexDouble> >(myBasisFunctions->at(0)->GetNumberOfParameters(), 
-															   vector<ComplexDouble>(myBasisFunctions->at(1)->GetNumberOfParameters(), 
+  elements.resize(myBasisFunctions->at(0)->GetSize(),
+				  vector< vector< vector< ComplexDouble > > > (myBasisFunctions->at(1)->GetSize(),
+															   vector<vector<ComplexDouble> >(myBasisFunctions->at(0)->GetSize(), 
+															   vector<ComplexDouble>(myBasisFunctions->at(1)->GetSize(), 
 																					 0.0))));
 
-  ulong nCross = pow(myBasisFunctions->at(0)->GetNumberOfParameters() * myBasisFunctions->at(1)->GetNumberOfParameters(), 2);
+  ulong nCross = pow(myBasisFunctions->at(0)->GetSize() * myBasisFunctions->at(1)->GetSize(), 2);
 
   if(myPrinter != NULL)
 	{
@@ -170,7 +172,7 @@ uint step = 0;
 		if(myPrinter != NULL)
 		  {
 			myPrinter->Print(4, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\033[K");
-			myPrinter->Print(4, "Progress: %04.02f%%", (double)100*(a * elements.at(a).size() + b ) / (double)(elements.size() * elements.size() ));
+			myPrinter->Print(4, "Progress: %04.02f%%", (double)100*(a * elements.at(a).size() + b ) / (double)(elements.at(a).size() * elements.size() ));
 		  }
 		for(uint c = 0; c<=a; ++c)
 		  {
@@ -224,7 +226,8 @@ ComplexDouble PrecomputedInteractionEvaluator::ComputeElement(uint a, uint b, ui
 			{
 			  for(uint n4 = n3; n4 < nmax; ++n4)
 				{
-				  sum += PsiB[0][a][n1] * 
+				  sum += 
+					PsiB[0][a][n1] * 
 					PsiB[1][b][n2] * 
 					PsiB[0][c][n3] * 
 					PsiB[1][d][n4]

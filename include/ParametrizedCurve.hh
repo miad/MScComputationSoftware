@@ -62,7 +62,7 @@ public:
 
   void Clear(); ///Clears the object of all information.
 
-  unsigned int GetTotalNumberOfGLPoints(); ///Returns the total number of GL points.
+  unsigned int GetTotalNumberOfGLPoints() const; ///Returns the total number of GL points.
 
   unsigned int SegmentIndexFromGLNumber(unsigned int val
 										) const; ///Returns the segment index from a GL number.
@@ -76,9 +76,17 @@ public:
 							 unsigned int GLpoint
 							 ) const;
 
+  
+  ComplexDouble GetRuleValue(unsigned int GLpoint
+							 ) const;
+
   ComplexDouble GetRuleWeight(unsigned int segment, 
 					   unsigned int GLpoint
 					   ) const;
+
+  
+  ComplexDouble GetRuleWeight(unsigned int GLpoint
+							  ) const;
 
 
 
