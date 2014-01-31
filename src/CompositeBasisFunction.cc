@@ -93,3 +93,17 @@ bool CompositeBasisFunction::IsHarmonic() const
 {
   return myHarmonicBasisFunction != NULL;
 }
+
+pair<uint, ComplexDouble> CompositeBasisFunction::GetDominatingVectorPart(uint eigenVector) const
+{
+  pair<uint, ComplexDouble> best = make_pair(0, 0.0);
+  for(uint i = 0; i<myInformation->Eigenvectors.at(eigenVector).size(); ++i)
+	{
+	  if(abs(myInformation->Eigenvectors.at(eigenVector).at(i)) > abs(best.second))
+		{
+		  best.second = myInformation->Eigenvectors.at(eigenVector).at(i);
+		  best.first = i;
+		}
+	}
+  return best;
+}

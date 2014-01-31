@@ -1,6 +1,6 @@
-#include "LapackeEigenvalueSolver.hh"
+#include "ArpackEigenvalueSolver.hh"
 
-EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve)
+EigenInformation * ArpackEigenvalueSolver::Solve(CMatrix * toSolve)
 {
   if( ! toSolve->IsSquare() )
 	{
@@ -24,7 +24,7 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve)
   
   if( reply )
 	{
-	  throw RLException("LapackeEigenvalueSolver: LAPACKe terminated with return code %d.", reply);
+	  throw RLException("ArpackEigenvalueSolver: LAPACKe terminated with return code %d.", reply);
 	}
 
   EigenInformation * toReturn = new EigenInformation();

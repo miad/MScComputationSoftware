@@ -56,32 +56,52 @@ public:
 
 
 protected:
-  static ComplexDouble ComputeElement(uint a, 
+  static ComplexDouble ComputeSingleElement(uint a, 
 									  uint b, 
 									  uint c, 
 									  uint d, 
-									  vector<vector<vector<vector<double> > > > &Vnnnn, 
-									  vector<vector<vector<ComplexDouble> > > & PsiB, 
+									  vector<vector<vector<vector<double> > > > *Vnnnn, 
+									  vector<vector<vector<ComplexDouble> > > * PsiB, 
 									  double nmax
 									  ); ///Computes an interaction matrix element (minus the coupling coefficient).
-
-  static uint Permutations(uint a, 
-						   uint b, 
-						   uint c, 
-						   uint d
-						   ); ///Count number of permutations.
 
   PrecomputedInteractionEvaluator() ///For debugging purposes.
   {};
 
+  void InitializeEnergies(vector<CompositeBasisFunction*> * myBasisFunctions
+						  );
+
+  static void ValidateInput(vector<CompositeBasisFunction*> * myBasisFunctions, 
+							const InteractionProperties * myInteractionProperties
+							);
+
+  static vector<vector<vector<ComplexDouble > > > * ComputePsiB(vector<CompositeBasisFunction*> * myBasisFunctions, 
+																uint integralPrecision, 
+																const HarmonicBasisFunction * myHarmonicBasisFunction, 
+																double bFactor, 
+																VerbosePrinter * myPrinter,
+																uint nmax
+																);
+
+  static vector<vector<vector<vector<double> > > > * ComputeVnnnn(uint integralPrecision, 
+																  const HarmonicBasisFunction * myHarmonicBasisFunction, 
+																  double bFactor, 
+																  VerbosePrinter * myPrinter,
+																  uint nmax
+																  );
+
+  void ComputeElements(vector<vector<vector<ComplexDouble> > > * PsiB, 
+					   vector<vector<vector<vector<double> > > > * Vnnnn, 
+					   VerbosePrinter * myPrinter,
+					   double couplingCoefficient,
+					   uint nmax
+					   );
 
 private:
+  vector< vector <vector <vector <ComplexDouble> > > >elements; ///Contains the precomputed interaction elements. We should have symmetry between the indices 1<->3 and 2<->4.
 
-  vector< vector <vector <vector <ComplexDouble> > > >elements;
-  vector<vector<ComplexDouble> > Energies; 
-  ///Outermost: basis function
-  ///middle: basis parameter ID
-  ///innermost: legendre x-point corresponding
+
+  vector<vector<ComplexDouble> > Energies; ///Contains energies corresponding to the basis functions. Outer layer is basis function number, inner layer is energy for that index. Not in general sorted in any way.
 
 };
 #endif

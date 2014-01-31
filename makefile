@@ -1,6 +1,6 @@
 CC:= g++
 
-CCFLAGS:=  -pthread -Wall -fPIC -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -fstack-protector-all -pedantic -Wno-long-long -O3 -g
+CCFLAGS:=  -pthread -Wall -fPIC -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -fstack-protector-all -pedantic -Wno-long-long -O3 -g 
 
 CCOFLAGS:= -fexpensive-optimizations -fira-loop-pressure
 
@@ -25,7 +25,7 @@ RLLIB:= RLlib/libRLlib.a
 
 
 INCLUDE:= -Iinclude -IRLlib/include -I$(LIBCONFIGDIR)/lib
-LIBS:= -lblas -lm -llapack -llapacke -LRLlib -lRLlib -Llibconfig-1.4.9/lib -Wl,-Bstatic -lconfig++ -Wl,-Bdynamic
+LIBS:=  -larpack++ -lm -llapack -llapacke -LRLlib -lRLlib -Llibconfig-1.4.9/lib -Wl,-Bstatic -lconfig++ -Wl,-Bdynamic
 
 SRC:= $(filter-out $(FPARSER:%=src/%.cc), $(wildcard src/*.cc)) $(FPARSER:%=src/%.cc)
 OBJ:= $(SRC:src/%.cc=bin/%.o) 

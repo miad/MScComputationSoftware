@@ -164,7 +164,7 @@ void ComputeConfig::ReadFile(const char * fileName)
 
   ReadHarmonicOscillator(computation);
 
-
+  ReadSolverInfo(computation);
 
   if(potentials.size() != numberOfParticles)
 	{
@@ -315,7 +315,7 @@ void ComputeConfig::WriteFile(const char * fileName) const
   wavePrecision.add("MaxX", Setting::TypeFloat) = minWavefunctionX;
   wavePrecision.add("DeltaX", Setting::TypeFloat) = minWavefunctionX;
   
-  
+
   root.add("Computation", Setting::TypeGroup);
 
   string matType = "General";
@@ -329,6 +329,21 @@ void ComputeConfig::WriteFile(const char * fileName) const
   inter.add("CouplingCoefficient", Setting::TypeFloat) = myInteractionProperties.GetCouplingCoefficient();
   inter.add("Nmax", Setting::TypeInt) = (int)myInteractionProperties.GetNMax(); 
   inter.add(Setting::TypeInt) = (int)myInteractionProperties.GetPrecision();
+
+
+  Setting & locSolver = root["Computation"].add("Solver", Setting::TypeGroup);
+
+
+  string sType = "Lapack";
+  if(mySolver.GetSolverType() == ArpackSolver)
+	sType = "Arpack";
+  locSolver.add("Type", Setting::TypeString) = sType;
+  locSolver.add("WorkArea", Setting::TypeString) = mySolver.GetWorkArea();
+  locSolver.add("NumberOfValues", Setting::TypeInt) = (int)mySolver.GetNumberOfEigenvalues();
+  Setting & shiftArray = locSolver.add("Shift", Setting::TypeArray);
+  shiftArray.add( Setting::TypeFloat) = real(mySolver.GetShift());
+  shiftArray.add( Setting::TypeFloat) = imag(mySolver.GetShift());
+  
 	
 
   Setting & units = root["Computation"].add("Units", Setting::TypeGroup);
@@ -728,6 +743,56 @@ void ComputeConfig::ReadSpecificUnits(Setting & computation)
   specificUnits = SpecificUnits(hbarTimesLambda, massOverLambda2, lengthUnitName, energyUnitName, timeToHertzFactor);
 }
 
+void ComputeConfig::ReadSolverInfo(Setting & computation)
+{
+
+  if( ! computation.exists("Solver") || ! computation["Solver"].isGroup())
+	{
+	  throw RLException("No info on eigenvalue solver found in config file.");
+	}
+
+  Setting & solver = computation["Solver"];
+  string temp;
+  if(! solver.lookupValue("Type", temp) )
+	{
+	  throw RLException("Could not look up value for Solver::Type.");
+	}
+  bool found = false;
+
+  EigenSolverType mySolverType;
+  if(strcmp(temp.c_str(), "Lapack") == 0) 
+	{
+	  mySolverType = LapackSolver;
+	  found = true;
+	}
+  if(strcmp(temp.c_str(), "Arpack") == 0)
+	{
+	  mySolverType = ArpackSolver;
+	  found = true;
+	}
+  mySolver.SetSolverType(mySolverType);
+
+  if(!found)
+	throw RLException("Invalid option for Solver::Type.");
+
+  if(! solver.lookupValue("WorkArea", temp))
+	{
+	  throw RLException("Could not look up value for Solver::WorkArea.");
+	}
+  mySolver.SetWorkArea(temp);
+  if(! solver.exists("Shift") || ! solver["Shift"].isArray() || solver["Shift"].getLength() != 2)
+	{
+	  throw RLException("Invalid solver shift.");
+	}
+  mySolver.SetShift(ComplexDouble(solver["Shift"][0], solver["Shift"][1]));
+  uint temp2;
+  if(!solver.lookupValue("NumberOfValues", temp2))
+	{
+	  throw RLException("Could not look up NumberOfValues for solver.");
+	}
+  mySolver.SetNumberOfEigenvalues(temp2);
+}
+
 void ComputeConfig::ReadHarmonicOscillator(Setting & computation)
 {
   if (! computation.exists("HarmonicOscillator") || !computation["HarmonicOscillator"].isGroup())
@@ -1091,4 +1156,9 @@ HarmonicBasisFunction * ComputeConfig::GetHarmonicBasisFunction() const
 void ComputeConfig::SetHarmonicBasisFunction(HarmonicBasisFunction * value)
 {
   myHarmonicBasisFunction = value;
+}
+
+EigenvalueSolver * ComputeConfig::GetSolver()
+{
+  return &mySolver;
 }

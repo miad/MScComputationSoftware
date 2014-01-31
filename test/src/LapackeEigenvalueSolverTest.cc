@@ -59,7 +59,7 @@ int LapackeEigenvalueSolverTest::TestCase3() const
   myMatrix.Element(2, 1) = ComplexDouble(0.097540404999410, 0.800280468888800);
   myMatrix.Element(2, 2) = ComplexDouble(0.957506835434298, 0.915735525189067);
 
-  EigenInformation * myInfo = LapackeEigenvalueSolver::Solve(&myMatrix, false);
+  EigenInformation * myInfo = LapackeEigenvalueSolver::Solve(&myMatrix);
 
 
   /*

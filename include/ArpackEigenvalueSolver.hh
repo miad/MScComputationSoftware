@@ -1,5 +1,5 @@
-#ifndef LapackeEigenvalueSolver_hh
-#define LapackeEigenvalueSolver_hh 1
+#ifndef ArpackEigenvalueSolver_hh
+#define ArpackEigenvalueSolver_hh 1
 
 #include <stdio.h>
 #include <vector>
@@ -18,13 +18,13 @@ using namespace std;
 
 /**Eigenvalue solver using LAPACKe
  */
-class LapackeEigenvalueSolver
+class ArpackEigenvalueSolver
 {
 public:
   static EigenInformation * Solve(CMatrix * toSolve
 								);
 private:
-  LapackeEigenvalueSolver() {}
+  ArpackEigenvalueSolver() {}
 };
 
 

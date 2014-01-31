@@ -45,6 +45,9 @@ public:
 
   bool IsHarmonic() const; ///Check if the object was initialized as harmonic object or not.
 
+  pair<uint, ComplexDouble> GetDominatingVectorPart(uint eigenVector ///Selects the appropriate eigenvector.
+										) const; ///Returns the dominating eigenvector part.
+
 protected:
   double HarmonicEval(const double & x, ///x-value.
 					  uint pIndex ///Basis function index.

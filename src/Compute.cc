@@ -74,7 +74,7 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 	  myProcessor.SaveMatrix(HamiltonianMatrix);
 	  
 	  myPrinter.Print(1, "Solving for eigenvalues and eigenvectors of the Hamiltonian.\n");
-	  EigenInformation * myInfo = LapackeEigenvalueSolver::Solve(HamiltonianMatrix);
+	  EigenInformation * myInfo = myConfiguration.GetSolver()->Solve(HamiltonianMatrix);
 	  
 	  myPrinter.Print(2, "Saving results to files.\n");
 	  
@@ -93,7 +93,7 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 		  CMatrix * OneBodyHamiltonian = ConstructOneParticleHamiltonian(myConfiguration, myPrinter, i);
 		  VerifyMatrixBasicProperties(myConfiguration, myPrinter, OneBodyHamiltonian);
 		  myPrinter.Print(1, "Finding eigenvalues for particle %d.\n", 0);
-		  EigenInformation * myEigenInfo = LapackeEigenvalueSolver::Solve(OneBodyHamiltonian);
+		  EigenInformation * myEigenInfo = myConfiguration.GetSolver()->Solve(OneBodyHamiltonian);
 		  if(myConfiguration.GetHarmonicOverride())
 			{
 			  myBasisFunctions.push_back(new CompositeBasisFunction(
@@ -118,12 +118,17 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 
 	  
 	  myPrinter.Print(2, "Precomputing interaction terms:\n");
-	  PrecomputedInteractionEvaluator myPrecomputedInteractionEvaluator(&myBasisFunctions, myConfiguration.GetInteractionProperties(), myConfiguration.GetHarmonicBasisFunction(), myConfiguration.GetSpecificUnits(), &myPrinter);
+	  PrecomputedInteractionEvaluator *  myPrecomputedInteractionEvaluator = 
+		new PrecomputedInteractionEvaluator(&myBasisFunctions, myConfiguration.GetInteractionProperties(), myConfiguration.GetHarmonicBasisFunction(), myConfiguration.GetSpecificUnits(), &myPrinter);
+
 	  myPrinter.Print(2, "Done precomputing.\n");
 
 
 	  CMatrix * TwoBodyHamiltonian = ConstructTwoParticleHamiltonian(myConfiguration, myPrinter, myPrecomputedInteractionEvaluator);
 	  VerifyMatrixBasicProperties(myConfiguration, myPrinter, TwoBodyHamiltonian);
+
+	  ///Free some memory before invoking eigenvalue solver.
+	  delete myPrecomputedInteractionEvaluator; myPrecomputedInteractionEvaluator = NULL;
 
 
 	  myProcessor.SaveMatrix(TwoBodyHamiltonian);
@@ -131,9 +136,9 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 	  myPrinter.Print(1, "Finding eigenvalues for the two-body system.\n");
 
 	  ///NOTE: I have disabled the throw() on non-orthogonal eigenvectors because the eigenvectors are NOT orthogonal any more...
-	  EigenInformation * TwoBodyEigenInfo = LapackeEigenvalueSolver::Solve(TwoBodyHamiltonian, false);
+	  EigenInformation * TwoBodyEigenInfo = myConfiguration.GetSolver()->Solve(TwoBodyHamiltonian, false);
 
-	  LapackeEigenvalueSolver::RescaleEigenvectors(TwoBodyEigenInfo);
+	  myConfiguration.GetSolver()->RescaleEigenvectors(TwoBodyEigenInfo);
 
 	  myProcessor.SetEigenInformation(TwoBodyEigenInfo);
 
@@ -308,12 +313,12 @@ CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration,
 
 
 
-CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration, VerbosePrinter & myPrinter, PrecomputedInteractionEvaluator & myPrecomputedInteractionEvaluator)
+CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration, VerbosePrinter & myPrinter, PrecomputedInteractionEvaluator * myPrecomputedInteractionEvaluator)
 {
 
   myPrinter.Print(3, "Creating 2-particle Hamiltonian\n");
   
-  uint MatrixSize = myPrecomputedInteractionEvaluator.GetBasisElements(0) * myPrecomputedInteractionEvaluator.GetBasisElements(1);
+  uint MatrixSize = myPrecomputedInteractionEvaluator->GetBasisElements(0) * myPrecomputedInteractionEvaluator->GetBasisElements(1);
 
   CMatrix * HamiltonianMatrix = new CMatrix(MatrixSize, MatrixSize);
   HamiltonianMatrix->InitializeAll(0.);
@@ -331,7 +336,7 @@ CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
   for(uint i = 0; i<MatrixSize; ++i)
 	{
 	  myMultiTasker->AddInput(TwoParticleWorkerData(HamiltonianMatrix,
-													&myPrecomputedInteractionEvaluator,
+													myPrecomputedInteractionEvaluator,
 													i,
 													i+1,
 													0,

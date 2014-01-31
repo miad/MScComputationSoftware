@@ -18,6 +18,7 @@
 #include "SpecificUnits.hh"
 #include "HarmonicBasisFunction.hh"
 #include "InteractionProperties.hh"
+#include "EigenvalueSolver.hh"
 
 
 using namespace std;
@@ -32,8 +33,6 @@ enum ExpectedMatrixType
 	SymmetricMatrix = 1,
 	HermitianMatrix = 2
   };
-
-
 
 
 /* Configuration for the program.
@@ -160,6 +159,8 @@ public:
 					   );
 
 
+  EigenvalueSolver * GetSolver();
+
 private:
   void ReadOutputFiles(Setting & output
 					   );
@@ -199,6 +200,9 @@ private:
   void ReadInteractionProperties(Setting & computation
 								 );
 
+  void ReadSolverInfo(Setting & computation
+					  );
+
 
 private:
 
@@ -222,7 +226,9 @@ private:
 
   bool harmonicOverride; ///Harmonic override (use harmonic basis instead)
   uint harmonicNmax; ///Use only in case of override.
+ 
 
+  EigenvalueSolver mySolver;
 
   vector<Potential*> potentials; ///One for each particle...
 

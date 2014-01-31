@@ -7,7 +7,7 @@ import sys, argparse, subprocess, os, errno, numpy
 from multiprocessing import Pool
 
 
-potDepths = numpy.arange(-5, 5, 0.01)
+potDepths = numpy.arange(-5, 5, 0.02)
 #for n in potDepths:
 #    n = round(n, 3)
 

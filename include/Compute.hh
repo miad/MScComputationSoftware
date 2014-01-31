@@ -77,7 +77,7 @@ CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration,
 
 CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
 										  VerbosePrinter & myPrinter, 
-										  PrecomputedInteractionEvaluator & myPrecomputedInteractionEvaluator
+										  PrecomputedInteractionEvaluator * myPrecomputedInteractionEvaluator
 										  
 										  );
 
