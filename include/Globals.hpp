@@ -2,10 +2,6 @@
 #define Globals_hpp 1
 
 
-#include "lapacke.h"
-#include "lapacke_utils.h"
-
-
 using namespace std;
 
 #include "Matrix.hpp"

@@ -36,5 +36,6 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve)
 	  toReturn->Eigenvectors[i%n].push_back(vr.at(i));
 	}
 
+
   return toReturn;
 }

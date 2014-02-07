@@ -1,40 +1,55 @@
 #include "ArpackEigenvalueSolver.hh"
 
-EigenInformation * ArpackEigenvalueSolver::Solve(CMatrix * toSolve)
+
+//ArpackError::ErrorCode ArpackError::code = NO_ERRORS;
+
+
+EigenInformation * ArpackEigenvalueSolver::Solve(CMatrix * toSolve, uint numberOfEigenvalues, ComplexDouble shift)
 {
+
   if( ! toSolve->IsSquare() )
 	{
 	  throw RLException("Can only find eigenvalues of square matrices.");
 	}
   
-  int matrix_order = LAPACK_ROW_MAJOR;
-  lapack_int n = toSolve->Rows();
+  /*
+  uint n = toSolve->Rows();
   ComplexDouble * a = toSolve->GetArray();
-  lapack_int lda = n;
-  vector<lapack_complex_double> w(n, 0);
-  char jobvl = 'N';
-  lapack_complex_double * vl = 0;
-  lapack_int ldvl = n;
-  char jobvr = 'V';
-  vector<lapack_complex_double> vr(n*n,0);
-  lapack_int ldvr = n;
+  ARComplexDouble * matr = new ARComplexDouble[n*n];
+  for(uint i = 0; i<n; ++i)
+	matr[i] = a[i];
   
-  int reply = LAPACKE_zgeev(matrix_order, jobvl, jobvr,
-							n, a, lda, &w[0], vl, ldvl, &vr[0], ldvr);
+
+
+  ARdsNonSymMatrix<ARComplexDouble, ARfloat> A(n*n, a);
+
+  ARComplexDouble sigma = shift;
+
   
-  if( reply )
+  ARluCompStdEig<ARfloat> Prob(numberOfEigenvalues, A, sigma);
+  
+  Prob.FindEigenvectors();
+
+  if(Prob.ConvergedEigenvalues() != (int)numberOfEigenvalues)
 	{
-	  throw RLException("ArpackEigenvalueSolver: LAPACKe terminated with return code %d.", reply);
+	  throw RLException("Only %d eigenvalues converged, %d were requested.\n",Prob.ConvergedEigenvalues(), numberOfEigenvalues);
+	}
+  
+  EigenInformation * toReturn = new EigenInformation();
+  toReturn->Eigenvalues.resize(Prob.ConvergedEigenvalues());
+  toReturn->Eigenvectors.resize(Prob.ConvergedEigenvalues(), vector<ComplexDouble>(n, 0.0) );
+  for(int i = 0; i<Prob.ConvergedEigenvalues(); ++i)
+	{
+	  toReturn->Eigenvalues.at(i) = Prob.Eigenvalue(i);
+	  for(uint j = 0; j<n; ++j)
+		{
+		  toReturn->Eigenvectors.at(i).at(j) = Prob.Eigenvector(i, j);
+		}
 	}
 
-  EigenInformation * toReturn = new EigenInformation();
-  toReturn->Eigenvalues = w;
-  for(int i = 0; i<n*n; ++i)
-	{
-	  if(i/n==0)
-		toReturn->Eigenvectors.push_back(vector<ComplexDouble>());
-	  toReturn->Eigenvectors[i%n].push_back(vr.at(i));
-	}
+  delete[] matr; matr = NULL;
 
   return toReturn;
+  */
+  return NULL;
 }

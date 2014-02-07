@@ -93,7 +93,7 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 		  CMatrix * OneBodyHamiltonian = ConstructOneParticleHamiltonian(myConfiguration, myPrinter, i);
 		  VerifyMatrixBasicProperties(myConfiguration, myPrinter, OneBodyHamiltonian);
 		  myPrinter.Print(1, "Finding eigenvalues for particle %d.\n", 0);
-		  EigenInformation * myEigenInfo = myConfiguration.GetSolver()->Solve(OneBodyHamiltonian);
+		  EigenInformation * myEigenInfo = myConfiguration.GetSolver()->LapackeSolve(OneBodyHamiltonian);
 		  if(myConfiguration.GetHarmonicOverride())
 			{
 			  myBasisFunctions.push_back(new CompositeBasisFunction(

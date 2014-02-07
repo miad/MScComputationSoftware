@@ -1,6 +1,6 @@
 CC:= g++
 
-CCFLAGS:=  -pthread -Wall -fPIC -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -fstack-protector-all -pedantic -Wno-long-long -O3 -g 
+CCFLAGS:=  -pthread -Wall -fPIC -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -fstack-protector-all -pedantic -Wno-long-long -g
 
 CCOFLAGS:= -fexpensive-optimizations -fira-loop-pressure
 
@@ -24,8 +24,8 @@ FPARSERDIR:= fparser4.5.1
 RLLIB:= RLlib/libRLlib.a
 
 
-INCLUDE:= -Iinclude -IRLlib/include -I$(LIBCONFIGDIR)/lib
-LIBS:=  -larpack++ -lm -llapack -llapacke -LRLlib -lRLlib -Llibconfig-1.4.9/lib -Wl,-Bstatic -lconfig++ -Wl,-Bdynamic
+INCLUDE:= -Iinclude -Ilapacke -IRLlib/include -I$(LIBCONFIGDIR)/lib 
+LIBS:=  -lm -llapack -llapacke -LRLlib -lRLlib -Llibconfig-1.4.9/lib -Wl,-Bstatic -lconfig++ -Wl,-Bdynamic
 
 SRC:= $(filter-out $(FPARSER:%=src/%.cc), $(wildcard src/*.cc)) $(FPARSER:%=src/%.cc)
 OBJ:= $(SRC:src/%.cc=bin/%.o) 
@@ -83,7 +83,7 @@ $(MAINS): %: $(filter-out $(MAINSOBJ), $(OBJ)) bin/%.o
 
 $(OBJ): bin/%.o: src/%.cc include/%.hh $(GLOBALDEPEND)
 	@echo Compiling $@...
-	@$(CC) $(CCFLAGS) $(INCLUDE) $(LIBS) -c $< -o $@
+	@$(CC) $(CCFLAGS) $(INCLUDE) -c $< $(LIBS) -o $@
 
 $(TEST): $(MAINS)
 	@$(MAKE) -C test makerun

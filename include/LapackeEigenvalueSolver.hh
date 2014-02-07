@@ -1,10 +1,10 @@
 #ifndef LapackeEigenvalueSolver_hh
 #define LapackeEigenvalueSolver_hh 1
 
-#include <stdio.h>
-#include <vector>
 #include "lapacke.h"
 #include "lapacke_utils.h"
+#include <stdio.h>
+#include <vector>
 #include "Globals.hpp"
 #include "Matrix.hpp"
 #include "RLException.hh"

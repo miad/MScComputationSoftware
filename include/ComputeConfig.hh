@@ -4,7 +4,6 @@
 #include <list>
 #include <vector>
 
-
 #include "libconfig.hh"
 #include "RLException.hh"
 #include "Globals.hpp"

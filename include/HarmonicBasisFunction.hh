@@ -16,6 +16,7 @@
 #include "Potential.hh"
 #include "SpecificUnits.hh"
 #include "LegendreRule.hh"
+#include "RLMacros.hpp"
 
 #define MAX_FACTORIALS 300
 

@@ -7,7 +7,7 @@ import sys, argparse, subprocess, os, errno, numpy
 from multiprocessing import Pool
 
 
-potDepths = numpy.arange(-5, 5, 0.02)
+potDepths = numpy.arange(-5.0, 5.0, 0.05)
 #for n in potDepths:
 #    n = round(n, 3)
 
@@ -90,7 +90,7 @@ def main():
         for dirac in outputDirectoriesToCreate:
             mkdir_p(dirac)
 
-        pool=Pool(20)
+        pool=Pool(12)
         for cFile in configFiles:
             pool.apply_async(computeRun,args=(cFile,))
 
@@ -100,6 +100,7 @@ def main():
     if args.rm:
         for f in configFiles:
             os.remove(f)
+        #os.removedirs(args.configdir)
 
 if __name__ == "__main__":
     """Launch."""

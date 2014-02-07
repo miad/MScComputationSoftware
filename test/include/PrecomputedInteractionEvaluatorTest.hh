@@ -29,20 +29,13 @@ public:
 										uint b, 
 										uint c, 
 										uint d, 
-										vector<vector<vector<vector<double> > > > &Vnnnn, 
-										vector<vector<vector<ComplexDouble> > > & PsiB, 
+										vector<vector<vector<vector<double> > > > * Vnnnn, 
+										vector<vector<vector<ComplexDouble> > > * PsiB, 
 										double nmax
 										)
   {
-	return ComputeElement(a, b, c, d, Vnnnn, PsiB, nmax);
+	return ComputeSingleElement(a, b, c, d, Vnnnn, PsiB, nmax);
   }
-
-  static uint Permutations_X(uint a, 
-							 uint b, 
-							 uint c, 
-							 uint d
-							 )
-  { return Permutations(a, b, c, d);}
 
 
   ComplexDouble ComputeElement_R(uint a, uint b, uint c, uint d, vector<vector<vector<vector<double> > > > &Vnnnn, vector<vector<vector<ComplexDouble> > > & PsiB, double nmax)
@@ -81,7 +74,6 @@ class PrecomputedInteractionEvaluatorTest : public GenericUnitTest
   int runUnitTests() const; ///Main function.
  protected:
   int TestCase1() const; /// Test case.
-  int TestCase2() const;
 };
 
 

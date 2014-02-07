@@ -78,7 +78,7 @@ EigenInformation * EigenvalueSolver::Solve(CMatrix * toSolve, bool assureEigenOr
 	  break;
 	case ArpackSolver:
 	  {
-		toReturn = ArpackEigenvalueSolver::Solve(toSolve);
+		toReturn = ArpackEigenvalueSolver::Solve(toSolve, numberOfEigenvalues, shift);
 	  }
 	  break;
 	default:

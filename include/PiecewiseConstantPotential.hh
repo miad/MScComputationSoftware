@@ -11,6 +11,7 @@
 #include "Globals.hpp"
 #include "Potential.hh"
 #include "LegendreRule.hh"
+#include "RLMacros.hpp"
 
 using namespace std;
 
