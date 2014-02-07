@@ -22,6 +22,7 @@
 
 #include <cstddef>
 #include <string>
+#include <iostream>
 #include "arch.h"
 #include "armat.h"
 #include "arerror.h"
@@ -245,12 +246,12 @@ void ARdsNonSymMatrix<ARTYPE, ARFLOAT>::FactorAsI(ARTYPE sigma)
   }
 
   // Reserving memory for some vectors used in matrix decomposition.
-
   CreateStructure();
 
   // Subtracting sigma*I from A.
-
+  ///SEGFAULT HERE
   ::copy(this->m*this->n,A,1,Ainv,1);
+
   for (int i=0; i<(this->m*this->n); i+=this->m+1) Ainv[i]-=sigma;
 
   // Decomposing AsI.

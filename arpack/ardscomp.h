@@ -84,10 +84,8 @@ template<class ARFLOAT>
 inline void ARluCompStdEig<ARFLOAT>::
 ChangeShift(arcomplex<ARFLOAT> sigmaRp)
 {
-
   this->objOP->FactorAsI(sigmaRp);
   ARrcStdEig<ARFLOAT, arcomplex<ARFLOAT> >::ChangeShift(sigmaRp);
-
 } // ChangeShift.
 
 
@@ -123,7 +121,6 @@ ARluCompStdEig(int nevp, ARdsNonSymMatrix<arcomplex<ARFLOAT>, ARFLOAT>& A,
                int maxitp, arcomplex<ARFLOAT>* residp, bool ishiftp)
 
 {
-
   this->NoShift();
   this->DefineParameters(A.ncols(), nevp, &A,
                    &ARdsNonSymMatrix<arcomplex<ARFLOAT>, ARFLOAT>::MultMv,
@@ -140,12 +137,10 @@ ARluCompStdEig(int nevp, ARdsNonSymMatrix<arcomplex<ARFLOAT>, ARFLOAT>& A,
                bool ishiftp)
 
 {
-
   this->DefineParameters(A.ncols(), nevp, &A, 
                    &ARdsNonSymMatrix<arcomplex<ARFLOAT>, ARFLOAT>::MultInvv,
                    whichp, ncvp, tolp, maxitp, residp, ishiftp);
   ChangeShift(sigmap);
-
 } // Long constructor (shift and invert mode).
 
 

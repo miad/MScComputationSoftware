@@ -90,6 +90,8 @@ inline void copy(const ARint &n, const arcomplex<float> dx[],
 inline void copy(const ARint &n, const arcomplex<double> dx[], 
                  const ARint &incx, arcomplex<double> dy[], 
                  const ARint &incy) {
+
+  ///SEGFAULT
   if (dx != dy) F77NAME(zcopy)(&n, dx, &incx, dy, &incy);
 } // copy (arcomplex<double>)
 #endif

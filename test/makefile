@@ -1,6 +1,6 @@
-INCLUDE:= -Iinclude -I../include -I../RLlib/include -I../libconfig-1.4.9/lib -I../lapacke
+INCLUDE:= -Iinclude -I../include -I../RLlib/include -I../libconfig-1.4.9/lib -I../lapacke -I../arpack
 
-LIBS:= -lm -llapack -llapacke -L../RLlib -lRLlib -L../libconfig-1.4.9/lib -Wl,-Bstatic -lconfig++ -Wl,-Bdynamic 
+LIBS:= -lblas -larpack  -lm -llapack -llapacke -L../RLlib -lRLlib -L../libconfig-1.4.9/lib -Wl,-Bstatic -lconfig++ -Wl,-Bdynamic 
 
 SRC:= $(wildcard src/*.cc)
 OBJ:= $(SRC:src/%.cc=bin/%.o)
@@ -14,7 +14,7 @@ NON_TESTABLE_BIN:= ../bin/Compute.o
 TESTABLE_BIN:= $(filter-out $(NON_TESTABLE_BIN), $(wildcard ../bin/*.o))
 
 
-CCFLAGS:=  -pthread -Wall -fPIC -g -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -std=c++11 -pedantic
+CCFLAGS:=  -pthread -Wall -fPIC -g -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -pedantic -Wno-long-long -O3
 
 CC:= g++
 
@@ -61,7 +61,7 @@ $(MAINS): %: $(filter-out $(MAINSOBJ), $(OBJ)) include/ExistingTests.cff include
 
 bin/%.o: src/%.cc include/%.hh include/ExistingTests.cff include/AllHeaders.cff
 	@echo Compiling $@
-	@$(CC) $(CCFLAGS) $(INCLUDE) -c $< $(LIBS) -o $@
+	@$(CC) $(CCFLAGS) $(INCLUDE) -c $< -o $@
 
 
 clean:

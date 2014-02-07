@@ -3,11 +3,12 @@
 
 #include "lapacke.h"
 #include "lapacke_utils.h"
-//#include "ardnsmat.h"
-//#include "arcomp.h"
-//#include "ardscomp.h"
+#include "ardnsmat.h"
+#include "arcomp.h"
+#include "ardscomp.h"
 
 #include <vector>
+#include <iostream>
 #include "Globals.hpp"
 #include "Matrix.hpp"
 #include "RLException.hh"
@@ -18,12 +19,12 @@
 #include "EigenInformation.hh"
 
 
-//typedef arcomplex<double> ARComplexDouble;
-//typedef double ARfloat;
+typedef arcomplex<double> ARComplexDouble;
+typedef double ARfloat;
 
 using namespace std;
 
-/**Eigenvalue solver using LAPACKe
+/**Eigenvalue solver using ARPACKpp
  */
 class ArpackEigenvalueSolver
 {
