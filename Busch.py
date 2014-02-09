@@ -6,6 +6,7 @@ For usage, run the script with the -h flag.
 import sys, argparse, subprocess, os, errno, numpy
 from multiprocessing import Pool
 
+NumberOfThreads=8
 
 potDepths = numpy.arange(-5.0, 5.0, 0.05)
 #for n in potDepths:
@@ -90,7 +91,7 @@ def main():
         for dirac in outputDirectoriesToCreate:
             mkdir_p(dirac)
 
-        pool=Pool(12)
+        pool=Pool(NumberOfThreads)
         for cFile in configFiles:
             pool.apply_async(computeRun,args=(cFile,))
 

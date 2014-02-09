@@ -125,7 +125,7 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 	  
 		  myPrinter.Print(2, "Precomputing interaction terms:\n");
 		  myPrecomputedInteractionEvaluator = 
-			new PrecomputedInteractionEvaluator(&myBasisFunctions, myConfiguration.GetInteractionProperties(), myConfiguration.GetHarmonicBasisFunction(), myConfiguration.GetSpecificUnits(), &myPrinter);
+			new PrecomputedInteractionEvaluator(&myBasisFunctions, myConfiguration.GetInteractionProperties(), myConfiguration.GetHarmonicBasisFunction(), myConfiguration.GetSpecificUnits(), &myPrinter, myConfiguration.GetNumberOfThreads());
 		  
 		  myPrinter.Print(2, "Done precomputing.\n");
 		}

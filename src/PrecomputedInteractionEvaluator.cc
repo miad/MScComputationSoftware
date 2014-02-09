@@ -375,6 +375,13 @@ PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(const Interacti
 	throw RLException("File read of precision failed.");
   if(fread(&nmax, sizeof(nmax), 1, fin) != 1)
 	throw RLException("Failed read of nmax");
+
+  if(myInteractionProperties->GetNMax() != nmax || myInteractionProperties->GetPrecision() != precision)
+	{
+	  throw RLException("Interaction data in cache file does not match some config settings.");
+	}
+
+
   if(fread(&N[0], sizeof(N[0]), 2, fin) != 2)
 	throw RLException("Failed read of N(1 or 2)");
   Energies.resize(2); 
