@@ -224,6 +224,13 @@ void ComputeConfig::ReadInteractionProperties(Setting & computation)
 	}
   myInteractionProperties.SetPrecision(prec);
 
+  string cFile;
+  if(! inter.lookupValue("CacheFile", cFile) )
+	{
+	  throw RLException("Could not find cache file in config file.");
+	}
+  myInteractionProperties.SetCacheFile(cFile);
+
 }
 
 void ComputeConfig::ReadWavefunctionProperties(Setting & outputSpecifics)
@@ -329,6 +336,7 @@ void ComputeConfig::WriteFile(const char * fileName) const
   inter.add("CouplingCoefficient", Setting::TypeFloat) = myInteractionProperties.GetCouplingCoefficient();
   inter.add("Nmax", Setting::TypeInt) = (int)myInteractionProperties.GetNMax(); 
   inter.add(Setting::TypeInt) = (int)myInteractionProperties.GetPrecision();
+  inter.add("CacheFile", Setting::TypeString) = myInteractionProperties.GetCacheFile();
 
 
   Setting & locSolver = root["Computation"].add("Solver", Setting::TypeGroup);

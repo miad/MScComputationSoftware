@@ -2,6 +2,8 @@
 #define InteractionProperties_hh 1
 
 #include "RLMacros.hpp"
+#include <string>
+using namespace std;
 
 /** Container class for some interaction term properties in 2-body Hamiltonian.
  */
@@ -32,15 +34,21 @@ public:
   void SetUpperIntegrationLimit(double value
 								);
 
-  long GetPrecision() const;
+  ulong GetPrecision() const;
 
-  void SetPrecision(long value
+  void SetPrecision(ulong value
+					);
+
+  string GetCacheFile() const;
+
+  void SetCacheFile(string value
 					);
 
 private:
   double couplingCoefficient;
-  long precision;
+  ulong precision;
   uint nmax;
+  string cacheFile;
 };
 
 #endif

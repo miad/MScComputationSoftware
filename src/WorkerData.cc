@@ -30,6 +30,11 @@ OneParticleWorkerData::OneParticleWorkerData(CMatrix * _HamiltonianMatrix,
 	throw RLException("Tried to initialize OneParticleWorkerData with n1 > n2");
   if(myBasisFunctions.empty())
 	throw RLException("Tried to initialize OneParticleWorkerData with empty basis function list.");
+  if(myCurve == NULL || myPotential == NULL || HamiltonianMatrix == NULL)
+	{
+	  throw RLException("Tried to create worker data object with a pointer set to NULL.");
+	}
+
 }
 
 OneParticleWorkerData::~OneParticleWorkerData()
@@ -55,6 +60,15 @@ TwoParticleWorkerData::TwoParticleWorkerData(CMatrix * _HamiltonianMatrix,
 	throw RLException("Tried to initialize TwoParticleWorkerData with m1 > m2");
   if(n1 > n2)
 	throw RLException("Tried to initialize TwoParticleWorkerData with n1 > n2");
+  if(myPrecomputedInteractionEvaluator == NULL)
+	{
+	  throw RLException("Tried to create worker data object with PrecomputedInteractionEvaluator pointer set to NULL.");
+	}
+  if(HamiltonianMatrix == NULL)
+	{
+	  throw RLException("Tried to create worker data object with HamiltonianMatrix pointer set to NULL.");
+
+	}
 }
 
 TwoParticleWorkerData::~TwoParticleWorkerData()

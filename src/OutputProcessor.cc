@@ -598,6 +598,11 @@ void OutputProcessor::WriteInterestingRelativeTwoParticleWavefunctionsToFile() c
 	{
 	  throw RLException("Must set CompositeBasisFunctions for OutputProcessor before writing to file.");
 	}
+  if(myCompositeBasisFunctions->size() < 2)
+	{
+	  vPrint(2, "Too few composite basis functions, not saving.\n");
+	  return;
+	}
 
   ///Some setup.
   vector<uint> interestingIndexes = FindInterestingKPointIndex();
@@ -704,6 +709,14 @@ void OutputProcessor::WriteProductTwoParticleWavefunctionToFile() const
 	  vPrint(4, "Empty ProductWavefunction filename, not saving.\n");
 	  return;
 	}
+
+  if(myCompositeBasisFunctions->size() < 2)
+	{
+	  vPrint(2, "Too few composite basis functions, not saving.\n");
+	  return;
+	}
+
+
 
   FILE * fout = AssuredFopen(fileName);
 

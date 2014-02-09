@@ -14,9 +14,10 @@
 #include "HermiteEvaluator.hh"
 #include "VerbosePrinter.hh"
 #include "MultiTasker.hpp"
+#include "ElementComputationWorkerData.hh"
 using namespace std;
 
-
+#define FILE_VALIDATION_NUMBER 1357955
 
 
 
@@ -36,6 +37,9 @@ public:
 								  VerbosePrinter * myPrinter = NULL, ///only used in the constructor.
 								  uint numberOfThreads = 10///Number of threads to use for init.
 								  );
+
+  PrecomputedInteractionEvaluator(const InteractionProperties * myInteractionProperties
+								  ); ///Initialize from file.
   
   ~PrecomputedInteractionEvaluator();
   
@@ -54,16 +58,21 @@ public:
   uint GetBasisElements(uint basisIndex
 						) const;
 
+  void SetNewCouplingCoefficient(double value);
+
+  void DiskSave(const InteractionProperties * myInteractionProperties
+				); ///Save object to file to be able to read it later on.
+
 
 protected:
   static ComplexDouble ComputeSingleElement(uint a, 
-									  uint b, 
-									  uint c, 
-									  uint d, 
-									  vector<vector<vector<vector<double> > > > *Vnnnn, 
-									  vector<vector<vector<ComplexDouble> > > * PsiB, 
-									  double nmax
-									  ); ///Computes an interaction matrix element (minus the coupling coefficient).
+											uint b, 
+											uint c, 
+											uint d, 
+											const vector<vector<vector<vector<double> > > > *Vnnnn, 
+											const vector<vector<vector<ComplexDouble> > > * PsiB, 
+											double nmax
+											); ///Computes an interaction matrix element (minus the coupling coefficient).
 
   PrecomputedInteractionEvaluator() ///For debugging purposes.
   {};
@@ -93,15 +102,20 @@ protected:
   void ComputeElements(vector<vector<vector<ComplexDouble> > > * PsiB, 
 					   vector<vector<vector<vector<double> > > > * Vnnnn, 
 					   VerbosePrinter * myPrinter,
-					   double couplingCoefficient,
-					   uint nmax
+					   uint nmax,
+					   uint numberOfThreads
 					   );
 
+  static bool ComputeElementsDoWork(ElementComputationWorkerData * w
+									);
+
 private:
-  vector< vector <vector <vector <ComplexDouble> > > >elements; ///Contains the precomputed interaction elements. We should have symmetry between the indices 1<->3 and 2<->4.
+  vector< vector <vector <vector <ComplexDouble> > > > elements; ///Contains the precomputed interaction elements. We should have symmetry between the indices 1<->3 and 2<->4.
 
 
   vector<vector<ComplexDouble> > Energies; ///Contains energies corresponding to the basis functions. Outer layer is basis function number, inner layer is energy for that index. Not in general sorted in any way.
 
+  double couplingCoefficient; ///Coupling coefficient.
 };
+
 #endif

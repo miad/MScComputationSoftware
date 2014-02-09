@@ -1,7 +1,7 @@
 #include "InteractionProperties.hh"
 
 InteractionProperties::InteractionProperties()
-  :couplingCoefficient(0), precision(1000), nmax(30)
+  :couplingCoefficient(0), precision(1000), nmax(30), cacheFile("")
 {
 
 }
@@ -22,12 +22,12 @@ void InteractionProperties::SetCouplingCoefficient(double value)
   couplingCoefficient = value;
 }
 
-long InteractionProperties::GetPrecision() const
+ulong InteractionProperties::GetPrecision() const
 {
   return precision;
 }
 
-void InteractionProperties::SetPrecision(long value)
+void InteractionProperties::SetPrecision(ulong value)
 {
   precision = value;
 }
@@ -40,4 +40,14 @@ uint InteractionProperties::GetNMax() const
 void InteractionProperties::SetNMax(uint value)
 {
   nmax = value;
+}
+
+string InteractionProperties::GetCacheFile() const
+{
+  return cacheFile;
+}
+
+void InteractionProperties::SetCacheFile(string value)
+{
+  cacheFile = value;
 }

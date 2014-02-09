@@ -28,13 +28,26 @@ PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(vector<Composit
 																   nmax
 																   );
 
-  ComputeElements(PsiB, Vnnnn, myPrinter, myInteractionProperties->GetCouplingCoefficient(), nmax);
+  
+  ComputeElements(PsiB, Vnnnn, myPrinter, nmax, numberOfThreads);
+
+  couplingCoefficient = myInteractionProperties->GetCouplingCoefficient();
   
   delete PsiB; PsiB = NULL;
   delete Vnnnn; Vnnnn = NULL;
+  if(myPrinter!=NULL)
+	myPrinter->Print(3, "Optionally saving to disk...");
+  DiskSave(myInteractionProperties);
+  if(myPrinter != NULL)
+	myPrinter->Print(3,"done\n");
 }
 
-ComplexDouble PrecomputedInteractionEvaluator::ComputeSingleElement(uint a, uint b, uint c, uint d, vector<vector<vector<vector<double> > > > * Vnnnn, vector<vector<vector<ComplexDouble> > > * PsiB, double nmax)
+void PrecomputedInteractionEvaluator::SetNewCouplingCoefficient(double value)
+{
+  couplingCoefficient = value;
+}
+
+ComplexDouble PrecomputedInteractionEvaluator::ComputeSingleElement(uint a, uint b, uint c, uint d, const vector<vector<vector<vector<double> > > > * Vnnnn, const vector<vector<vector<ComplexDouble> > > * PsiB, double nmax)
 {
   ComplexDouble sum = 0.0;
   for(uint n1 = 0; n1 < nmax; ++n1)
@@ -99,7 +112,7 @@ PrecomputedInteractionEvaluator::~PrecomputedInteractionEvaluator()
 
 ComplexDouble PrecomputedInteractionEvaluator::GetElement(uint a, uint b, uint c, uint d) const
 {
-  return elements.at(a).at(b).at(c).at(d);
+  return elements.at(a).at(b).at(c).at(d) * couplingCoefficient;
 }
 
 
@@ -234,10 +247,8 @@ vector<vector<vector<vector<double> > > > * PrecomputedInteractionEvaluator::Com
 						
 					}
 				  uint vals[] = {n1, n2, n3, n4};
-				  uint nPr = 0;
 				  do
 					{
-					  ++nPr;
 					  Vnnnn->at(vals[0]).at(vals[1]).at(vals[2]).at(vals[3]) = sum;
 					}while(next_permutation(vals, vals+4));
 				}
@@ -253,7 +264,7 @@ vector<vector<vector<vector<double> > > > * PrecomputedInteractionEvaluator::Com
 }
 
 
-void PrecomputedInteractionEvaluator::ComputeElements(vector<vector<vector<ComplexDouble> > > * PsiB, vector<vector<vector<vector<double> > > > * Vnnnn, VerbosePrinter * myPrinter, double couplingCoefficient, uint nmax)
+void PrecomputedInteractionEvaluator::ComputeElements(vector<vector<vector<ComplexDouble> > > * PsiB, vector<vector<vector<vector<double> > > > * Vnnnn, VerbosePrinter * myPrinter, uint nmax, uint numberOfThreads)
 {
 
   elements.resize(PsiB->at(0).size(), 
@@ -264,49 +275,210 @@ void PrecomputedInteractionEvaluator::ComputeElements(vector<vector<vector<Compl
   
   ulong nCross = pow(PsiB->at(0).size() * PsiB->at(1).size(), 2);
 
+  MultiTasker<ElementComputationWorkerData*, bool> * myMultiTasker = new MultiTasker<ElementComputationWorkerData*, bool>(ComputeElementsDoWork, numberOfThreads);
+  myMultiTasker->RegisterListener(myPrinter);
+
   if(myPrinter != NULL)
 	{
-	  myPrinter->Print(3, "Interaction: Precomputing cross-values. %ld values to compute.\n", nCross);
-	  myPrinter->Print(4, "Progress: 00.00%%");
+	  myPrinter->Print(3, "Queuing up cross-value work.\n");
 	}
 
-
+  ulong workElements = 0;
   for(uint a = 0; a<elements.size(); ++a)
   {
 	for(uint b = 0; b<elements.at(a).size(); ++b)
 	  {
-		if(myPrinter != NULL)
-		  {
-			myPrinter->Print(4, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\033[K");
-			myPrinter->Print(4, "Progress: %04.02f%%", (double)100*(a * elements.at(a).size() + b ) / (double)(elements.at(a).size() * elements.size() ));
-		  }
-		for(uint c = 0; c<=a; ++c)
-		  {
-			for(uint d = 0; d<=b; ++d)
-			  {
-				ComplexDouble val = couplingCoefficient * ComputeSingleElement(a, b, c, d, Vnnnn, PsiB, nmax);
-				uint elPtr1[] = {a, c};
-				uint elPtr2[] = {b, d};
-				
-				uint nPr = 0;
-				do
-				  {
-					do
-					  {
-						elements[elPtr1[0]][elPtr2[0]][elPtr1[1]][elPtr2[1]] = val;
-						++nPr;
-					  }
-					while(prev_permutation(elPtr2, elPtr2+2));
-				  }
-				while(prev_permutation(elPtr1, elPtr1+2));
-				
-			  }
-		  }
+		++workElements;
+		myMultiTasker->AddInput(new ElementComputationWorkerData(a, b, nmax, &elements, PsiB, Vnnnn));
 	  }
   }
 
   if(myPrinter != NULL)
 	{
+	  myPrinter->Print(3, "Interaction: Precomputing cross-values. %ld values to compute.\n", nCross);
+	  myPrinter->Print(4, "Progress: 00.00%%");
+	}
+  
+  
+  myMultiTasker->LaunchThreads();
+  ulong progress = 0;
+  while(myMultiTasker->GetInputMinusOutput())
+	{
+	  myMultiTasker->GetOutput();
+	  if(myPrinter != NULL)
+		{
+		  myPrinter->Print(4, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\033[K");
+		  myPrinter->Print(4, "Progress: %04.02f%%", (double)100*((double)progress++/((double)workElements)));
+		}
+	}
+  
+  myMultiTasker->PauseUntilOutputIsGenerated();
+  myMultiTasker->DestroyThreads();
+  
+  
+  if(myPrinter != NULL)
+	{
 	  myPrinter->Print(4, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\033[K");
 	}
+  delete myMultiTasker; 
+  myMultiTasker = NULL;
+}
+
+
+
+bool PrecomputedInteractionEvaluator::ComputeElementsDoWork(ElementComputationWorkerData * w)
+{
+  uint a = w->a;
+  uint b = w->b;
+  uint nmax = w->nmax;
+  for(uint c = 0; c<=a; ++c)
+	{
+	  for(uint d = 0; d<=b; ++d)
+		{
+		  ComplexDouble val = PrecomputedInteractionEvaluator::ComputeSingleElement(a, b, c, d, w->Vnnnn, w->PsiB, nmax);
+		  uint elPtr1[] = {a, c};
+		  uint elPtr2[] = {b, d};
+		  do
+			{
+			  do
+				{
+				  w->elements->at(elPtr1[0])[elPtr2[0]][elPtr1[1]][elPtr2[1]] = val;
+				}
+			  while(prev_permutation(elPtr2, elPtr2+2));
+			}
+		  while(prev_permutation(elPtr1, elPtr1+2));
+		}
+	}
+  delete w;
+  return true; ///We need to return _something_ in order to count the number of returned values for progress bar.
+}
+
+
+PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(const InteractionProperties * myInteractionProperties)
+{
+  couplingCoefficient = myInteractionProperties->GetCouplingCoefficient();
+  string filename = myInteractionProperties->GetCacheFile();
+  if(filename.empty()) ///Don't save if filename is empty.
+	{
+	  throw RLException("Cannot read from non-existing input file.");
+	}
+  
+  FILE * fin = fopen(filename.c_str(), "rb");
+  if(fin == NULL)
+	{
+	  throw RLException("Could not open interaction output file.");
+	}
+  ulong precision;
+  uint nmax;
+  uint N[2];
+  if(fread(&precision, sizeof(precision), 1, fin) != 1)
+	throw RLException("File read of precision failed.");
+  if(fread(&nmax, sizeof(nmax), 1, fin) != 1)
+	throw RLException("Failed read of nmax");
+  if(fread(&N[0], sizeof(N[0]), 2, fin) != 2)
+	throw RLException("Failed read of N(1 or 2)");
+  Energies.resize(2); 
+  for(uint i = 0; i<2; ++i)
+	{
+	  Energies[i].resize(N[i]);
+	  if(fread(&Energies[i][0], sizeof(Energies[i][0]), N[i], fin) != N[i])
+		throw RLException("Failed read.");
+	}
+
+  elements.resize(N[0], 
+				  vector< vector< vector< ComplexDouble > > > (N[1],
+				  vector<vector<ComplexDouble> >(N[0], 
+				  vector<ComplexDouble>(N[1], 
+				  0.0))));
+
+  for(uint a = 0; a<N[0]; ++a)
+	{
+	  for(uint b = 0; b<N[1]; ++b)
+		{
+		  for(uint c = 0; c<N[0]; ++c)
+			{
+			  if(fread(&elements[a][b][c][0], sizeof(elements[a][b][c][0]), N[1], fin) != N[1])
+				throw RLException("File read failed : a=%d, b=%d, c=%d, dsize=%d", a, b, c, N[1]);
+			}
+		}
+	}
+
+  ulong validateNo = 0;
+  if(fread(&validateNo, sizeof(validateNo), 1, fin) != 1)
+	throw RLException("File read of validateNo failed.");
+  if(validateNo != FILE_VALIDATION_NUMBER)
+	{
+	  throw RLException("File consistency validation failed.");
+	}
+
+  fclose(fin); fin = NULL;
+}
+
+void PrecomputedInteractionEvaluator::DiskSave(const InteractionProperties * myInteractionProperties)
+{
+  string filename = myInteractionProperties->GetCacheFile();
+  if(filename.empty()) ///Don't save if filename is empty.
+	return; 
+
+  FILE * fout = fopen(filename.c_str(), "wb");
+  if(fout == NULL)
+	{
+	  throw RLException("Could not open interaction output file.");
+	}
+  ///Save interaction properties for data validation on readback.
+  ulong precision = myInteractionProperties->GetPrecision();
+  uint nmax = myInteractionProperties->GetNMax();
+  if(fwrite(&precision, sizeof(precision), 1, fout) != 1)
+	throw RLException("File write failed.");
+  if(fwrite(&nmax, sizeof(nmax), 1, fout) != 1)
+	throw RLException("File write failed.");
+
+  uint N[2];
+  for(uint i = 0; i<2; ++i)
+	N[i] = Energies[i].size();
+
+  ///Save the two primary numbers: the number of basis elements for each particle.
+  if(fwrite(&N[0], sizeof(N[0]), 2, fout) != 2)
+	throw RLException("File write failed.");
+  
+  ///Save individual particle energies.
+  for(uint i = 0; i<2; ++i)
+	{
+	  if(fwrite(&Energies[i][0], sizeof(Energies[i][0]), N[i], fout) != Energies[i].size())
+		throw RLException("File write failed.");
+	  
+	}
+  
+  if(elements.size() != N[0])
+	throw RLException("Size mismatch.");
+  for(uint a = 0; a<N[0]; ++a)
+	{
+	  if(elements[a].size() != N[1])
+		{
+		  throw RLException("Size mismatch");
+		}
+	  for(uint b = 0; b<N[1]; ++b)
+		{
+		  if(elements[a][b].size() != N[0])
+			{
+			  throw RLException("Size mismatch");
+			}
+		  
+		  for(uint c = 0; c<N[0]; ++c)
+			{
+			  if(elements[a][b][c].size() != N[1])
+				{
+				  throw RLException("Size mismatch");
+				}
+			  if(fwrite(&elements[a][b][c][0], sizeof(elements[a][b][c][0]), N[1], fout) != N[1])
+				throw RLException("File write failed.");
+			}
+		}
+	}
+
+  ulong validateNo = FILE_VALIDATION_NUMBER;
+  if(fwrite(&validateNo, sizeof(validateNo), 1, fout) != 1)
+	throw RLException("File write failed.");
+  
+  fclose(fout); fout = NULL;
 }

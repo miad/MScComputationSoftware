@@ -85,44 +85,56 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 	}
   else if(myConfiguration.GetNumberOfParticles() == 2)
 	{
-	  vector<EigenInformation *> OneParticleEigenData;
+	  PrecomputedInteractionEvaluator *  myPrecomputedInteractionEvaluator = NULL;
 	  vector<CompositeBasisFunction * > myBasisFunctions;
-	  for(uint i = 0; i<2; ++i)
+	  vector<EigenInformation *> OneParticleEigenData;
+	  if( myConfiguration.GetInteractionProperties()->GetCacheFile().empty() ||
+		  access(myConfiguration.GetInteractionProperties()->GetCacheFile().c_str(), F_OK) == -1)
 		{
-		  myPrinter.Print(1, "Constructing Hamiltonian for particle %d.\n", 0);
-		  CMatrix * OneBodyHamiltonian = ConstructOneParticleHamiltonian(myConfiguration, myPrinter, i);
-		  VerifyMatrixBasicProperties(myConfiguration, myPrinter, OneBodyHamiltonian);
-		  myPrinter.Print(1, "Finding eigenvalues for particle %d.\n", 0);
-		  EigenInformation * myEigenInfo = myConfiguration.GetSolver()->LapackeSolve(OneBodyHamiltonian);
-		  if(myConfiguration.GetHarmonicOverride())
+		  for(uint i = 0; i<2; ++i)
 			{
-			  myBasisFunctions.push_back(new CompositeBasisFunction(
-																	myConfiguration.GetHarmonicBasisFunction(),
-																	myEigenInfo
-																	)
-										 );
+			  myPrinter.Print(1, "Constructing Hamiltonian for particle %d.\n", 0);
+			  CMatrix * OneBodyHamiltonian = ConstructOneParticleHamiltonian(myConfiguration, myPrinter, i);
+			  VerifyMatrixBasicProperties(myConfiguration, myPrinter, OneBodyHamiltonian);
+			  myPrinter.Print(1, "Finding eigenvalues for particle %d.\n", 0);
+			  EigenInformation * myEigenInfo = myConfiguration.GetSolver()->LapackeSolve(OneBodyHamiltonian);
+			  if(myConfiguration.GetHarmonicOverride())
+				{
+				  myBasisFunctions.push_back(new CompositeBasisFunction(
+																		myConfiguration.GetHarmonicBasisFunction(),
+																		myEigenInfo
+																		)
+											 );
+				}
+			  else
+				{
+				  myBasisFunctions.push_back(new CompositeBasisFunction(
+																		myConfiguration.GetBasisFunctions(),
+																		myEigenInfo,
+																		myConfiguration.GetKCurve()
+																		)
+											 );
+				}
+			  OneParticleEigenData.push_back(myEigenInfo);  ///Must be retained in memory and deleted later.
+			  delete OneBodyHamiltonian;
+			  
 			}
-		  else
-			{
-			  myBasisFunctions.push_back(new CompositeBasisFunction(
-																	myConfiguration.GetBasisFunctions(),
-																	myEigenInfo,
-																	myConfiguration.GetKCurve()
-																	)
-										 );
-			}
-		  OneParticleEigenData.push_back(myEigenInfo);  ///Must be retained in memory and deleted later.
-		  delete OneBodyHamiltonian;
-																
-		}
+		
+
 
 	  
-	  myPrinter.Print(2, "Precomputing interaction terms:\n");
-	  PrecomputedInteractionEvaluator *  myPrecomputedInteractionEvaluator = 
-		new PrecomputedInteractionEvaluator(&myBasisFunctions, myConfiguration.GetInteractionProperties(), myConfiguration.GetHarmonicBasisFunction(), myConfiguration.GetSpecificUnits(), &myPrinter);
-
-	  myPrinter.Print(2, "Done precomputing.\n");
-
+		  myPrinter.Print(2, "Precomputing interaction terms:\n");
+		  myPrecomputedInteractionEvaluator = 
+			new PrecomputedInteractionEvaluator(&myBasisFunctions, myConfiguration.GetInteractionProperties(), myConfiguration.GetHarmonicBasisFunction(), myConfiguration.GetSpecificUnits(), &myPrinter);
+		  
+		  myPrinter.Print(2, "Done precomputing.\n");
+		}
+	  else
+		{
+		  myPrinter.Print(2, "Loading interaction properties directly from save file...");
+		  myPrecomputedInteractionEvaluator = new PrecomputedInteractionEvaluator(myConfiguration.GetInteractionProperties());
+		  myPrinter.Print(2, "done\n");
+		}
 
 	  CMatrix * TwoBodyHamiltonian = ConstructTwoParticleHamiltonian(myConfiguration, myPrinter, myPrecomputedInteractionEvaluator);
 	  VerifyMatrixBasicProperties(myConfiguration, myPrinter, TwoBodyHamiltonian);
@@ -419,6 +431,12 @@ void * EvaluateSubMatrixTwoParticles(TwoParticleWorkerData w)
   CMatrix * HamiltonianMatrix = w.HamiltonianMatrix;
   const PrecomputedInteractionEvaluator * myPrecomputedInteractionEvaluator = w.myPrecomputedInteractionEvaluator;
   uint m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
+
+  if(myPrecomputedInteractionEvaluator == NULL)
+	{
+	  throw RLException("myPrecomputedInteractionEvaluator was NULL.");
+	}
+
   uint N1 = myPrecomputedInteractionEvaluator->GetBasisElements(0);
   uint N2 = myPrecomputedInteractionEvaluator->GetBasisElements(1);
 

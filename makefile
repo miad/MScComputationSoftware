@@ -1,6 +1,6 @@
 CC:= g++
 
-CCFLAGS:=  -pthread -Wall -fPIC -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -fstack-protector-all -pedantic -Wno-long-long -g -O3
+CCFLAGS:=  -pthread -Wall -fPIC -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -pedantic -Wno-long-long -g -O3
 
 CCOFLAGS:= -fexpensive-optimizations -fira-loop-pressure
 
