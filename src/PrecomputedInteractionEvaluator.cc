@@ -354,7 +354,7 @@ bool PrecomputedInteractionEvaluator::ComputeElementsDoWork(ElementComputationWo
 }
 
 
-PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(const InteractionProperties * myInteractionProperties)
+PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(const InteractionProperties * myInteractionProperties, VerbosePrinter * myPrinter)
 {
   couplingCoefficient = myInteractionProperties->GetCouplingCoefficient();
   string filename = myInteractionProperties->GetCacheFile();
@@ -367,6 +367,10 @@ PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(const Interacti
   if(fin == NULL)
 	{
 	  throw RLException("Could not open interaction output file.");
+	}
+  if(myPrinter != NULL)
+	{
+	  myPrinter->Print(4, "Using file '%s'.\n", filename.c_str());
 	}
   ulong precision;
   uint nmax;
@@ -385,12 +389,25 @@ PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(const Interacti
   if(fread(&N[0], sizeof(N[0]), 2, fin) != 2)
 	throw RLException("Failed read of N(1 or 2)");
   Energies.resize(2); 
+  if(myPrinter != NULL)
+	{
+	  myPrinter->Print(4, "Loading energies...", filename.c_str());
+	}
+
   for(uint i = 0; i<2; ++i)
 	{
 	  Energies[i].resize(N[i]);
 	  if(fread(&Energies[i][0], sizeof(Energies[i][0]), N[i], fin) != N[i])
 		throw RLException("Failed read.");
 	}
+  if(myPrinter != NULL)
+	{
+	  myPrinter->Print(4, "done\n", filename.c_str());
+	  myPrinter->Print(4, "Mapping RAM memory...", filename.c_str());
+	}
+
+
+
 
   elements.resize(N[0], 
 				  vector< vector< vector< ComplexDouble > > > (N[1],
@@ -398,10 +415,24 @@ PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(const Interacti
 				  vector<ComplexDouble>(N[1], 
 				  0.0))));
 
+  if(myPrinter != NULL)
+	{
+	  myPrinter->Print(4, "done\n");
+	  myPrinter->Print(3, "Loading elements from file.\n");
+	  myPrinter->Print(4, "Progress: 00.00%%");
+	}
+
+
   for(uint a = 0; a<N[0]; ++a)
 	{
 	  for(uint b = 0; b<N[1]; ++b)
 		{
+		  if(myPrinter != NULL)
+			{
+			  myPrinter->Print(4, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\033[K");
+			  myPrinter->Print(4, "Progress: %04.02f%%", (double)100*((double)(a*N[1]+b)/((double)N[0]*N[1])));
+			}
+
 		  for(uint c = 0; c<N[0]; ++c)
 			{
 			  if(fread(&elements[a][b][c][0], sizeof(elements[a][b][c][0]), N[1], fin) != N[1])
@@ -419,6 +450,11 @@ PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(const Interacti
 	}
 
   fclose(fin); fin = NULL;
+  if(myPrinter != NULL)
+	{
+	  myPrinter->Print(4, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\033[K");
+	}
+
 }
 
 void PrecomputedInteractionEvaluator::DiskSave(const InteractionProperties * myInteractionProperties)

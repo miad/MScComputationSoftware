@@ -38,7 +38,8 @@ public:
 								  uint numberOfThreads = 10///Number of threads to use for init.
 								  );
 
-  PrecomputedInteractionEvaluator(const InteractionProperties * myInteractionProperties
+  PrecomputedInteractionEvaluator(const InteractionProperties * myInteractionProperties,
+								  VerbosePrinter * myPrinter = NULL
 								  ); ///Initialize from file.
   
   ~PrecomputedInteractionEvaluator();

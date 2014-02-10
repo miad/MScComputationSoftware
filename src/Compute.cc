@@ -131,9 +131,9 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 		}
 	  else
 		{
-		  myPrinter.Print(2, "Loading interaction properties directly from save file...");
-		  myPrecomputedInteractionEvaluator = new PrecomputedInteractionEvaluator(myConfiguration.GetInteractionProperties());
-		  myPrinter.Print(2, "done\n");
+		  myPrinter.Print(2, "Loading interaction properties directly from save file.\n");
+		  myPrecomputedInteractionEvaluator = new PrecomputedInteractionEvaluator(myConfiguration.GetInteractionProperties(), &myPrinter);
+		  myPrinter.Print(2, "Done loading interaction properties.\n");
 		}
 
 	  CMatrix * TwoBodyHamiltonian = ConstructTwoParticleHamiltonian(myConfiguration, myPrinter, myPrecomputedInteractionEvaluator);
