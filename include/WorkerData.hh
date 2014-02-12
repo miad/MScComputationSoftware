@@ -32,6 +32,7 @@ public:
 			 double _hbarTimesLambda, ///Used for k-E transformation.
 			 double _massOverLambda2, ///Used for k-E transformation.
 			 HarmonicBasisFunction * _harmonicBasisFunction,
+						uint _particleID, ///Particle ID.
 			 uint _m1, /// Specifies the submatrix to use.
 			 uint _m2, /// Specifies the submatrix to use.
 			 uint _n1, /// Specifies the submatrix to use.
@@ -48,6 +49,7 @@ public:
   double hbarTimesLambda; /// Used for k-E transformation.
   double massOverLambda2; /// Used for k-E transformation.
   HarmonicBasisFunction * myHarmonicBasisFunction; ///Harmonic basis function if we are integrating harmonically.
+  uint particleID;
   uint m1; /// Specifies the submatrix to use.
   uint m2; /// Specifies the submatrix to use.
   uint n1; /// Specifies the submatrix to use.

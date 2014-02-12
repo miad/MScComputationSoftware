@@ -27,11 +27,11 @@ ComputeConfig::ComputeConfig()
   kCurve->AddGLPoints(30);
   kCurve->ComputeGaussLegendre();
 
-  myHarmonicBasisFunction = new HarmonicBasisFunction(0, 1, &potentials, &specificUnits);
+  myHarmonicBasisFunction = NULL; ///Note: this will seriously impede functionality. Need to be fixed.
+	//new HarmonicBasisFunction(vector<double>(2, 0), vector<double>(2, 1), &potentials, &specificUnits);
 
   basisFunctions.push_back(BasisFunction("sqrt(2)*sin(k*x)"));
   basisFunctions.push_back(BasisFunction("sqrt(2)*cos(k*x)"));
-
 }
 
 ComputeConfig::ComputeConfig(const char * fileName)
@@ -165,12 +165,6 @@ void ComputeConfig::ReadFile(const char * fileName)
   ReadHarmonicOscillator(computation);
 
   ReadSolverInfo(computation);
-
-  if(potentials.size() != numberOfParticles)
-	{
-	  throw RLException("Internal inconsistency in the implementation of ComputeConfig: #potentials and #particles were not the same.");
-	}
-
 
   // Read the file. If there is an error, report it and exit.
 }
@@ -364,8 +358,15 @@ void ComputeConfig::WriteFile(const char * fileName) const
   Setting & oscillator = root["Computation"].add("HarmonicOscillator", Setting::TypeGroup);
   oscillator.add("Override", Setting::TypeBoolean) = harmonicOverride;
   oscillator.add("Nmax", Setting::TypeInt) = (int)harmonicNmax;
-  oscillator.add("AngularFrequency", Setting::TypeFloat) = myHarmonicBasisFunction->GetOmega();
-  oscillator.add("Xmin", Setting::TypeFloat) = myHarmonicBasisFunction->GetXmin();
+
+  Setting & oscillatorArray = oscillator.add("AngularFrequency", Setting::TypeArray);
+  Setting & oscillatorXmin = oscillator.add("Xmin", Setting::TypeArray);
+  for(uint i = 0; i<2; ++i)
+	{
+	  oscillatorArray.add(Setting::TypeFloat) = myHarmonicBasisFunction->GetOmega(i);
+	  oscillatorXmin.add(Setting::TypeFloat) = myHarmonicBasisFunction->GetXmin(i);
+	}
+
 
 
   Setting & basFun = root["Computation"].add("BasisFunctions", Setting::TypeArray);
@@ -818,19 +819,28 @@ void ComputeConfig::ReadHarmonicOscillator(Setting & computation)
 	{
 	  throw RLException("Could not locate harmonicNmax");
 	}
-  double harmonicAngularFrequency, harmonicXMin;
-  if( ! oscillator.lookupValue("AngularFrequency", harmonicAngularFrequency ) )
+  vector<double> harmonicAngularFrequency, harmonicXMin;
+  
+  if( ! oscillator.exists("AngularFrequency") || ! oscillator["AngularFrequency"].isArray() || oscillator["AngularFrequency"].getLength() != 2)
 	{
-	  throw RLException("Could not locate harmonic angular frequency.");
+	  throw RLException("Invalid array at AngularFrequency: should contain two floats.");
 	}
-  if( ! oscillator.lookupValue("Xmin", harmonicXMin) )
+  harmonicAngularFrequency.push_back(oscillator["AngularFrequency"][0]);
+  harmonicAngularFrequency.push_back(oscillator["AngularFrequency"][1]);
+
+
+  if( ! oscillator.exists("Xmin") || ! oscillator["Xmin"].isArray() || oscillator["Xmin"].getLength() != 2)
 	{
-	  throw RLException("Could not locate harmonic Xmin");
+	  throw RLException("Invalid array at XMin: should contain two floats.");
 	}
+  harmonicXMin.push_back(oscillator["Xmin"][0]);
+  harmonicXMin.push_back(oscillator["Xmin"][1]);
+
   if(myHarmonicBasisFunction)
 	{
 	  delete myHarmonicBasisFunction;
 	}
+
   myHarmonicBasisFunction = new HarmonicBasisFunction(harmonicXMin, harmonicAngularFrequency, &potentials, &specificUnits, potentials.at(0)->GetPrecision());
 }
 
@@ -887,36 +897,30 @@ void ComputeConfig::ReadParametrizedPotential(Setting & poten)
 
   map<string, vector<double> > variableParameters;
 
-  ///Only populate var-param in case of more than 1 particle. In this case the var-param will superseed corresponding non-var-params.
-  if(numberOfParticles > 1)
+  ///Var-param will superseed corresponding non-var-params.
+  if( ! poten.exists("VariableParameters") || ! poten["VariableParameters"].isList() )
 	{
-	  if( ! poten.exists("VariableParameters") || ! poten["VariableParameters"].isList() )
+	  throw RLException("VariableParameters for potential not properly specified.");
+	}
+  Setting & vparam = poten["VariableParameters"];
+  
+  for(int i = 0; i<vparam.getLength(); ++i)
+	{
+	  string paraStr;
+	  if(!vparam[i].lookupValue("Name", paraStr))
 		{
-		  throw RLException("VariableParameters for potential not properly specified.");
+		  throw RLException("Variable parameter name #%d was not properly specified.", i);
 		}
-	  Setting & vparam = poten["VariableParameters"];
-	  
-	  for(int i = 0; i<vparam.getLength(); ++i)
+	  variableParameters[paraStr] = vector<double>();
+	  if(! vparam[i].exists("Value") || ! vparam[i]["Value"].isArray() || vparam[i]["Value"].getLength() != (int)2 )
 		{
-		  string paraStr;
-		  if(!vparam[i].lookupValue("Name", paraStr))
-			{
-			  throw RLException("Variable parameter name #%d was not properly specified.", i);
-			}
-		  variableParameters[paraStr] = vector<double>();
-		  if(! vparam[i].exists("Value") || ! vparam[i]["Value"].isArray() || vparam[i]["Value"].getLength() != (int)numberOfParticles )
-			{
-			  throw RLException("Invalid value given for variable parameter '%s'.", paraStr.c_str());
-			}
-		  for(int j = 0; j<vparam[i]["Value"].getLength(); ++j)
-			{
-			  variableParameters[paraStr].push_back(vparam[i]["Value"][j]);
-			}
+		  throw RLException("Invalid value given for variable parameter '%s'.", paraStr.c_str());
+		}
+	  for(int j = 0; j<vparam[i]["Value"].getLength(); ++j)
+		{
+		  variableParameters[paraStr].push_back(vparam[i]["Value"][j]);
 		}
 	}
-
-
-
 
   Setting & pparam = poten["Parameters"];
   
@@ -948,7 +952,7 @@ void ComputeConfig::ReadParametrizedPotential(Setting & poten)
   maxX = poten["Interval"][1].c_str();
   
 
-  for(uint i = 0; i<numberOfParticles; ++i)
+  for(uint i = 0; i<2; ++i)
 	{
 	  vector<pair<string, double> > fullParam = parameters;
 	  for(map<string, vector<double> >::const_iterator it = variableParameters.begin(); it!=variableParameters.end(); ++it)

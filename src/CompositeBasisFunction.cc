@@ -14,8 +14,8 @@ CompositeBasisFunction::CompositeBasisFunction(vector<BasisFunction> _functions,
 	}
 }
 
-CompositeBasisFunction::CompositeBasisFunction(const HarmonicBasisFunction * _myHarmonicBasisFunction, EigenInformation * _myInformation)
-  : myHarmonicBasisFunction(_myHarmonicBasisFunction), myInformation(_myInformation), KCurve(NULL)
+CompositeBasisFunction::CompositeBasisFunction(const HarmonicBasisFunction * _myHarmonicBasisFunction, EigenInformation * _myInformation, uint _curveIndex)
+  : myHarmonicBasisFunction(_myHarmonicBasisFunction), myInformation(_myInformation), KCurve(NULL), curveIndex(_curveIndex)
 {
   if(myInformation == NULL || myHarmonicBasisFunction == NULL)
 	{
@@ -78,7 +78,7 @@ double CompositeBasisFunction::HarmonicEval(const double & x, uint pIndex) const
 	  if(imag(coefficient) > 1E-9)
 		throw RLException("Complex coefficient (imag part %+13.10f ) for harmonic oscillator basis: something is wrong here.", imag(coefficient));
 
-	  sum += real(coefficient) * myHarmonicBasisFunction->Eval(n, x);
+	  sum += real(coefficient) * myHarmonicBasisFunction->Eval(n, x, curveIndex);
 	}
   return (double)sum;
 }

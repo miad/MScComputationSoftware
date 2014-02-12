@@ -6,7 +6,7 @@ For usage, run the script with the -h flag.
 import sys, argparse, subprocess, os, errno, numpy
 from multiprocessing import Pool
 
-NumberOfThreads=8
+NumberOfThreads=12
 
 potDepths = numpy.arange(-5.0, 5.0, 0.05)
 #for n in potDepths:

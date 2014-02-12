@@ -8,7 +8,10 @@ PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(vector<Composit
 
   
   uint nmax = myInteractionProperties->GetNMax();
-  double bFactor = 	mySpecificUnits->GetMassOverLambda2() * myHarmonicBasisFunction->GetOmega() / mySpecificUnits->GetHbarTimesLambda();
+  vector<double> bFactor;
+  for(uint i = 0; i<2; ++i)
+	bFactor.push_back(mySpecificUnits->GetMassOverLambda2() * myHarmonicBasisFunction->GetOmega(i) / mySpecificUnits->GetHbarTimesLambda());
+
   HermiteEvaluator::Init(myInteractionProperties->GetNMax(), false);
 
 
@@ -146,7 +149,7 @@ void PrecomputedInteractionEvaluator::ValidateInput(vector<CompositeBasisFunctio
 
 }
 
-vector<vector<vector<ComplexDouble > > > * PrecomputedInteractionEvaluator::ComputePsiB(vector<CompositeBasisFunction*> * myBasisFunctions, uint integralPrecision, const HarmonicBasisFunction * myHarmonicBasisFunction, double bFactor, VerbosePrinter * myPrinter, uint nmax)
+vector<vector<vector<ComplexDouble > > > * PrecomputedInteractionEvaluator::ComputePsiB(vector<CompositeBasisFunction*> * myBasisFunctions, uint integralPrecision, const HarmonicBasisFunction * myHarmonicBasisFunction, vector<double> & bFactor, VerbosePrinter * myPrinter, uint nmax)
 {
 
   ///Outermost: composite basis function number.
@@ -154,9 +157,11 @@ vector<vector<vector<ComplexDouble > > > * PrecomputedInteractionEvaluator::Comp
   ///inner: Hermite polynomial number.
   vector<vector<vector<ComplexDouble > > > * PsiB = new vector<vector<vector<ComplexDouble> > >();
 
-  vector<pair<double, double> > myHalfHermiteRule = 
-	HermiteRule::GetRule(integralPrecision,
-						 myHarmonicBasisFunction->GetXmin(), bFactor / 2.0);
+  vector<vector<pair<double, double> > > myHalfHermiteRule;
+  for(uint i = 0; i<2; ++i)
+	myHalfHermiteRule.push_back(
+								HermiteRule::GetRule(integralPrecision, myHarmonicBasisFunction->GetXmin(i), bFactor.at(i) / 2.0)
+								);
 
 
   ulong ele = 2 * myBasisFunctions->at(0)->GetSize() * myBasisFunctions->at(1)->GetSize() * nmax;
@@ -188,12 +193,12 @@ vector<vector<vector<ComplexDouble > > > * PrecomputedInteractionEvaluator::Comp
 			{
 			  ///Summation should be done using extended precision.
 			  complex<long double> sum = 0.0;
-			  for(vector<pair<double, double> > ::const_iterator it = myHalfHermiteRule.begin(); it!=myHalfHermiteRule.end(); ++it)
+			  for(vector<pair<double, double> > ::const_iterator it = myHalfHermiteRule.at(i).begin(); it!=myHalfHermiteRule.at(i).end(); ++it)
 				{
 				  ComplexDouble s = myBasisFunctions->at(i)->Eval(it->first, j);
 				  complex<long double> rs = complex<long double>(real(s), imag(s));
 				  sum += (complex<long double>)it->second * 
-					myHarmonicBasisFunction->EvalNonExponentPart(n, it->first) * rs;
+					myHarmonicBasisFunction->EvalNonExponentPart(n, it->first, i) * rs;
 				}
 			  PsiB->at(i).at(j).at(n) = ComplexDouble(real(sum), imag(sum));
 			}
@@ -204,12 +209,24 @@ vector<vector<vector<ComplexDouble > > > * PrecomputedInteractionEvaluator::Comp
 
 
 
-vector<vector<vector<vector<double> > > > * PrecomputedInteractionEvaluator::ComputeVnnnn(uint integralPrecision, const HarmonicBasisFunction * myHarmonicBasisFunction, double bFactor, VerbosePrinter * myPrinter, uint nmax)
+vector<vector<vector<vector<double> > > > * PrecomputedInteractionEvaluator::ComputeVnnnn(uint integralPrecision, const HarmonicBasisFunction * myHarmonicBasisFunction, vector<double> & bFactor, VerbosePrinter * myPrinter, uint nmax)
 {
-  
-  vector<pair<double, double> > myDoubleHermiteRule = 
-	HermiteRule::GetRule(integralPrecision, 
-						 myHarmonicBasisFunction->GetXmin(), bFactor * 2.0);
+
+
+  double x1 = myHarmonicBasisFunction->GetXmin(0);
+  double x2 = myHarmonicBasisFunction->GetXmin(1);
+  double b1 = bFactor.at(0);
+  double b2 = bFactor.at(1);
+
+  double bTilde = (b1+b2);
+  double xTilde = (b1*x1+b2*x2)/(b1+b2);
+  double preFExp = (b1*x1*x1+b2*x2*x2) - xTilde*xTilde*bTilde;
+  double integralPrefactor = exp(-preFExp);
+
+
+
+  vector<pair<double, double> > myDoubleHermiteRule = HermiteRule::GetRule(integralPrecision, 
+											 xTilde, bTilde);
 
 
   if(myPrinter != NULL)
@@ -239,11 +256,11 @@ vector<vector<vector<vector<double> > > > * PrecomputedInteractionEvaluator::Com
 				  long double sum = 0.0;
 				  for(vector<pair<double, double> > ::const_iterator it = myDoubleHermiteRule.begin(); it!=myDoubleHermiteRule.end(); ++it)
 					{
-					  sum += it->second * 
-						myHarmonicBasisFunction->EvalNonExponentPart(n1, it->first) *
-						myHarmonicBasisFunction->EvalNonExponentPart(n2, it->first) *
-						myHarmonicBasisFunction->EvalNonExponentPart(n3, it->first) *
-						myHarmonicBasisFunction->EvalNonExponentPart(n4, it->first);
+					  sum += integralPrefactor * it->second * 
+						myHarmonicBasisFunction->EvalNonExponentPart(n1, it->first, 0) *
+						myHarmonicBasisFunction->EvalNonExponentPart(n2, it->first, 1) *
+						myHarmonicBasisFunction->EvalNonExponentPart(n3, it->first, 0) *
+						myHarmonicBasisFunction->EvalNonExponentPart(n4, it->first, 1);
 						
 					}
 				  uint vals[] = {n1, n2, n3, n4};

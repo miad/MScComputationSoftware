@@ -1,11 +1,12 @@
 #include "HarmonicBasisFunction.hh"
 
-HarmonicBasisFunction::HarmonicBasisFunction(double _xmin, double _omega, vector<Potential *> * _potentials, SpecificUnits * _units, uint precision)
+HarmonicBasisFunction::HarmonicBasisFunction(vector<double> _xmin, vector<double> _omega, vector<Potential *> * _potentials, SpecificUnits * _units, uint precision)
   : xmin(_xmin), omega(_omega), potentials(_potentials), units(_units)
 {
   if(units == NULL)
 	throw RLException("Invalid units.");
-  if(omega <= 0)
+
+  if(omega.size() != 2 || omega.at(0) <= 0 || omega.at(1) <= 0)
 	{
 	  throw RLException("Omega must be strictly greater than zero.");
 	}
@@ -20,8 +21,14 @@ HarmonicBasisFunction::HarmonicBasisFunction(double _xmin, double _omega, vector
 		  throw RLException("Potential vector cannot contain NULL elements.");
 		}
 	}
-  
-  GHpoints = HermiteRule::GetRule(precision, xmin, MASS*omega/HBAR);
+  if(xmin.size() != omega.size() || xmin.size() != potentials->size() )
+	{
+	  throw RLException("Invalid constructor vectors for HarmonicBasisFunction: code %d%d%d",xmin.size(),omega.size(),potentials->size());
+	}
+
+
+  for(uint i = 0; i<potentials->size(); ++i)
+	GHpoints.push_back(HermiteRule::GetRule(precision, xmin.at(i), MASS*omega.at(i)/HBAR));
 
   InitFactorials();
 }
@@ -41,7 +48,7 @@ void HarmonicBasisFunction::InitFactorials()
 
 double HarmonicBasisFunction::GetEigenEnergy(uint n, uint pIndex) const
 {
-  return HBAR * omega * (0.5 + n) + potentials->at(pIndex)->Evaluate(xmin);
+  return HBAR * omega.at(pIndex) * (0.5 + n) + potentials->at(pIndex)->Evaluate(xmin.at(pIndex));
 }
 
 HarmonicBasisFunction::~HarmonicBasisFunction()
@@ -57,26 +64,26 @@ long double HarmonicBasisFunction::Integrate(uint n1, uint n2, uint pIndex) cons
 
 
   long double value = 0;
-  for(vector<pair<double, double> >::const_iterator it = GHpoints.begin(); it!=GHpoints.end(); ++it)
+  for(vector<pair<double, double> >::const_iterator it = GHpoints.at(pIndex).begin(); it!=GHpoints.at(pIndex).end(); ++it)
 	{
-	  long double WF1 = EvalNonExponentPart(n1, it->first);
-	  long double WF2 = EvalNonExponentPart(n2, it->first); 
+	  long double WF1 = EvalNonExponentPart(n1, it->first, pIndex);
+	  long double WF2 = EvalNonExponentPart(n2, it->first, pIndex); 
 	  value += it->second * WF1 * WF2 * potentials->at(pIndex)->Evaluate(it->first);
 	}
 
   return value;
 }
 
-long double HarmonicBasisFunction::KineticTerm(uint n1, uint n2) const
+ long double HarmonicBasisFunction::KineticTerm(uint n1, uint n2, uint pIndex) const
 {
   if(n1 == n2)
 	{
-	  return HBAR * omega * 0.25 * (2.0 * n1 + 1.0);
+	  return HBAR * omega.at(pIndex) * 0.25 * (2.0 * n1 + 1.0);
 	}
   else if(n1 == n2 + 2 || n1 + 2 == n2)
 	{
 	  uint n = MIN(n1, n2);
-	  return -1* HBAR * omega * 0.25 * sqrt((n+1)*(n+2));
+	  return -1* HBAR * omega.at(pIndex) * 0.25 * sqrt((n+1)*(n+2));
 	}
   return 0;
 }
@@ -90,14 +97,14 @@ long double HarmonicBasisFunction::DiffIntegrate(uint n1, uint n2, uint pIndex) 
 
 
   long double value = 0;
-  for(vector<pair<double, double> >::const_iterator it = GHpoints.begin(); it!=GHpoints.end(); ++it)
+  for(vector<pair<double, double> >::const_iterator it = GHpoints.at(pIndex).begin(); it!=GHpoints.at(pIndex).end(); ++it)
 	{
-	  long double WF1 = EvalNonExponentPart(n1, it->first);
-	  long double WF2 = EvalNonExponentPart(n2, it->first); 
+	  long double WF1 = EvalNonExponentPart(n1, it->first, pIndex);
+	  long double WF2 = EvalNonExponentPart(n2, it->first, pIndex); 
 	  value += it->second * WF1 * WF2 *
 		( potentials->at(pIndex)->Evaluate(it->first) - 
 		  (  
-		   0.5*MASS*pow(omega,2.0) * pow((it->first - xmin),2.0) + potentials->at(pIndex)->Evaluate(xmin) 
+		   0.5*MASS*pow(omega.at(pIndex),2.0) * pow((it->first - xmin.at(pIndex)),2.0) + potentials->at(pIndex)->Evaluate(xmin.at(pIndex)) 
 		  ) 
 		) ;
 	}
@@ -105,34 +112,34 @@ long double HarmonicBasisFunction::DiffIntegrate(uint n1, uint n2, uint pIndex) 
   return value;
 }
 
-long double HarmonicBasisFunction::NormalizationConstant(uint n) const
+ long double HarmonicBasisFunction::NormalizationConstant(uint n, uint pIndex) const
 {
   long double partA = 1.0/sqrt(pow(2.0L, n) * factorials.at(n));
-  long double partB = pow(MASS * omega / (PI * HBAR), 0.25);
+  long double partB = pow(MASS * omega.at(pIndex) / (PI * HBAR), 0.25);
   return partA * partB;
 }
 
-long double HarmonicBasisFunction::EvalNonExponentPart(uint n, double x) const
+long double HarmonicBasisFunction::EvalNonExponentPart(uint n, double x, uint pIndex) const
 {
-  long double part = HermiteEvaluator::HermiteH(n, sqrt(MASS*omega/HBAR) * (x-xmin));
+  long double part = HermiteEvaluator::HermiteH(n, sqrt(MASS*omega.at(pIndex)/HBAR) * (x-xmin.at(pIndex)));
 
-  return part * NormalizationConstant(n);
+  return part * NormalizationConstant(n, pIndex);
 }
 
 
-long double HarmonicBasisFunction::Eval(uint n, double x) const
+long double HarmonicBasisFunction::Eval(uint n, double x, uint pIndex) const
 {
 
-  long double partD = exp(-MASS*omega*pow(x-xmin,2.0)/(2.0*HBAR));
-  return EvalNonExponentPart(n, x) * partD;
+  long double partD = exp(-MASS*omega.at(pIndex)*pow(x-xmin.at(pIndex),2.0)/(2.0*HBAR));
+  return EvalNonExponentPart(n, x, pIndex) * partD;
 }
 
-double HarmonicBasisFunction::GetXmin() const
+double HarmonicBasisFunction::GetXmin(uint pIndex ) const
 {
-  return xmin;
+  return xmin.at(pIndex);
 }
 
-double HarmonicBasisFunction::GetOmega() const
+double HarmonicBasisFunction::GetOmega(uint pIndex) const
 {
-  return omega;
+  return omega.at(pIndex);
 }

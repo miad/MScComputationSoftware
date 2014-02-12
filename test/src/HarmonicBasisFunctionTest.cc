@@ -9,28 +9,36 @@ int HarmonicBasisFunctionTest::TestCase1() const
   double mass = 723.453025853; ///Total mass in special mass units.
   double omega = 4.270E-3;
   double xmin = 4;
+
+  vector<double> vxmin; vxmin.push_back(xmin); vxmin.push_back(2*xmin);
+  vector<double> vomega;vomega.push_back(omega); vomega.push_back(2*omega);
   SpecificUnits myUnits(hbar, mass, "","",1.0);
   
   ParametrizedPotential myPotential("x", vector<pair<string, double> >(), -5, 5);
+  ParametrizedPotential myPotential2("x", vector<pair<string, double> >(), -5, 5);
 
-  vector<Potential*> potV; potV.push_back(&myPotential);
 
-  HarmonicBasisFunction basis(xmin, omega, &potV, &myUnits);
+  vector<Potential*> potV; potV.push_back(&myPotential); potV.push_back(&myPotential2);
+
+  HarmonicBasisFunction basis(vxmin, vomega, &potV, &myUnits);
 
   vector<pair<double, double> > rule = LegendreRule::GetRule(300, -20, 25);
 
-  for(uint n = 0; n<NMAX_CERT_ONE; ++n)
+  for(uint i = 0; i<2; ++i)
 	{
-	  for(uint m = 0; m<NMAX_CERT_ONE; ++m)
+	  for(uint n = 0; n<NMAX_CERT_ONE; ++n)
 		{
-		  long double sum = 0;
-		  for(vector<pair<double, double> >::const_iterator it = rule.begin(); it!=rule.end(); ++it)
+		  for(uint m = 0; m<NMAX_CERT_ONE; ++m)
 			{
-			  sum += it->second * basis.Eval(n, it->first) * basis.Eval(m, it->first);
-			}
-		  if(!GL_EQ(KRONECKER_DELTA(n, m), sum) )
-			{
-			  return 1+n+m;
+			  long double sum = 0;
+			  for(vector<pair<double, double> >::const_iterator it = rule.begin(); it!=rule.end(); ++it)
+				{
+				  sum += it->second * basis.Eval(n, it->first,i) * basis.Eval(m, it->first,i);
+				}
+			  if(!GL_EQ(KRONECKER_DELTA(n, m), sum) )
+				{
+				  return 1+n+m;
+				}
 			}
 		}
 	}
@@ -48,6 +56,10 @@ int HarmonicBasisFunctionTest::TestCase2() const
   double mass = 723.453025853; ///Total mass in special mass units.
   double omega = 4.270E-3;
   double xmin = 4;
+
+  vector<double> vxmin; vxmin.push_back(xmin); vxmin.push_back(2*xmin);
+  vector<double> vomega;vomega.push_back(omega); vomega.push_back(2*omega);
+
   SpecificUnits myUnits(hbar, mass, "µm","µK*kB", 0.0);
 
   vector<pair<string, double> > args;
@@ -57,26 +69,30 @@ int HarmonicBasisFunctionTest::TestCase2() const
   
   
   ParametrizedPotential myPotential("0.5*mass*pow(omega, 2)*pow(x-xmin,2)", args, -50000, 50000);
-  vector<Potential*> potV; potV.push_back(&myPotential);
+  ParametrizedPotential myPotential2("0.5*mass*pow(2*omega, 2)*pow(x-2*xmin,2)", args, -50000, 50000);
+  vector<Potential*> potV; potV.push_back(&myPotential); potV.push_back(&myPotential2);
 
 
-  HarmonicBasisFunction basis(xmin, omega, &potV, &myUnits);
+  HarmonicBasisFunction basis(vxmin, vomega, &potV, &myUnits);
 
-  vector<pair<double, double> > rule = HermiteRule::GetRule(300, xmin, mass*omega/hbar); //myUnits.GetMassOverLambda2()*omega/(myUnits.GetHbarTimesLambda()));
-  for(uint n = 0; n<NMAX_CERT_TWO; ++n)
+  for(uint i = 0; i<2; ++i)
 	{
-	  for(uint m = 0; m<NMAX_CERT_TWO; ++m)
+	  vector<pair<double, double> > rule = HermiteRule::GetRule(300, vxmin.at(i), mass*vomega.at(i)/hbar); 
+	  for(uint n = 0; n<NMAX_CERT_TWO; ++n)
 		{
-		  double sum = 0;
-		  
-		  for(vector<pair<double, double> >::const_iterator it = rule.begin(); it!=rule.end(); ++it)
+		  for(uint m = 0; m<NMAX_CERT_TWO; ++m)
 			{
-			  sum += it->second * basis.EvalNonExponentPart(n, it->first) * basis.EvalNonExponentPart(m, it->first);
-			}
-		  if( !GL_EQ(KRONECKER_DELTA(n, m), sum) )
-			{
-			  cout << "n " << n << " m " << m << " sum " << sum << endl;
-			  return 1+n+m;
+			  double sum = 0;
+			  
+			  for(vector<pair<double, double> >::const_iterator it = rule.begin(); it!=rule.end(); ++it)
+				{
+				  sum += it->second * basis.EvalNonExponentPart(n, it->first,i) * basis.EvalNonExponentPart(m, it->first,i);
+				}
+			  if( !GL_EQ(KRONECKER_DELTA(n, m), sum) )
+				{
+				  cout << "n " << n << " m " << m << " sum " << sum << endl;
+				  return 1+n+m;
+				}
 			}
 		}
 	}
@@ -93,6 +109,10 @@ int HarmonicBasisFunctionTest::TestCase3() const
   double mass = 723.453025853; ///Total mass in special mass units.
   double omega = 4.270E-3;
   double xmin = 4;
+
+  vector<double> vxmin; vxmin.push_back(xmin); vxmin.push_back(2*xmin);
+  vector<double> vomega;vomega.push_back(omega); vomega.push_back(2*omega);
+
   SpecificUnits myUnits(hbar, mass, "","",1.0);
 
   vector<pair<string, double> > args;
@@ -102,31 +122,39 @@ int HarmonicBasisFunctionTest::TestCase3() const
   
   
   ParametrizedPotential myPotential("0.5*mass*pow(omega, 2.0)*pow((x-xmin),2.0)", args, -50000, 50000);
-  vector<Potential*> potV; potV.push_back(&myPotential);
+  ParametrizedPotential myPotential2("0.5*mass*pow(2*omega, 2.0)*pow((x-2*xmin),2.0)", args, -50000, 50000);
+
+  vector<Potential*> potV; potV.push_back(&myPotential); potV.push_back(&myPotential2);
 
 
-  HarmonicBasisFunction basis(xmin, omega, &potV, &myUnits);
+  HarmonicBasisFunction basis(vxmin, vomega, &potV, &myUnits);
 
-  vector<pair<double, double> > rule = HermiteRule::GetRule(300, xmin, mass*omega/hbar);
-  for(uint n = 0; n<NMAX_CERT; ++n)
+  for(uint i = 0; i<2; ++i)
 	{
-	  for(uint m = 0; m<NMAX_CERT; ++m)
+	  vector<pair<double, double> > rule = HermiteRule::GetRule(300, vxmin.at(i), mass*vomega.at(i)/hbar);
+	  for(uint n = 0; n<NMAX_CERT; ++n)
 		{
-		  double sum = 0;
-		  
-		  for(vector<pair<double, double> >::const_iterator it = rule.begin(); it!=rule.end(); ++it)
+		  for(uint m = 0; m<NMAX_CERT; ++m)
 			{
-			  sum += it->second * basis.EvalNonExponentPart(n, it->first) * basis.EvalNonExponentPart(m, it->first) * myPotential.Evaluate(it->first);
+			  double sum = 0;
+			  
+			  for(vector<pair<double, double> >::const_iterator it = rule.begin(); it!=rule.end(); ++it)
+				{
+				  sum += it->second * basis.EvalNonExponentPart(n, it->first,i) * basis.EvalNonExponentPart(m, it->first,i) * potV.at(i)->Evaluate(it->first);
+				}
+			  ///Compare with the matrix elements for X^2 in the harmonic oscillator case.
+			  double expect = 
+				hbar*vomega.at(i)/(4.0)* (
+								   KRONECKER_DELTA(n, m) * (2*m+1) + 
+								   KRONECKER_DELTA(m, n-2)* sqrt(n*(n-1)) + 
+								   KRONECKER_DELTA(m, n+2) * sqrt((n+1)*(n+2))
+								   );
+			  if(!GL_EQ(expect, sum) )
+				{
+				  cout << i << " " << n << " " << m << " " << expect << " " << " " << sum << endl;
+				  return 1+n+m;
+				}
 			}
-		  ///Compare with the matrix elements for X^2 in the harmonic oscillator case.
-		  double expect = 
-			hbar*omega/(4.0)* (
-								  KRONECKER_DELTA(n, m) * (2*m+1) + 
-								  KRONECKER_DELTA(m, n-2)* sqrt(n*(n-1)) + 
-								  KRONECKER_DELTA(m, n+2) * sqrt((n+1)*(n+2))
-								  );
-		  if(!GL_EQ(expect, sum) )
-			return 1+n+m;
 		}
 	}
 
@@ -142,6 +170,10 @@ int HarmonicBasisFunctionTest::TestCase4() const
   double mass = 723.453025853; ///Total mass in special mass units.
   double omega = 4.270E-3;
   double xmin = 4;
+
+  vector<double> vxmin; vxmin.push_back(xmin); vxmin.push_back(2*xmin);
+  vector<double> vomega;vomega.push_back(omega); vomega.push_back(2*omega);
+
   SpecificUnits myUnits(hbar, mass, "","",1.0);
 
   vector<pair<string, double> > args;
@@ -151,18 +183,27 @@ int HarmonicBasisFunctionTest::TestCase4() const
   
   
   ParametrizedPotential myPotential("0.5*mass*pow(omega, 2.0)*pow((x-xmin),2.0)-1.0", args, -50000, 50000);
-  vector<Potential*> potV; potV.push_back(&myPotential);
+  ParametrizedPotential myPotential2("0.5*mass*pow(2*omega, 2.0)*pow((x-2*xmin),2.0)-1.0", args, -50000, 50000);
+
+  vector<Potential*> potV; potV.push_back(&myPotential); potV.push_back(&myPotential2);
 
 
-  HarmonicBasisFunction basis(xmin, omega, &potV, &myUnits);
+  HarmonicBasisFunction basis(vxmin, vomega, &potV, &myUnits);
 
-  vector<pair<double, double> > rule = HermiteRule::GetRule(300, xmin, mass*omega/hbar);
-  for(uint n = 0; n<NMAX_CERT; ++n)
+  for(uint i = 0; i<2; ++i)
 	{
-	  for(uint m = 0; m<NMAX_CERT; ++m)
+	  vector<pair<double, double> > rule = HermiteRule::GetRule(300, vxmin.at(i), mass*vomega.at(i)/hbar);
+	  for(uint n = 0; n<NMAX_CERT; ++n)
 		{
-		  if(basis.DiffIntegrate(n, m) != 0)
-			return n + m + 1;
+		  for(uint m = 0; m<NMAX_CERT; ++m)
+			{
+			  double ans = basis.DiffIntegrate(n, m, i);
+			  if(ans != 0)
+				{
+				  cout << n << " " << m << " " << i << " " << ans << endl;
+				  return n + m + 1;
+				}
+			}
 		}
 	}
 
@@ -176,6 +217,10 @@ int HarmonicBasisFunctionTest::TestCase5() const
   double mass = 723.453025853; ///Total mass in special mass units.
   double omega = 4.270E-3;
   double xmin = 4;
+
+  vector<double> vxmin; vxmin.push_back(xmin); vxmin.push_back(2*xmin);
+  vector<double> vomega;vomega.push_back(omega); vomega.push_back(2*omega);
+
   SpecificUnits myUnits(hbar, mass, "","",1.0);
 
   vector<pair<string, double> > args;
@@ -185,16 +230,22 @@ int HarmonicBasisFunctionTest::TestCase5() const
   
   
   ParametrizedPotential myPotential("0.5*mass*pow(omega, 2.0)*pow((x-xmin),2.0) - 1.0", args, -50000, 50000);
-  vector<Potential*> potV; potV.push_back(&myPotential);
+  ParametrizedPotential myPotential2("0.5*mass*pow(2*omega, 2.0)*pow((x-2*xmin),2.0)-1.0", args, -50000, 50000);
+
+  vector<Potential*> potV; potV.push_back(&myPotential); potV.push_back(&myPotential2);
 
 
-  HarmonicBasisFunction basis(xmin, omega, &potV, &myUnits);
+  HarmonicBasisFunction basis(vxmin, vomega, &potV, &myUnits);
 
-  vector<pair<double, double> > rule = HermiteRule::GetRule(300, xmin, mass*omega/hbar);
-  for(uint n = 0; n<NMAX_CERT; ++n)
+  
+  for(uint i = 0; i<2; ++i)
 	{
-	  if(! DBL_EQUAL(basis.GetEigenEnergy(n), (0.5L+n)*hbar*omega - 1.0))
-		return n;
+	  vector<pair<double, double> > rule = HermiteRule::GetRule(300, vxmin.at(i), mass*vomega.at(i)/hbar);
+	  for(uint n = 0; n<NMAX_CERT; ++n)
+		{
+		  if(! DBL_EQUAL(basis.GetEigenEnergy(n, i), (0.5L+n)*hbar*omega - 1.0))
+			return n;
+		}
 	}
 
   return 0;

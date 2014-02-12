@@ -29,7 +29,8 @@ public:
 						 ); ///Constructor. Ownership of the objects are NOT passed, and they are NOT used after the constructor.
 
   CompositeBasisFunction(const HarmonicBasisFunction * _myHarmonicBasisFunction,
-						 EigenInformation * myInformation
+						 EigenInformation * _myInformation, 
+						 uint _curveIndex = 0
 						 ); ///For using with HarmonicOverride...
 
   ~CompositeBasisFunction(); ///Destructor.
@@ -63,6 +64,7 @@ private:
 
   const EigenInformation * myInformation; ///Eigen information. 
   const ParametrizedCurve * KCurve; ///K-curve, in the event of non-harmonic. Otherwise NULL.
+  uint curveIndex;
 };
 
 #endif

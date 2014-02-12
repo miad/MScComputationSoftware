@@ -88,14 +88,14 @@ protected:
   static vector<vector<vector<ComplexDouble > > > * ComputePsiB(vector<CompositeBasisFunction*> * myBasisFunctions, 
 																uint integralPrecision, 
 																const HarmonicBasisFunction * myHarmonicBasisFunction, 
-																double bFactor, 
+																vector<double> & bFactor, 
 																VerbosePrinter * myPrinter,
 																uint nmax
 																);
 
   static vector<vector<vector<vector<double> > > > * ComputeVnnnn(uint integralPrecision, 
 																  const HarmonicBasisFunction * myHarmonicBasisFunction, 
-																  double bFactor, 
+																  vector<double> & bFactor, 
 																  VerbosePrinter * myPrinter,
 																  uint nmax
 																  );

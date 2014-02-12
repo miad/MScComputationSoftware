@@ -96,13 +96,15 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 			  myPrinter.Print(1, "Constructing Hamiltonian for particle %d.\n", 0);
 			  CMatrix * OneBodyHamiltonian = ConstructOneParticleHamiltonian(myConfiguration, myPrinter, i);
 			  VerifyMatrixBasicProperties(myConfiguration, myPrinter, OneBodyHamiltonian);
+
 			  myPrinter.Print(1, "Finding eigenvalues for particle %d.\n", 0);
 			  EigenInformation * myEigenInfo = myConfiguration.GetSolver()->LapackeSolve(OneBodyHamiltonian);
 			  if(myConfiguration.GetHarmonicOverride())
 				{
 				  myBasisFunctions.push_back(new CompositeBasisFunction(
 																		myConfiguration.GetHarmonicBasisFunction(),
-																		myEigenInfo
+																		myEigenInfo,
+																		i
 																		)
 											 );
 				}
@@ -298,18 +300,19 @@ CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration,
   for(uint i = 0; i<MatrixSize; ++i)
 	{
 	  myMultiTasker->AddInput(OneParticleWorkerData(HamiltonianMatrix,
-										 myCurve,
-										 myPotential,
-										 myBasisFunctions,
-										 numberOfGLPoints,
-										 myConfiguration.GetSpecificUnits()->GetHbarTimesLambda(),
-										 myConfiguration.GetSpecificUnits()->GetMassOverLambda2(),
-										 myConfiguration.GetHarmonicBasisFunction(),
-										 i,
-										 i+1,
-										 0,
-										 MatrixSize
-										 )
+													myCurve,
+													myPotential,
+													myBasisFunctions,
+													numberOfGLPoints,
+													myConfiguration.GetSpecificUnits()->GetHbarTimesLambda(),
+													myConfiguration.GetSpecificUnits()->GetMassOverLambda2(),
+													myConfiguration.GetHarmonicBasisFunction(),
+													particleID,
+													i,
+													i+1,
+													0,
+													MatrixSize
+													)
 							  );
 	  
 	}
@@ -476,10 +479,10 @@ void * EvaluateSubMatrixOneParticleHarmonic(OneParticleWorkerData w)
 	  for(uint j = n1; j<n2; ++j)
 		{
 		  ///Kinetic part.
-		  HamiltonianMatrix->Element(i, j) += w.myHarmonicBasisFunction->KineticTerm(i, j);
+		  HamiltonianMatrix->Element(i, j) += w.myHarmonicBasisFunction->KineticTerm(i, j, w.particleID);
 
 		  ///Potential part.
-		  HamiltonianMatrix->Element(i, j) += w.myHarmonicBasisFunction->Integrate(i, j);
+		  HamiltonianMatrix->Element(i, j) += w.myHarmonicBasisFunction->Integrate(i, j, w.particleID);
 		}
    }
   return NULL;

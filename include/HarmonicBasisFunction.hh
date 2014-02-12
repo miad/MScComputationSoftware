@@ -37,8 +37,8 @@ using namespace std;
 class HarmonicBasisFunction
 {
 public:
-  HarmonicBasisFunction(double _xmin,
-						double _omega,
+  HarmonicBasisFunction(vector<double> _xmin,
+						vector<double> _omega,
 						vector<Potential *> * _potentials,
 						SpecificUnits * _units,
 						uint precision = 300
@@ -49,39 +49,40 @@ public:
 
   long double DiffIntegrate(uint n1, 
 							uint n2,
-							uint pIndex = 0
+							uint pIndex
 							) const;
 
   long double Integrate(uint n1, 
 						uint n2,
-						uint pIndex = 0
+						uint pIndex
 						) const;
 
-  long double NormalizationConstant(uint n) const;
+  long double NormalizationConstant(uint n, uint pIndex) const;
 
-  long double Eval(uint n, double x) const;
+  long double Eval(uint n, double x, uint pIndex) const;
 
-  long double EvalNonExponentPart(uint n, double x) const;
+  long double EvalNonExponentPart(uint n, double x, uint pIndex) const;
 
   long double KineticTerm(uint n1, 
-						  uint n2
+						  uint n2,
+						  uint pIndex
 						  ) const;
   
   double GetEigenEnergy(uint n,
-						uint pIndex = 0
+						uint pIndex
 						) const;
 
-  double GetXmin() const;
-  double GetOmega() const;
+  double GetXmin(uint pIndex) const;
+  double GetOmega(uint pIndex) const;
 
 private:
 
   void InitFactorials();
 
   vector<long double> factorials;
-  vector<pair<double, double> > GHpoints;
-  double xmin;
-  double omega;
+  vector<vector<pair<double, double> > > GHpoints;
+  vector<double> xmin;
+  vector<double> omega;
   vector<Potential *> * potentials;
   SpecificUnits * units;
 };

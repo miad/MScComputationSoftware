@@ -231,7 +231,7 @@ void OutputProcessor::WriteInterestingKPointsVerbosely() const
 
   for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
 	{
-	  double RVu = real(config->GetSpecificUnits()->KValueToEnergy(*it) - config->GetPotential()->Evaluate(config->GetHarmonicBasisFunction()->GetXmin()) ); ///Energy in custom unit.
+	  double RVu = real(config->GetSpecificUnits()->KValueToEnergy(*it) - config->GetPotential()->Evaluate(config->GetHarmonicBasisFunction()->GetXmin(0)) ); ///Energy in custom unit.
 
 	  double RVs = RVu / ( config->GetSpecificUnits()->GetHbarTimesLambda() * 2 * PI * config->GetSpecificUnits()->GetTimeToHertzFactor()) ; ///Energy in hbar * Hz
 	  double IVu = imag(config->GetSpecificUnits()->KValueToEnergy(*it)); ///Energy in custom unit. = -Gamma/2
@@ -469,7 +469,8 @@ void OutputProcessor::WriteInterestingOneParticleWavefunctionsToFile() const
   else
 	{
 	  myCompositeBasisFunction = new CompositeBasisFunction(config->GetHarmonicBasisFunction(), 
-															eigenData
+															eigenData,
+															0
 															);
 	}
   

@@ -8,6 +8,7 @@ OneParticleWorkerData::OneParticleWorkerData(CMatrix * _HamiltonianMatrix,
 											 double _hbarTimesLambda, 
 											 double _massOverLambda2, 
 											 HarmonicBasisFunction * _myHarmonicBasisFunction,
+											 uint _particleID,
 											 uint _m1,
 											 uint _m2,
 											 uint _n1,
@@ -21,6 +22,7 @@ OneParticleWorkerData::OneParticleWorkerData(CMatrix * _HamiltonianMatrix,
    hbarTimesLambda(_hbarTimesLambda),
    massOverLambda2(_massOverLambda2),
    myHarmonicBasisFunction(_myHarmonicBasisFunction),
+   particleID(_particleID),
    m1(_m1),m2(_m2),n1(_n1),n2(_n2)
 { 
   // Some basic checks.
