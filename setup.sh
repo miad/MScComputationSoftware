@@ -44,6 +44,8 @@ function CheckRequirements()
 	AssurePackageInstalled liblapack-dev
 	AssurePackageInstalled libarpack2-dev
 	AssurePackageInstalled libblas-dev
+	AssurePackageInstalled liblapacke-dev
+	AssurePackageInstalled libconfig++-dev
 }
 
 function AssurePackageInstalled()
