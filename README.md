@@ -12,14 +12,14 @@ Note that this software is currently under construction, and the results from it
 ##Prerequisities
 This software depends on a number of external libraries, some of which are bundeled with it and some of which are not. Most importantly, the following packages needs to be installed in the latest stable Debian versions for the software to even compile:
 
-*Lapack
-*Arpack
-*BLAS
+* Lapack
+* Arpack
+* BLAS
 
 This software also bundles with the following libraries, released under a LGPL license:
 
-*libconfig-1.4.9
-*fparser4.5.1
+* libconfig-1.4.9
+* fparser4.5.1
 
 
 
@@ -49,7 +49,8 @@ Bundled with this software is a large number of additional programs useful in da
 
 
 ##Known issues
-*Documentation is not yet complete.
-*Automatic creation of configuration files is not fully implemented. Workaround: use a template file.
-*Program output not yet verified.
-*Repository cleanup pending.
+
+* Documentation is not yet complete.
+* Automatic creation of configuration files is not fully implemented. Workaround: use a template file.
+* Program output not yet verified.
+* Repository cleanup pending.
