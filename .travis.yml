@@ -5,11 +5,11 @@ git:
 
 before_install:
    - sudo apt-get update -qq
-   - sudo apt-get install -qq liblapack-dev libarpack2-dev libblas-dev libconfig++-dev liblapacke
+   - sudo apt-get install -qq liblapack-dev libarpack2-dev libblas-dev libconfig++-dev
    - git submodule update --init --recursive
 
 before_script: 
-  - ./setup.sh
+  #- ./setup.sh
 
 script: 
   #- make -j 1
