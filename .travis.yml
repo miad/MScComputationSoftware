@@ -6,7 +6,6 @@ git:
 before_install:
    - sudo apt-get update -qq
    - sudo apt-get install -qq liblapack-dev libarpack2-dev libblas-dev
-   - sudo apt-get remove flex bison
    - git submodule update --init --recursive
 
 before_script: 
