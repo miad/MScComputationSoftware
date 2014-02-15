@@ -28,6 +28,7 @@ function InitRLlib()
 		echo "RLlib setup returned nonzero exit code, fatal error."
 		exit 5
 	fi
+	cd ..
 }
 
 
