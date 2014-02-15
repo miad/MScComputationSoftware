@@ -13,18 +13,14 @@ TEST:= test/RunTests
 
 EXTRA_LIBS:= extra_libs
 
-LIBCONFIG:= libconfig-1.4.9/lib/libconfig++.a
-LIBCONFIGDIR:= libconfig-1.4.9
-
 FPARSER:= fparser fpoptimizer fpconfig
 
 FPARSERDIR:= fparser4.5.1
 
 RLLIB:= RLlib/libRLlib.a
 
-
-INCLUDE:= -Iinclude -IRLlib/include -I$(LIBCONFIGDIR)/lib -Ilapacke -Iarpack
-LIBS:=  -lblas -lm -larpack -llapack -llapacke -LRLlib -lRLlib -Llibconfig-1.4.9/lib -Wl,-Bstatic -lconfig++ -Wl,-Bdynamic
+INCLUDE:= -Iinclude -IRLlib/include -Ilapacke -Iarpack
+LIBS:=  -lblas -lm -larpack -llapack -llapacke -LRLlib -lRLlib -lconfig++ -Wl,-Bdynamic
 
 SRC:= $(filter-out $(FPARSER:%=src/%.cc), $(wildcard src/*.cc)) $(FPARSER:%=src/%.cc)
 OBJ:= $(SRC:src/%.cc=bin/%.o) 
@@ -38,7 +34,7 @@ MAINSNAME := Compute
 
 .PHONY: clean doc all
 
-all: bin $(RLLIB) $(LIBCONFIG) fparser_all $(OBJ) $(MAINS) $(TEST)
+all: bin $(RLLIB) fparser_all $(OBJ) $(MAINS) $(TEST)
 
 
 fparser_all: $(FPARSER:%=src/%.cc) $(FPARSER:%=include/%.hh) include/extrasrc
@@ -64,16 +60,6 @@ $(FPARSERDIR): $(EXTRA_LIBS)/$(FPARSERDIR).zip
 	@echo Unpacking fparser...
 	@mkdir -p $(FPARSERDIR)
 	@unzip $< -d $@
-
-$(LIBCONFIG): $(LIBCONFIGDIR)
-	@echo Making libconfig...
-	@(cd libconfig-1.4.9 && ./configure --prefix=$$(pwd) CFLAGS="-include unistd.h -include scanner.h" CPPFLAGS="-include unistd.h -include scanner.h" CXXFLAGS="-include unistd.h -include scanner.h")
-	@$(MAKE) -C libconfig-1.4.9
-	@$(MAKE) -C libconfig-1.4.9 install
-
-$(LIBCONFIGDIR): $(EXTRA_LIBS)/$(LIBCONFIGDIR).tar.gz
-	@echo Unpacking libconfig...
-	@tar -xzvf $<
 
 bin: 
 	mkdir -p bin

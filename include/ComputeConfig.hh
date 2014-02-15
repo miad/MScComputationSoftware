@@ -4,7 +4,7 @@
 #include <list>
 #include <vector>
 
-#include "libconfig.hh"
+#include "libconfig.h++"
 #include "RLException.hh"
 #include "Globals.hpp"
 #include "Potential.hh"
