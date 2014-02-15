@@ -2,7 +2,10 @@
 function Main()
 {
 	CheckRequirements
-	chmod a+w makefile
+	if [ -f "makefile" ]
+	then
+		chmod a+w makefile
+	fi
 	cp makefile.in makefile
 	#To prevent accidental modification of makefile instead of makefile.in
 	chmod a-w makefile 
