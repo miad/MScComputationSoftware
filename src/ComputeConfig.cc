@@ -948,8 +948,8 @@ void ComputeConfig::ReadParametrizedPotential(Setting & poten)
 	  throw RLException("Invalid interval specified for parametrized input potential.");
 	}
   
-  minX = poten["Interval"][0].c_str();
-  maxX = poten["Interval"][1].c_str();
+  minX = (const char*)poten["Interval"][0];
+  maxX = (const char*)poten["Interval"][1];
   
 
   for(uint i = 0; i<2; ++i)
