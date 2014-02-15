@@ -67,7 +67,7 @@ $(FPARSERDIR): $(EXTRA_LIBS)/$(FPARSERDIR).zip
 
 $(LIBCONFIG): $(LIBCONFIGDIR)
 	@echo Making libconfig...
-	@(cd libconfig-1.4.9 && ./configure --prefix=$$(pwd) CXXFLAGS="-include unistd.h")
+	@(cd libconfig-1.4.9 && ./configure --prefix=$$(pwd) CFLAGS="-include unistd.h -include scanner.h" CPPFLAGS="-include unistd.h -include scanner.h" CXXFLAGS="-include unistd.h -include scanner.h")
 	@$(MAKE) -C libconfig-1.4.9
 	@$(MAKE) -C libconfig-1.4.9 install
 
