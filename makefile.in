@@ -48,6 +48,8 @@ include/extrasrc: $(FPARSERDIR)/extrasrc
 	@echo Linking $@...
 	@ln -fs ../$< include/extrasrc
 
+$(FPARSERDIR)/extrasrc: $(FPARSERDIR)
+
 $(FPARSER:%=src/%.cc): $(FPARSERDIR)
 	@echo Symlinking $@...
 	@touch $(patsubst src/%, $</%, $@)
