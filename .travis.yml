@@ -12,7 +12,10 @@ before_script:
   - ./setup.sh
 
 script: 
-  - make -j 1
+  #- make -j 1
+  #We can't build on travis, since we need the package liblapacke available in ubuntu 12.10 or later. 
+  #Should be available in the next LTS, though.
+  true
 
 compiler: 
   - gcc

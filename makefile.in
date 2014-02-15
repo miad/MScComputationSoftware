@@ -20,7 +20,7 @@ FPARSERDIR:= fparser4.5.1
 RLLIB:= RLlib/libRLlib.a
 
 INCLUDE:= -Iinclude -IRLlib/include -Ilapacke -Iarpack
-LIBS:=  -lblas -lm -larpack -llapack -llapacke -LRLlib -lRLlib -lconfig++ -Wl,-Bdynamic
+LIBS:=  -lblas -lm -larpack -llapack -llapacke -LRLlib -lRLlib -lconfig++
 
 SRC:= $(filter-out $(FPARSER:%=src/%.cc), $(wildcard src/*.cc)) $(FPARSER:%=src/%.cc)
 OBJ:= $(SRC:src/%.cc=bin/%.o) 
