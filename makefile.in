@@ -68,6 +68,7 @@ $(FPARSERDIR): $(EXTRA_LIBS)/$(FPARSERDIR).zip
 
 $(LIBCONFIG): $(LIBCONFIGDIR)
 	@echo Making libconfig...
+	@export CXXFLAGS+=-include unistd.h
 	@(cd libconfig-1.4.9 && ./configure --prefix=$$(pwd) )
 	@$(MAKE) -C libconfig-1.4.9
 	@$(MAKE) -C libconfig-1.4.9 install
