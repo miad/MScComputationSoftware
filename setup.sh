@@ -6,7 +6,7 @@ function Main()
 	cp makefile.in makefile
 	#To prevent accidental modification of makefile instead of makefile.in
 	chmod a-w makefile 
-	echo "Setup complete."
+	echo "Setup completed without errors."
 }
 
 
@@ -19,9 +19,16 @@ function CheckRequirements()
 		RETURNCODE=1
 		exit $RETURNCODE
 	fi
-	if [[ "$(echo "`gsl-config --version`>1.14" | bc)" -lt "1" ]]
+	AssurePackageInstalled liblapack-dev
+	AssurePackageInstalled libarpack2-dev
+	AssurePackageInstalled libblas-dev
+}
+
+function AssurePackageInstalled()
+{
+	if [[ "$(dpkg -s $1 2>&1 | grep 'Status: install ok installed' | wc -l)" -ne "1" ]]
 	then 
-		echo "Fatal error: This program required GSL >= 1.15 to run."
+		echo "Fatal error: This program requires the package $1. Install it and try again."
 		RETURNCODE=2
 		exit $RETURNCODE
 	fi
