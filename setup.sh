@@ -2,6 +2,7 @@
 function Main()
 {
 	CheckRequirements
+	InitRLlib
 	if [ -f "makefile" ]
 	then
 		chmod a+w makefile
@@ -10,6 +11,23 @@ function Main()
 	#To prevent accidental modification of makefile instead of makefile.in
 	chmod a-w makefile 
 	echo "Setup completed without errors."
+}
+
+function InitRLlib()
+{
+	if [ ! -f "RLlib/setup.sh" ]
+	then
+		echo "Could not find RLlib/setup.sh, fatal error."
+		exit 4
+	fi
+	cd RLlib
+	echo -n "RLlib : "
+	./setup.sh
+	if [ "$?" -ne "0" ]
+	then
+		echo "RLlib setup returned nonzero exit code, fatal error."
+		exit 5
+	fi
 }
 
 
