@@ -13,7 +13,7 @@ before_script:
   - ./setup.sh
 
 script: 
-  - make
+  - make -j 1
 
 compiler: 
   - gcc
