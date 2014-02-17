@@ -3,6 +3,7 @@ function Main()
 {
 	CheckRequirements
 	InitRLlib
+	InitFParser
 	if [ -f "makefile" ]
 	then
 		chmod a+w makefile
@@ -13,6 +14,48 @@ function Main()
 	echo "Setup completed without errors."
 }
 
+
+#Install fparser files in correct directories for build.
+function InitFParser()
+{
+	FPARSERDIR="fparser4.5.1"
+	EXTRALIBS="extra_libs"
+	echo "Unpacking and preparing fparser..."
+	mkdir -p $FPARSERDIR
+	if [ ! -f "$EXTRALIBS/$FPARSERDIR.zip" ]
+	then
+		echo "Could not find $EXTRALIBS/$FPARSERDIR.zip, critical error, exiting."
+		exit 9
+	fi
+
+	if [ -d "$FPARSERDIR" ]
+	then
+		read -p "Directory $FPARSERDIR exists, overwrite? (y/n)" -n 1 -r
+		echo -en "\n"
+		if [[ $REPLY =~ ^[yY]$ ]]
+		then
+			rm -rf "$FPARSERDIR"
+		fi
+	fi
+
+	if [ ! -d "$FPARSERDIR" ]
+	then
+		unzip $EXTRALIBS/$FPARSERDIR.zip -d $FPARSERDIR
+	fi
+
+	ln -fs ../$FPARSERDIR/extrasrc include/extrasrc
+
+	FPOBJECTS=(fparser fpoptimizer fpconfig)
+	for OBJ in "${FPOBJECTS[@]}"
+	do
+		touch $FPARSERDIR/$OBJ.cc
+		touch $FPARSERDIR/$OBJ.hh
+		ln -fs ../$FPARSERDIR/$OBJ.cc src/$OBJ.cc
+		ln -fs ../$FPARSERDIR/$OBJ.hh include/$OBJ.hh
+	done
+}
+
+#Run setup script on RLlib
 function InitRLlib()
 {
 	if [ ! -f "RLlib/setup.sh" ]
@@ -48,6 +91,8 @@ function CheckRequirements()
 	AssurePackageInstalled libconfig++-dev
 }
 
+
+#Check if a package is installed and terminate the script if it isn't
 function AssurePackageInstalled()
 {
 	if [[ "$(dpkg -s $1 2>&1 | grep 'Status: install ok installed' | wc -l)" -ne "1" ]]
@@ -58,4 +103,11 @@ function AssurePackageInstalled()
 	fi
 }
 
+
+
+
+
+
+
+#Run the main function.
 Main

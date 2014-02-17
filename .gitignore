@@ -28,3 +28,10 @@ runData*
 *#*
 *.cache
 makefile
+include/extrasrc
+include/fparser.hh
+include/fpconfig.hh
+include/fpoptimizer.hh
+src/fparser.cc
+src/fpconfig.cc
+src/fpoptimizer.cc
