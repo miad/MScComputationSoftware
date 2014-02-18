@@ -800,6 +800,13 @@ void ComputeConfig::ReadSolverInfo(Setting & computation)
 	  throw RLException("Could not look up NumberOfValues for solver.");
 	}
   mySolver.SetNumberOfEigenvalues(temp2);
+
+  bool temp3;
+  if(!solver.lookupValue("FindEigenvectors", temp3) )
+	{
+	  throw RLException("Could not lookup FindEigenvectors value.");
+	}
+  mySolver.SetFindEigenvectors(temp3);
 }
 
 void ComputeConfig::ReadHarmonicOscillator(Setting & computation)

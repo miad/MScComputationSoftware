@@ -21,7 +21,8 @@ using namespace std;
 class LapackeEigenvalueSolver
 {
 public:
-  static EigenInformation * Solve(CMatrix * toSolve
+  static EigenInformation * Solve(CMatrix * toSolve,
+								  bool ComputeEigenvectors = true
 								);
 private:
   LapackeEigenvalueSolver() {}

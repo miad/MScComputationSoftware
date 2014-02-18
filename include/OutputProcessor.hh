@@ -72,9 +72,6 @@ private:
 
   vector<ComplexDouble> FindInterestingKPoints() const; ///Returns the interesting K points by value.
 
-  vector<ComplexDouble> * GetReshapedEigenvector(uint index ///Index.
-											   ) const; ///Normalize the eigenvector with respect to another norm.
-
 
   static FILE * AssuredFopen(const string filename ///File to open.
 							 ); ///Opens a file FOR WRITING and returns the handle, throws exception if the open failed. Ownership passed on.

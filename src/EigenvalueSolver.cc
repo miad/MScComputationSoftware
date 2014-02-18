@@ -1,6 +1,6 @@
 #include "EigenvalueSolver.hh"
 
-EigenvalueSolver::EigenvalueSolver(EigenSolverType _mySolverType, uint _numberOfEigenvalues, ComplexDouble _shift, string _workArea)
+EigenvalueSolver::EigenvalueSolver(EigenSolverType _mySolverType, uint _numberOfEigenvalues, ComplexDouble _shift, string _workArea, bool _findEigenvectors)
   :mySolverType(_mySolverType), numberOfEigenvalues(_numberOfEigenvalues), shift(_shift), workArea(_workArea)
 {
 
@@ -73,12 +73,12 @@ EigenInformation * EigenvalueSolver::Solve(CMatrix * toSolve, bool assureEigenOr
 	{
 	case LapackSolver:
 	  {
-		toReturn = LapackeEigenvalueSolver::Solve(toSolve);
+		toReturn = LapackeEigenvalueSolver::Solve(toSolve, findEigenvectors);
 	  }
 	  break;
 	case ArpackSolver:
 	  {
-		toReturn = ArpackEigenvalueSolver::Solve(toSolve, numberOfEigenvalues, shift);
+		toReturn = ArpackEigenvalueSolver::Solve(toSolve, numberOfEigenvalues, shift, findEigenvectors);
 	  }
 	  break;
 	default:
@@ -93,6 +93,17 @@ EigenInformation * EigenvalueSolver::Solve(CMatrix * toSolve, bool assureEigenOr
 	  AssureEigenOrthonormality(toReturn);
 	}
   return toReturn;
+}
+
+
+bool EigenvalueSolver::GetFindEigenvectors() const
+{
+  return findEigenvectors;
+}
+
+void EigenvalueSolver::SetFindEigenvectors(bool value)
+{
+  findEigenvectors = value;
 }
 
 

@@ -31,7 +31,8 @@ class ArpackEigenvalueSolver
 public:
   static EigenInformation * Solve(CMatrix * toSolve,
 								  uint numberOfEigenvalues,
-								  ComplexDouble shift = 0.0
+								  ComplexDouble shift = 0.0,
+								  bool findEigenvectors = true
 								);
 private:
   ArpackEigenvalueSolver() {}

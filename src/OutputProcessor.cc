@@ -529,31 +529,6 @@ double OutputProcessor::SquareSum( const vector<ComplexDouble> & toSum)
   return sqSum;
 }
 
-
-
-
-vector<ComplexDouble> * OutputProcessor::GetReshapedEigenvector(uint index) const
-{
-  if(index >= eigenData->Eigenvectors.size())
-	{
-	  throw RLException("Tried to access eigenvector %d, but max is %d.", index, eigenData->Eigenvectors.size());
-	}
-  vector<ComplexDouble> * toReturn = new vector<ComplexDouble>(eigenData->Eigenvectors[index]);
-
-  ComplexDouble normalizationFactor = ComplexDouble(0.0,0.0);
-  for(uint i = 0; i<toReturn->size(); ++i)
-	{
- 	  normalizationFactor += pow((*toReturn)[i], 2.0);
-	}
-  ComplexDouble toDivideBy = sqrt(normalizationFactor);
-  for(vector<ComplexDouble>::iterator it = toReturn->begin(); it!=toReturn->end(); ++it)
-	{
-	  *it /= toDivideBy;
-	}
-  return toReturn;
-}
-
-
 void OutputProcessor::SaveMatrix(CMatrix * toSave) const
 {
   string fileName = config->GetOutputFilenames()->Get("MatrixFile");

@@ -4,7 +4,7 @@
 ArpackError::ErrorCode ArpackError::code = NO_ERRORS;
 
 
-EigenInformation * ArpackEigenvalueSolver::Solve(CMatrix * toSolve, uint numberOfEigenvalues, ComplexDouble shift)
+EigenInformation * ArpackEigenvalueSolver::Solve(CMatrix * toSolve, uint numberOfEigenvalues, ComplexDouble shift, bool findEigenvectors)
 {
 
   if( ! toSolve->IsSquare() )
@@ -24,7 +24,10 @@ EigenInformation * ArpackEigenvalueSolver::Solve(CMatrix * toSolve, uint numberO
 
   ARluCompStdEig<ARfloat> Prob(numberOfEigenvalues, A, sigma);
   
-  Prob.FindEigenvectors();
+  if(findEigenvectors)
+	Prob.FindEigenvectors();
+  else
+	Prob.FindEigenvalues();
   
   if(Prob.ConvergedEigenvalues() != (int)numberOfEigenvalues)
 	{
@@ -32,14 +35,16 @@ EigenInformation * ArpackEigenvalueSolver::Solve(CMatrix * toSolve, uint numberO
 	}
   EigenInformation * toReturn = new EigenInformation();
   toReturn->Eigenvalues.resize(Prob.ConvergedEigenvalues());
-  toReturn->Eigenvectors.resize(Prob.ConvergedEigenvalues(), vector<ComplexDouble>(n, 0.0) );
+  if(findEigenvectors)
+	toReturn->Eigenvectors.resize(Prob.ConvergedEigenvalues(), vector<ComplexDouble>(n, 0.0) );
   for(int i = 0; i<Prob.ConvergedEigenvalues(); ++i)
 	{
 	  toReturn->Eigenvalues.at(i) = Prob.Eigenvalue(i);
-	  for(uint j = 0; j<n; ++j)
-		{
-		  toReturn->Eigenvectors.at(i).at(j) = Prob.Eigenvector(i, j);
-		}
+	  if(findEigenvectors)
+		for(uint j = 0; j<n; ++j)
+		  {
+			toReturn->Eigenvectors.at(i).at(j) = Prob.Eigenvector(i, j);
+		  }
 	}
 
   delete[] matr; matr = NULL;

@@ -20,7 +20,8 @@ public:
   EigenvalueSolver(EigenSolverType _mySolverType = LapackSolver, 
 				   uint _numberOfEigenvalues = 10, 
 				   ComplexDouble _shift = 0.0,
-				   string _workArea = ""
+				   string _workArea = "", 
+				   bool _findEigenvectors = true
 				   );
 
   ~EigenvalueSolver();
@@ -45,6 +46,12 @@ public:
   void SetWorkArea(string value
 				   );
 
+  bool GetFindEigenvectors() const;
+
+  void SetFindEigenvectors(bool value
+						   );
+
+
   EigenInformation * Solve(CMatrix * toSolve, 
 						   bool assureEigenOrthonormality = true
 						   ) const;
@@ -64,6 +71,7 @@ private:
   uint numberOfEigenvalues;
   ComplexDouble shift;
   string workArea;
+  bool findEigenvectors;
 };
 
 #endif
