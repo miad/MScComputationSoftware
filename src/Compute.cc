@@ -459,7 +459,6 @@ void * EvaluateSubMatrixTwoParticles(TwoParticleWorkerData w)
 		  
 		  if(a==c && b==d)
 			{
-			  cout << i << " " << j << " " << myPrecomputedInteractionEvaluator->GetEnergy(0, a) << " " << myPrecomputedInteractionEvaluator->GetEnergy(1, b) << endl;
 			  HamiltonianMatrix->Element(i, j) += myPrecomputedInteractionEvaluator->GetEnergy(0, a);
 			  HamiltonianMatrix->Element(i, j) += myPrecomputedInteractionEvaluator->GetEnergy(1, b);
 			}
