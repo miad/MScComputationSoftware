@@ -113,4 +113,4 @@ function AssurePackageInstalled()
 
 
 #Run the main function.
-Main
+Main "$*"
