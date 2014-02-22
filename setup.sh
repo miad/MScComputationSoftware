@@ -1,7 +1,10 @@
 #!/bin/bash
 function Main()
 {
-	CheckRequirements
+	if [ "$1" != "--skip-requirement-check" ]
+	then
+		CheckRequirements
+	fi
 	InitRLlib
 	InitFParser
 	if [ -f "makefile" ]

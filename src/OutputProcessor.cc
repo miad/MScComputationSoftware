@@ -225,36 +225,38 @@ void OutputProcessor::WriteEnergiesToFile() const
 
 
 
-void OutputProcessor::WriteInterestingKPointsVerbosely() const
+void OutputProcessor::WriteInterestingKPointsVerbosely(bool forceFilter, uint pid) const
 {
-  vector<ComplexDouble> printVector = FindInterestingKPoints();
+  vector<ComplexDouble> printVector = FindInterestingKPoints(forceFilter);
+  vector<uint> idxVector = FindInterestingKPointIndex(forceFilter);
 
-  for(vector<ComplexDouble>::const_iterator it = printVector.begin(); it!=printVector.end(); ++it)
+  for(uint id = 0; id<printVector.size(); ++id)
 	{
-	  double RVu = real(config->GetSpecificUnits()->KValueToEnergy(*it) - config->GetPotential()->Evaluate(config->GetHarmonicBasisFunction()->GetXmin(0)) ); ///Energy in custom unit.
+	  double RVu = real(config->GetSpecificUnits()->KValueToEnergy(printVector[id]) - config->GetPotential(pid)->Evaluate(config->GetHarmonicBasisFunction()->GetXmin(pid)) ); ///Energy in custom unit.
 
 	  double RVs = RVu / ( config->GetSpecificUnits()->GetHbarTimesLambda() * 2 * PI * config->GetSpecificUnits()->GetTimeToHertzFactor()) ; ///Energy in hbar * Hz
-	  double IVu = imag(config->GetSpecificUnits()->KValueToEnergy(*it)); ///Energy in custom unit. = -Gamma/2
+	  double IVu = imag(config->GetSpecificUnits()->KValueToEnergy(printVector[id])); ///Energy in custom unit. = -Gamma/2
 	  double IVrte = 2.0*abs(IVu) / (config->GetSpecificUnits()->GetHbarTimesLambda() * config->GetSpecificUnits()->GetTimeToHertzFactor()); /// Gamma / hbar 
 
-	  if(imag(*it) > 1E-5 && abs(arg(*it)-PI/2) < 1E-2 )
+	  if(imag(printVector[id]) > 1E-5 && abs(arg(printVector[id])-PI/2) < 1E-2 )
 		{
 		  vPrint(1,"Bound state: k = %+6.10fi [%s]^(-1)    =>   E = %+6.10f %s  (= %6.10f Hz * h) \n", 
-				 imag(*it), 
+				 imag(printVector[id]), 
 				 config->GetSpecificUnits()->GetLengthUnitName().c_str(), 
 				 RVu, 
 				 config->GetSpecificUnits()->GetEnergyUnitName().c_str(), 
 				 RVs
 				 );
 		}
-	  else if((imag(*it) < -1E-6 && arg(*it) < 0.0 && arg(*it) > -1.0*PI/2 ))
+	  else if((imag(printVector[id]) < -1E-6 && arg(printVector[id]) < 0.0 && arg(printVector[id]) > -1.0*PI/2 ))
 		{
-		  vPrint(1,"Resonant state: k = [ %+6.10f %+6.10fi ] [%s]^(-1)    =>    E = [ %+6.10f %+6.10fi ] %s  (= %6.10f Hz * h,  decayRate= %6.10f s^{-1})\n", 
-				 real(*it), 
-				 imag(*it), 
+		  vPrint(1,"Resonant state (index %d): k = [ %+6.10f %+6.10fi ] [%s]^(-1)    =>    E = [ %+6.10f %+6.10fi ] %s  (= %6.10f Hz * h,  decayRate= %6.10f s^{-1})\n", 
+				 idxVector[id],
+				 real(printVector[id]), 
+				 imag(printVector[id]), 
 				 config->GetSpecificUnits()->GetLengthUnitName().c_str(), 
 				 RVu, 
-				 imag(config->GetSpecificUnits()->KValueToEnergy(*it)), 
+				 imag(config->GetSpecificUnits()->KValueToEnergy(printVector[id])), 
 				 config->GetSpecificUnits()->GetEnergyUnitName().c_str(), 
 				 RVs, 
 				 IVrte
@@ -262,9 +264,10 @@ void OutputProcessor::WriteInterestingKPointsVerbosely() const
 		}
 	  else
 		{
-		  vPrint(1,"Other state: k = [ %+6.10f %+6.10fi ] [%s]^(-1)  =>   E = [ %+6.10f + %6.10fi ] %s (= %6.10f Hz * h,  decayRate= %6.10f s^{-1}) \n", 
-				 real(*it), 
-				 imag(*it),
+		  vPrint(1,"Other state (index %d): k = [ %+6.10f %+6.10fi ] [%s]^(-1)  =>   E = [ %+6.10f + %6.10fi ] %s (= %6.10f Hz * h,  decayRate= %6.10f s^{-1}) \n", 
+				 idxVector[id],
+				 real(printVector[id]), 
+				 imag(printVector[id]),
 				 config->GetSpecificUnits()->GetEnergyUnitName().c_str(), 
 				 RVu, 
 				 IVu, 
@@ -303,14 +306,14 @@ void OutputProcessor::WriteInterestingKPointsToFile() const
 }
 
 
-vector<uint> OutputProcessor::FindInterestingKPointIndex() const
+vector<uint> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) const
 {
     ///Retrieve k-points corresponding to the basis: those are the "filter", which means that
   ///points too close to them are considered "uninteresting".
   ///Filtering only enabled for 1 particle case however, otherwise they must be explicitly specified in the config file.
   vector<uint> toReturn;
 
-  if(config->GetNumberOfParticles() == 1)
+  if(config->GetNumberOfParticles() == 1 || forceFilter)
 	{
 	  vector<ComplexDouble> filterVector;
 	  for(uint i = 0; i<config->GetKCurve()->GetNumberOfSegments(); ++i)
@@ -422,10 +425,10 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex() const
 
 
 
-vector<ComplexDouble> OutputProcessor::FindInterestingKPoints() const
+vector<ComplexDouble> OutputProcessor::FindInterestingKPoints(bool forceFilter) const
 {
   vector<ComplexDouble> toReturn;
-  vector<uint> ikpIndex = FindInterestingKPointIndex();
+  vector<uint> ikpIndex = FindInterestingKPointIndex(forceFilter);
   for(vector<uint>::const_iterator it = ikpIndex.begin(); it!=ikpIndex.end(); ++it)
 	{
 	  if(*it >= eigenData->Eigenvalues.size())
@@ -529,7 +532,7 @@ double OutputProcessor::SquareSum( const vector<ComplexDouble> & toSum)
   return sqSum;
 }
 
-void OutputProcessor::SaveMatrix(CMatrix * toSave) const
+bool OutputProcessor::SaveMatrix(CMatrix * toSave) const
 {
   string fileName = config->GetOutputFilenames()->Get("MatrixFile");
 
@@ -537,7 +540,7 @@ void OutputProcessor::SaveMatrix(CMatrix * toSave) const
   if(fileName.empty() )
 	{
 	  vPrint(4, "Empty Matrix filename, not saving.\n");
-	  return;
+	  return false;
 	}
 
 
@@ -554,6 +557,7 @@ void OutputProcessor::SaveMatrix(CMatrix * toSave) const
   fclose(fout);
 
   vPrint(4, "done\n");
+  return true;
 }
 
 

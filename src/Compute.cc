@@ -93,11 +93,11 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 		{
 		  for(uint i = 0; i<2; ++i)
 			{
-			  myPrinter.Print(1, "Constructing Hamiltonian for particle %d.\n", 0);
+			  myPrinter.Print(1, "Constructing Hamiltonian for particle %d.\n", i);
 			  CMatrix * OneBodyHamiltonian = ConstructOneParticleHamiltonian(myConfiguration, myPrinter, i);
 			  VerifyMatrixBasicProperties(myConfiguration, myPrinter, OneBodyHamiltonian);
 
-			  myPrinter.Print(1, "Finding eigenvalues for particle %d.\n", 0);
+			  myPrinter.Print(1, "Finding eigenvalues for particle %d.\n", i);
 			  EigenInformation * myEigenInfo = myConfiguration.GetSolver()->LapackeSolve(OneBodyHamiltonian);
 			  if(myConfiguration.GetHarmonicOverride())
 				{
@@ -117,6 +117,8 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 																		)
 											 );
 				}
+			  myProcessor.SetEigenInformation(myEigenInfo);
+			  myProcessor.WriteInterestingKPointsVerbosely(true, i);
 			  OneParticleEigenData.push_back(myEigenInfo);  ///Must be retained in memory and deleted later.
 			  delete OneBodyHamiltonian;
 			  
@@ -145,7 +147,8 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 	  delete myPrecomputedInteractionEvaluator; myPrecomputedInteractionEvaluator = NULL;
 
 
-	  myProcessor.SaveMatrix(TwoBodyHamiltonian);
+	  if(myProcessor.SaveMatrix(TwoBodyHamiltonian))
+		return;
 
 	  myPrinter.Print(1, "Finding eigenvalues for the two-body system.\n");
 
@@ -456,6 +459,7 @@ void * EvaluateSubMatrixTwoParticles(TwoParticleWorkerData w)
 		  
 		  if(a==c && b==d)
 			{
+			  cout << i << " " << j << " " << myPrecomputedInteractionEvaluator->GetEnergy(0, a) << " " << myPrecomputedInteractionEvaluator->GetEnergy(1, b) << endl;
 			  HamiltonianMatrix->Element(i, j) += myPrecomputedInteractionEvaluator->GetEnergy(0, a);
 			  HamiltonianMatrix->Element(i, j) += myPrecomputedInteractionEvaluator->GetEnergy(1, b);
 			}

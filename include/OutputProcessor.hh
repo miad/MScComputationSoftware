@@ -36,12 +36,15 @@ public:
   
   void WritePostOutput() const; ///Call this to perform all POST output processing on the set value of data. Throws exception if data is not set.
 
-  void SaveMatrix(CMatrix * toSave ///The matrix.
+  bool SaveMatrix(CMatrix * toSave ///The matrix.
 				  ) const; ///Write the matrix to predetermined file.
 
   void SetCompositeBasisFunctions(vector<CompositeBasisFunction * > * value
 								  );
 
+  void WriteInterestingKPointsVerbosely(bool forceFilter = false,
+										uint pid = 0
+										) const; ///Writes output.
 
 
 private:
@@ -56,7 +59,6 @@ private:
   void WriteKCurveToFile() const; ///Writes output.
   void WriteKFoundToFile() const; ///Writes output.
   void WriteEnergiesToFile() const; ///Writes output.
-  void WriteInterestingKPointsVerbosely() const; ///Writes output.
   void WriteInterestingKPointsToFile() const; ///Writes output.
   void WriteInterestingOneParticleWavefunctionsToFile() const; ///Writes output.
 
@@ -68,9 +70,11 @@ private:
 
   // Auxiliary functions.
 
-  vector<uint> FindInterestingKPointIndex() const; ///Returns the interesting K points by index (in the eigenData object)
+  vector<uint> FindInterestingKPointIndex(bool forceFilter = false
+										  ) const; ///Returns the interesting K points by index (in the eigenData object)
 
-  vector<ComplexDouble> FindInterestingKPoints() const; ///Returns the interesting K points by value.
+  vector<ComplexDouble> FindInterestingKPoints(bool forceFilter = false
+											   ) const; ///Returns the interesting K points by value.
 
 
   static FILE * AssuredFopen(const string filename ///File to open.
