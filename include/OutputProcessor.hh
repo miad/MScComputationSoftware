@@ -19,6 +19,8 @@
 #include "CompositeBasisFunction.hh"
 
 
+using namespace std;
+
 
 /** This class will process the results from computations, and save it in the correct format in the correct output files. In order to do so it has to do some filtering etc. of points.
 
