@@ -400,7 +400,7 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) const
   for(vector<ComplexDouble>::const_iterator ip = extraInterestingPoints.begin(); ip!=extraInterestingPoints.end(); ++ip)
 	{
 	  double minDistance = 1E99;
-	  uint bestMatch = -1;
+	  int bestMatch = -1;
 	  
 
 	  uint loopCount = 0;
@@ -417,7 +417,7 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) const
 		}
 	  if(DBL_EQUAL(bestMatch, -1))
 		throw RLException("Best match was never found. This should never happen.");
-	  toReturn.push_back(bestMatch);
+	  toReturn.push_back((uint)bestMatch);
 	}
   return toReturn;
 }
