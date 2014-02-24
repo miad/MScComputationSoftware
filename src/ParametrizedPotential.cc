@@ -1,7 +1,7 @@
 #include "ParametrizedPotential.hh"
 
-ParametrizedPotential::ParametrizedPotential(string function, vector<pair<string, double> > parameters, double minX, double maxX)
-  :minX(minX), maxX(maxX)
+ParametrizedPotential::ParametrizedPotential(string function, vector<pair<string, double> > parameters, double _minX, double _maxX)
+  :minX(_minX), maxX(_maxX)
 {
   SetPrecision(100);
   for(vector<pair<string, double> >::const_iterator it = parameters.begin(); it!=parameters.end(); ++it)

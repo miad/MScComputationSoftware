@@ -32,7 +32,7 @@
 #include "HermiteEvaluator.hh"
 #include "HarmonicBasisFunction.hh"
 #include "CompositeBasisFunction.hh"
-
+#include "LanczosSaver.hh"
 
 using namespace std;
 

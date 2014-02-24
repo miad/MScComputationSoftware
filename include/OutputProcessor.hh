@@ -48,6 +48,10 @@ public:
 										uint pid = 0
 										) const; ///Writes output.
 
+  vector<uint> FindInterestingKPointIndex(bool forceFilter = false
+										  ) const; ///Returns the interesting K points by index (in the eigenData object)
+
+
 
 private:
 
@@ -71,9 +75,6 @@ private:
 
 
   // Auxiliary functions.
-
-  vector<uint> FindInterestingKPointIndex(bool forceFilter = false
-										  ) const; ///Returns the interesting K points by index (in the eigenData object)
 
   vector<ComplexDouble> FindInterestingKPoints(bool forceFilter = false
 											   ) const; ///Returns the interesting K points by value.

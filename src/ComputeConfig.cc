@@ -310,6 +310,7 @@ void ComputeConfig::WriteFile(const char * fileName) const
   output.add("EnergyFile", Setting::TypeString) = outputFilenames.Get("EnergyFile");
   output.add("ProductWavefunction", Setting::TypeString) = outputFilenames.Get("ProductWavefunction");
   output.add("Matrix", Setting::TypeString) = outputFilenames.Get("MatrixFile");
+  output.add("LanczosObject", Setting::TypeString) = outputFilenames.Get("LanczosObject");
   Setting & outputSpecifics = root.add("OutputSpecifics", Setting::TypeGroup);
   Setting & wavePrecision = outputSpecifics.add("WavefunctionProperties", Setting::TypeGroup);
   wavePrecision.add("MinX", Setting::TypeFloat) = minWavefunctionX;
@@ -685,6 +686,15 @@ void ComputeConfig::ReadOutputFiles(Setting & output)
   else
 	{
 	  throw RLException("The value 'Matrix' was not set appropriately.");
+	}
+
+  if( output.lookupValue("LanczosObject", temp) )
+	{
+	  outputFilenames.Add("LanczosObject", temp);
+	}
+  else
+	{
+	  throw RLException("The value 'LanczosObject' was not set appropriately.");
 	}
 
 }

@@ -26,8 +26,8 @@ class ParametrizedPotential
 public:
   ParametrizedPotential(string function, /// The function to use.
 						vector<pair<string, double> > parameters, /// The parameters to use. 
-						double minX, /// Minimum x value.
-						double maxX /// Maximum x value.
+						double _minX, /// Minimum x value.
+						double _maxX /// Maximum x value.
 						); ///Constructor. \todo Implement reading potential from file.
 
   ParametrizedPotential(string function, /// The function to use.

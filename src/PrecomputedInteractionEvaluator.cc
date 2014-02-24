@@ -374,6 +374,7 @@ bool PrecomputedInteractionEvaluator::ComputeElementsDoWork(ElementComputationWo
 PrecomputedInteractionEvaluator::PrecomputedInteractionEvaluator(const InteractionProperties * myInteractionProperties, VerbosePrinter * myPrinter)
 {
   couplingCoefficient = myInteractionProperties->GetCouplingCoefficient();
+  
   string filename = myInteractionProperties->GetCacheFile();
   if(filename.empty()) ///Don't save if filename is empty.
 	{

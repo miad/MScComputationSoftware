@@ -39,7 +39,7 @@ ComplexDouble CompositeBasisFunction::Eval(const double & x, uint pIndex)
 {
   if(pIndex >= myInformation->Eigenvectors.size())
 	{
-	  throw RLException("Invalid p-index.");
+	  throw RLException("Invalid p-index: %d but %d is max", pIndex, myInformation->Eigenvectors.size());
 	}
 
   if(myHarmonicBasisFunction != NULL)

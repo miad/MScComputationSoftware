@@ -88,6 +88,8 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 	  PrecomputedInteractionEvaluator *  myPrecomputedInteractionEvaluator = NULL;
 	  vector<CompositeBasisFunction * > myBasisFunctions;
 	  vector<EigenInformation *> OneParticleEigenData;
+	  int r[2]; r[0] = -1; r[1] = -1;
+	  
 	  if( myConfiguration.GetInteractionProperties()->GetCacheFile().empty() ||
 		  access(myConfiguration.GetInteractionProperties()->GetCacheFile().c_str(), F_OK) == -1)
 		{
@@ -119,6 +121,19 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 				}
 			  myProcessor.SetEigenInformation(myEigenInfo);
 			  myProcessor.WriteInterestingKPointsVerbosely(true, i);
+			  vector<uint> idx = myProcessor.FindInterestingKPointIndex(true);
+			  if(idx.empty())
+				{
+				  myPrinter.Print(2, "Warning: no interesting K point for further processing.\n");
+				  r[0] = -10;
+				}
+			  else
+				{
+				  if(idx.size() > 1)
+					myPrinter.Print(2, "Warning: too many interesting K points, selecting first one.\n");
+				  r[i] = idx.front();
+				}
+			  
 			  OneParticleEigenData.push_back(myEigenInfo);  ///Must be retained in memory and deleted later.
 			  delete OneBodyHamiltonian;
 			  
@@ -147,8 +162,19 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 	  delete myPrecomputedInteractionEvaluator; myPrecomputedInteractionEvaluator = NULL;
 
 
-	  if(myProcessor.SaveMatrix(TwoBodyHamiltonian))
+	  myPrinter.Print(2, "Optionally saving stuff to disk...\n");
+	  ///If we should save and exit, do so.
+	  bool doBreak = false;
+	  doBreak = LanczosSaver::Save(myConfiguration.GetOutputFilenames()->Get("LanczosObject").c_str(),
+								  TwoBodyHamiltonian,
+								   r
+								  );
+	  doBreak = myProcessor.SaveMatrix(TwoBodyHamiltonian) || doBreak; 
+
+	  if(doBreak)
 		return;
+
+
 
 	  myPrinter.Print(1, "Finding eigenvalues for the two-body system.\n");
 
@@ -258,7 +284,7 @@ CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration,
   myPrinter.Print(3, "Creating 1-particle Hamiltonian for particle : %d\n", particleID);
   
   uint numberOfGLPoints = myConfiguration.GetKCurve()->GetTotalNumberOfGLPoints();
-  uint numberOfBasisFunctions =  myBasisFunctions.size();
+  uint numberOfBasisFunctions =  (uint)myBasisFunctions.size();
   uint MatrixSize = numberOfGLPoints * numberOfBasisFunctions;
 
   if(myConfiguration.GetHarmonicOverride())
