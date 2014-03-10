@@ -45,6 +45,25 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool Comput
 		}
 	}
 
+#ifdef LAPACK_BUBBLE_SORT
+  ///Now, sort (used mainly in debugging, but anyway...also, obviously really quick and dirty since it's bubble sort)
+  bool proceed = true;
+  while(proceed)
+	{
+	  proceed = false;
+	  for(uint i = 1; i<toReturn->Eigenvalues.size(); ++i)
+		{
+		  if(abs(toReturn->Eigenvalues[i-1] ) > abs(toReturn->Eigenvalues[i]) )
+			{
+			  swap(toReturn->Eigenvalues[i-1], toReturn->Eigenvalues[i]);
+			  swap(toReturn->Eigenvectors[i-1], toReturn->Eigenvectors[i]);
+			  proceed = true;
+			}
+		}
+	}
+
+#endif
+  
 
   return toReturn;
 }

@@ -1,10 +1,13 @@
 #ifndef LapackeEigenvalueSolver_hh
 #define LapackeEigenvalueSolver_hh 1
 
+//#define LAPACK_BUBBLE_SORT 1
+
 #include "lapacke.h"
 #include "lapacke_utils.h"
 #include <stdio.h>
 #include <vector>
+#include <algorithm>
 #include "Globals.hpp"
 #include "Matrix.hpp"
 #include "RLException.hh"

@@ -226,8 +226,8 @@ vector<vector<vector<vector<double> > > > * PrecomputedInteractionEvaluator::Com
 
 
   vector<pair<double, double> > myDoubleHermiteRule = HermiteRule::GetRule(integralPrecision, 
-											 xTilde, bTilde);
-
+																		   xTilde, bTilde);
+  
 
   if(myPrinter != NULL)
 	{

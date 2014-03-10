@@ -162,13 +162,14 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 	  delete myPrecomputedInteractionEvaluator; myPrecomputedInteractionEvaluator = NULL;
 
 
-	  myPrinter.Print(2, "Optionally saving stuff to disk...\n");
+	  myPrinter.Print(2, "Optionally saving Lanczos object...");
 	  ///If we should save and exit, do so.
 	  bool doBreak = false;
 	  doBreak = LanczosSaver::Save(myConfiguration.GetOutputFilenames()->Get("LanczosObject").c_str(),
 								  TwoBodyHamiltonian,
 								   r
 								  );
+	  myPrinter.Print(2, "done.\n");
 	  doBreak = myProcessor.SaveMatrix(TwoBodyHamiltonian) || doBreak; 
 
 	  if(doBreak)
