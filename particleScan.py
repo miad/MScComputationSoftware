@@ -9,8 +9,8 @@ import itertools
 
 NumberOfThreads=8
 
-pValues = numpy.arange(0.6, 0.67, 0.0014)
-bValues = numpy.arange(18.8, 19.1, 0.006)
+pValues = numpy.arange(0.6, 0.67, 0.003)
+bValues = numpy.arange(18.0, 19.5, 0.003)
 cbValues=[1.00457, 1.00311, 0.99968, 0.98989]
 
 allValues = list(itertools.product(pValues, bValues, cbValues))
