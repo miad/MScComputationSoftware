@@ -6,16 +6,17 @@ For usage, run the script with the -h flag.
 import sys, argparse, subprocess, os, errno, numpy
 from multiprocessing import Pool
 import itertools
+import NumZero
 
 NumberOfThreads=8
 
-pValues = numpy.arange(0.6, 0.67, 0.003)
-bValues = numpy.arange(18.0, 19.5, 0.003)
+#pValues = numpy.arange(0.632, 0.644, 1.2E-4)
+pValues = [0.6388322]
+bValues = [18.91987]
+#bValues = numpy.arange(18.86, 19.04, 1.8E-3)
 cbValues=[1.00457, 1.00311, 0.99968, 0.98989]
 
 allValues = list(itertools.product(pValues, bValues, cbValues))
-
-
 
 rfoNames = ["KCurve", "KFound", "Potential", "PotentialPrecision", "InterestingPoints", "EnergyFile"]
 
@@ -62,6 +63,7 @@ def generateConfigFiles(inFile, configDir, outputDir):
                 currLine = currLine.replace("_PV_", "%.10f" % val[0])
                 currLine = currLine.replace("_BP_", "%.10fE-8" % val[1])
                 currLine = currLine.replace("_CB_", "%.10f" % val[2])
+                currLine = currLine.replace("_VRC_", "%.10f" % NumZero.GetZero(val[2], val[0], val[1]*1E-8))
 
                 f.write(currLine )
 

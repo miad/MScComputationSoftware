@@ -1,0 +1,17 @@
+A=load('run_0.98989000000000000000.dat.parsed');
+B=load('run_0.99512000000000000000.dat.parsed');
+C=load('run_0.99806000000000000000.dat.parsed');
+D=load('run_0.99968000000000000000.dat.parsed');
+E=load('run_1.0000000000000000000.dat.parsed');
+F=load('run_1.0031100000000000000.dat.parsed');
+G=load('run_1.0035600000000000000.dat.parsed');
+H=load('run_1.0040700000000000000.dat.parsed');
+I=load('run_1.0045700000000000000.dat.parsed');
+mmean = @(x) sum(x)/size(x,1);
+clf;
+plot(I(:,1), I(:,3)/mmean(I(:,3)), 'rx');
+hold on;
+plot(G(:,1), G(:,3)/mmean(G(:,3)), 'bx');
+plot(E(:,1), E(:,3)/mmean(E(:,3)), 'gx');
+plot(D(:,1), D(:,3)/mmean(D(:,3)), 'kx');
+plot(A(:,1), A(:,3)/mmean(A(:,3)), 'cx');

@@ -19,6 +19,7 @@
 Compute
 test/RunTests
 *.dat
+*.txt
 libconfig-1.4.9/*
 fparser/*
 fparser4.5.1/*
@@ -35,3 +36,4 @@ include/fpoptimizer.hh
 src/fparser.cc
 src/fpconfig.cc
 src/fpoptimizer.cc
+*.conf
