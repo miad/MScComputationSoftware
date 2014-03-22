@@ -34,7 +34,7 @@ def GetKPoints(RLOffset):
 
 def main():
     cB = float(sys.argv[1])
-    p = 0.638322
+    p = 0.6388322
     Bp = 18.91987E-8
     Offset = [0.5]
     for RLOffset in Offset:
