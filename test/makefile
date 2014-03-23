@@ -14,7 +14,7 @@ NON_TESTABLE_BIN:= ../bin/Compute.o
 TESTABLE_BIN:= $(filter-out $(NON_TESTABLE_BIN), $(wildcard ../bin/*.o))
 
 
-CCFLAGS:=  -pthread -Wall -fPIC -g -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -pedantic -Wno-long-long -O3
+CCFLAGS:=  -pthread -Wall -fPIC -g -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -pedantic -Wno-long-long -O3 -DMKL_Complex16="std::complex<double>" 
 
 CC:= g++
 
