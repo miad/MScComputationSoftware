@@ -1,8 +1,12 @@
 #ifndef ArpackEigenvalueSolver_hh
 #define ArpackEigenvalueSolver_hh 1
 
+#ifdef USE_MKL_LAPACKE
+#include "mkl_lapacke.h"
+#else
 #include "lapacke.h"
 #include "lapacke_utils.h"
+#endif
 #include "ardnsmat.h"
 #include "arcomp.h"
 #include "ardscomp.h"

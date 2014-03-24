@@ -1,6 +1,6 @@
 CC:= g++
 
-CCFLAGS:=  -pthread -Wall -fPIC -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -pedantic -Wno-long-long -g -O3 -DMKL_Complex16="std::complex<double>" 
+CCFLAGS:=  -pthread -Wall -fPIC -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -pedantic -Wno-long-long -g -O3 -DUSE_MKL_LAPACKE  -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE
 
 CCOFLAGS:= -fexpensive-optimizations
 
@@ -15,8 +15,10 @@ EXTRA_LIBS:= extra_libs
 
 RLLIB:= RLlib/libRLlib.a
 
-INCLUDE:= -Iinclude -IRLlib/include -Ilapacke -Iarpack
-LIBS:=  -lblas -lm -larpack -llapack -llapacke -LRLlib -lRLlib -lconfig++
+INCLUDE:= -Iinclude -IRLlib/include -Iarpack
+
+LIBS:=  -lm -larpack -LRLlib -lRLlib -lconfig++
+LIBS+= -L/net/opt/intel/composer_xe_2013.0.079/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -liomp5
 
 SRC:= $(wildcard src/*.cc)
 OBJ:= $(SRC:src/%.cc=bin/%.o) 

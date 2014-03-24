@@ -73,6 +73,8 @@ private:
   void WriteInterestingRelativeTwoParticleWavefunctionsToFile() const;
   void WriteProductTwoParticleWavefunctionToFile() const;
 
+  void SavePrimaryEigenvectors() const;
+
 
   // Auxiliary functions.
 

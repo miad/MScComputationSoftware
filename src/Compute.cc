@@ -170,11 +170,11 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 								   r
 								  );
 	  myPrinter.Print(2, "done.\n");
+
 	  doBreak = myProcessor.SaveMatrix(TwoBodyHamiltonian) || doBreak; 
 
 	  if(doBreak)
 		return;
-
 
 
 	  myPrinter.Print(1, "Finding eigenvalues for the two-body system.\n");

@@ -1,6 +1,11 @@
-INCLUDE:= -Iinclude -I../include -I../RLlib/include -I../libconfig-1.4.9/lib -I../lapacke -I../arpack
+CCFLAGS:=  -pthread -Wall -fPIC -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -pedantic -Wno-long-long -g -O3 -DUSE_MKL_LAPACKE  -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE
 
-LIBS:= -lblas -larpack  -lm -llapack -llapacke -L../RLlib -lRLlib -lconfig++
+
+INCLUDE:= -Iinclude -I../include -I../RLlib/include -I../libconfig-1.4.9/lib  -I../arpack
+
+
+LIBS:=  -lm -larpack -L../RLlib -lRLlib -lconfig++
+LIBS+= -L/net/opt/intel/composer_xe_2013.0.079/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -liomp5
 
 SRC:= $(wildcard src/*.cc)
 OBJ:= $(SRC:src/%.cc=bin/%.o)
@@ -14,7 +19,6 @@ NON_TESTABLE_BIN:= ../bin/Compute.o
 TESTABLE_BIN:= $(filter-out $(NON_TESTABLE_BIN), $(wildcard ../bin/*.o))
 
 
-CCFLAGS:=  -pthread -Wall -fPIC -g -DHAVE_LAPACK_CONFIG_H -DLAPACK_COMPLEX_CPP -pedantic -Wno-long-long -O3 -DMKL_Complex16="std::complex<double>" 
 
 CC:= g++
 

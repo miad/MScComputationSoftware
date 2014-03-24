@@ -16,6 +16,7 @@ ComputeConfig::ComputeConfig()
   outputFilenames.Add("Matrix", "Matrix.dat");
   outputFilenames.Add("EnergyFile", "Energies.dat");
   outputFilenames.Add("ProductWavefunctionFile", "ProductWavefunction.dat");
+  outputFilenames.Add("PrimaryEigenvectors", "PrimaryEigenvectors.dat");
 
   kCurve = new ParametrizedCurve(-1,1);
   kCurve->AddValue(0.0);
@@ -311,6 +312,8 @@ void ComputeConfig::WriteFile(const char * fileName) const
   output.add("ProductWavefunction", Setting::TypeString) = outputFilenames.Get("ProductWavefunction");
   output.add("Matrix", Setting::TypeString) = outputFilenames.Get("MatrixFile");
   output.add("LanczosObject", Setting::TypeString) = outputFilenames.Get("LanczosObject");
+  output.add("PrimaryEigenvectors", Setting::TypeString) = outputFilenames.Get("PrimaryEigenvectors");
+
   Setting & outputSpecifics = root.add("OutputSpecifics", Setting::TypeGroup);
   Setting & wavePrecision = outputSpecifics.add("WavefunctionProperties", Setting::TypeGroup);
   wavePrecision.add("MinX", Setting::TypeFloat) = minWavefunctionX;
@@ -695,6 +698,15 @@ void ComputeConfig::ReadOutputFiles(Setting & output)
   else
 	{
 	  throw RLException("The value 'LanczosObject' was not set appropriately.");
+	}
+
+  if( output.lookupValue("PrimaryEigenvectors", temp) )
+	{
+	  outputFilenames.Add("PrimaryEigenvectors", temp);
+	}
+  else
+	{
+	  throw RLException("The value 'PrimaryEigenvectors' was not set appropriately.");
 	}
 
 }

@@ -35,6 +35,7 @@ void OutputProcessor::WritePostOutput() const
   WriteKCurveToFile();
   WriteKFoundToFile();
   WriteEnergiesToFile();
+  SavePrimaryEigenvectors();
 
   if(config->GetNumberOfParticles() == 1)
 	{
@@ -48,6 +49,37 @@ void OutputProcessor::WritePostOutput() const
 	  WriteInterestingRelativeTwoParticleWavefunctionsToFile();
 	  WriteProductTwoParticleWavefunctionToFile();
 	}
+}
+
+void OutputProcessor::SavePrimaryEigenvectors() const
+{
+  string fileName = config->GetOutputFilenames()->Get("PrimaryEigenvectors");
+  if(fileName.empty() )
+	{
+	  vPrint(4, "Empty PrimaryEigenvectors filename, not saving.\n");
+	  return;
+	}
+
+  vPrint(4, "Saving primary eigenvectors...");
+
+  FILE * fout = AssuredFopen(fileName);
+
+  fprintf(fout, "#Format: Re(eigenval) Im(Eigenval) Re(eigvect[0]) Im(eigvect[0]) etc.\n");
+
+  for(uint i = 0; i<eigenData->Eigenvectors.size(); ++i)
+	{
+	  fprintf(fout, "%+13.10e %+13.10e", real(eigenData->Eigenvalues[i]), imag(eigenData->Eigenvalues[i]));
+	  for(uint j = 0; j<eigenData->Eigenvectors[i].size(); ++j)
+		{
+		  fprintf(fout, " %+13.10e %+13.10e", real(eigenData->Eigenvectors[i][j]), imag(eigenData->Eigenvectors[i][j]));
+		}
+	  fprintf(fout, "\n");
+	}
+
+  fclose(fout);
+  fout = NULL; 
+
+  vPrint(4, "done\n");
 }
 
 

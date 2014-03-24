@@ -1,5 +1,18 @@
 #include "LapackeEigenvalueSolver.hh"
 
+RIKARD_COMPLEX_TYPE * LapackeEigenvalueSolver::GetArray(CMatrix * matrix)
+{
+  ulong N = matrix->Rows() * matrix->Columns();
+  RIKARD_COMPLEX_TYPE * toReturn = new RIKARD_COMPLEX_TYPE[N];
+  ComplexDouble * a = matrix->GetArray();
+  for(ulong i = 0; i<N; ++i)
+	{
+	  RIKARD_COMPLEX_COPY_TO(a[i], toReturn[i]);
+	}
+  matrix->DeleteArray();
+  return toReturn;
+}
+
 EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool ComputeEigenvectors)
 {
   if( ! toSolve->IsSquare() )
@@ -9,21 +22,23 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool Comput
   
   int matrix_order = LAPACK_ROW_MAJOR;
   lapack_int n = toSolve->Rows();
-  ComplexDouble * a = toSolve->GetArray();
   lapack_int lda = n;
-  vector<lapack_complex_double> w(n, 0);
+  vector<RIKARD_COMPLEX_TYPE> w(n);
   char jobvl = 'N';
-  lapack_complex_double * vl = 0;
+  RIKARD_COMPLEX_TYPE * vl = 0;
   lapack_int ldvl = n;
   char jobvr = 'N';
-  vector<lapack_complex_double> vr;
+  vector<RIKARD_COMPLEX_TYPE> vr;
   lapack_int ldvr = n;
   
   if(ComputeEigenvectors)
 	{
 	  jobvr = 'V';
-	  vr.resize(n*n, 0);
+	  vr.resize(n*n);
 	}
+
+  RIKARD_COMPLEX_TYPE * a = GetArray(toSolve);
+
   int reply = LAPACKE_zgeev(matrix_order, jobvl, jobvr,
 							n, a, lda, &w[0], vl, ldvl, &vr[0], ldvr);
   
@@ -33,37 +48,26 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool Comput
 	}
 
   EigenInformation * toReturn = new EigenInformation();
-  toReturn->Eigenvalues = w;
+  toReturn->Eigenvalues.resize(n);
+  for(int i = 0; i<n; ++i)
+	{
+	  RIKARD_COMPLEX_COPY_FROM(w[i], toReturn->Eigenvalues[i]);
+	}
   
   if(ComputeEigenvectors)
 	{
+	  toReturn->Eigenvectors.resize(n);
+	  for(int i = 0; i<n; ++i)
+		{
+		  toReturn->Eigenvectors[i].resize(n);
+		}
 	  for(int i = 0; i<n*n; ++i)
 		{
-		  if(i/n==0)
-			toReturn->Eigenvectors.push_back(vector<ComplexDouble>());
-		  toReturn->Eigenvectors[i%n].push_back(vr.at(i));
+		  RIKARD_COMPLEX_COPY_FROM(vr.at(i), toReturn->Eigenvectors[i%n][i/n]);
 		}
 	}
 
-#ifdef LAPACK_BUBBLE_SORT
-  ///Now, sort (used mainly in debugging, but anyway...also, obviously really quick and dirty since it's bubble sort)
-  bool proceed = true;
-  while(proceed)
-	{
-	  proceed = false;
-	  for(uint i = 1; i<toReturn->Eigenvalues.size(); ++i)
-		{
-		  if(abs(toReturn->Eigenvalues[i-1] ) > abs(toReturn->Eigenvalues[i]) )
-			{
-			  swap(toReturn->Eigenvalues[i-1], toReturn->Eigenvalues[i]);
-			  swap(toReturn->Eigenvectors[i-1], toReturn->Eigenvectors[i]);
-			  proceed = true;
-			}
-		}
-	}
-
-#endif
-  
+  delete [] a;
 
   return toReturn;
 }
