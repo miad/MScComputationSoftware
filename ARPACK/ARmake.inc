@@ -25,7 +25,7 @@
 # | other than your home directory.      |
 # %--------------------------------------%
 #
-home = /net/home/riklund/Dropbox/MastersProject_Drafts/ComputationSoftware/ARPACK
+home = /c3se/users/riklund/Glenn/MScComputationSoftware/ARPACK
 #
 #  %--------------------------------------%
 #  | The platform identifier to suffix to |
