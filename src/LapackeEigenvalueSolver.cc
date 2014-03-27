@@ -1,18 +1,5 @@
 #include "LapackeEigenvalueSolver.hh"
 
-RIKARD_COMPLEX_TYPE * LapackeEigenvalueSolver::GetArray(CMatrix * matrix)
-{
-  ulong N = matrix->Rows() * matrix->Columns();
-  RIKARD_COMPLEX_TYPE * toReturn = new RIKARD_COMPLEX_TYPE[N];
-  ComplexDouble * a = matrix->GetArray();
-  for(ulong i = 0; i<N; ++i)
-	{
-	  RIKARD_COMPLEX_COPY_TO(a[i], toReturn[i]);
-	}
-  matrix->DeleteArray();
-  return toReturn;
-}
-
 EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool ComputeEigenvectors)
 {
   if( ! toSolve->IsSquare() )
@@ -37,7 +24,7 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool Comput
 	  vr.resize(n*n);
 	}
 
-  RIKARD_COMPLEX_TYPE * a = GetArray(toSolve);
+  RIKARD_COMPLEX_TYPE * a = toSolve->GetArray();
 
   int reply = LAPACKE_zgeev(matrix_order, jobvl, jobvr,
 							n, a, lda, &w[0], vl, ldvl, &vr[0], ldvr);
@@ -48,12 +35,8 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool Comput
 	}
 
   EigenInformation * toReturn = new EigenInformation();
-  toReturn->Eigenvalues.resize(n);
-  for(int i = 0; i<n; ++i)
-	{
-	  RIKARD_COMPLEX_COPY_FROM(w[i], toReturn->Eigenvalues[i]);
-	}
-  
+  toReturn->Eigenvalues = w;
+
   if(ComputeEigenvectors)
 	{
 	  toReturn->Eigenvectors.resize(n);
@@ -63,11 +46,9 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool Comput
 		}
 	  for(int i = 0; i<n*n; ++i)
 		{
-		  RIKARD_COMPLEX_COPY_FROM(vr.at(i), toReturn->Eigenvectors[i%n][i/n]);
+		  toReturn->Eigenvectors[i%n][i/n] = vr.at(i);
 		}
 	}
-
-  delete [] a;
 
   return toReturn;
 }

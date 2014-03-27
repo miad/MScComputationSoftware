@@ -1,4 +1,4 @@
-CCFLAGS:=  -pthread -Wall -fPIC -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -pedantic -Wno-long-long -g -O3 -DUSE_MKL_LAPACKE  -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE
+CCFLAGS:=  -pthread -Wall -fPIC -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -pedantic -Wno-long-long -g -O3  -DFP_SUPPORT_COMPLEX_DOUBLE_TYPE -DUSE_MKL_LAPACKE -DMKL_Complex16="std::complex<double>"
 
 
 INCLUDE:= -Iinclude -I../include -I../RLlib/include -I../libconfig-1.4.9/lib  -I../arpack

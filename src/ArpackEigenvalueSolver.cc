@@ -14,9 +14,6 @@ EigenInformation * ArpackEigenvalueSolver::Solve(CMatrix * toSolve, uint numberO
   
   uint n = toSolve->Rows();
   ComplexDouble * a = toSolve->GetArray();
-  ARComplexDouble * matr = new ARComplexDouble[n*n];
-  for(uint i = 0; i<n*n; ++i)
-	matr[i] = a[i];
   
   ARdsNonSymMatrix<ARComplexDouble, ARfloat> A(n, a);
 
@@ -47,7 +44,6 @@ EigenInformation * ArpackEigenvalueSolver::Solve(CMatrix * toSolve, uint numberO
 		  }
 	}
 
-  delete[] matr; matr = NULL;
 
   return toReturn;
 }

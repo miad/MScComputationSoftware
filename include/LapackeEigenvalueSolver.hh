@@ -24,8 +24,6 @@ public:
   static EigenInformation * Solve(CMatrix * toSolve,
 								  bool ComputeEigenvectors = true
 								);
-  static RIKARD_COMPLEX_TYPE * GetArray(CMatrix * matrix
-								  );
 
 private:
   LapackeEigenvalueSolver() {}
