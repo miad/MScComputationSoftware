@@ -17,7 +17,7 @@ RLLIB:= RLlib/libRLlib.a
 
 INCLUDE:= -Iinclude -IRLlib/include -Iarpack
 
-LIBS:=  -lm -larpack -LRLlib -lRLlib -lconfig++ ARPACK/libarpack.a
+LIBS:=  -lm -LRLlib -lRLlib -lconfig++ ARPACK/libarpack.a -lgfortran
 LIBS+= -L/net/opt/intel/composer_xe_2013.0.079/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -liomp5
 
 SRC:= $(wildcard src/*.cc)
