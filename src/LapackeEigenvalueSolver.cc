@@ -40,11 +40,11 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool Comput
   if(ComputeEigenvectors)
 	{
 	  toReturn->Eigenvectors.resize(n);
-	  for(int i = 0; i<n; ++i)
+	  for(uint i = 0; i<n; ++i)
 		{
 		  toReturn->Eigenvectors[i].resize(n);
 		}
-	  for(int i = 0; i<n*n; ++i)
+	  for(uint i = 0; i<n*n; ++i)
 		{
 		  toReturn->Eigenvectors[i%n][i/n] = vr.at(i);
 		}

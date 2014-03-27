@@ -7,6 +7,7 @@ function Main()
 	fi
 	InitRLlib
 	InitFParser
+	InitArpack
 	if [ -f "makefile" ]
 	then
 		chmod a+w makefile
@@ -15,6 +16,19 @@ function Main()
 	#To prevent accidental modification of makefile instead of makefile.in
 	chmod a-w makefile 
 	echo "Setup completed without errors."
+}
+
+function InitArpack()
+{
+	cd ARPACK
+	sed -e -i "s_home = [.]*ARPACK_home = $(pwd)_g"
+	make -j 200 lib
+	if [ "$?" -ne "0" ]
+	then
+		echo "Error in ARPACK compilation."
+		exit 15
+	fi
+	cd ..
 }
 
 

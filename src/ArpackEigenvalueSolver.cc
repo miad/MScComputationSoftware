@@ -7,10 +7,15 @@ ArpackError::ErrorCode ArpackError::code = NO_ERRORS;
 EigenInformation * ArpackEigenvalueSolver::Solve(CMatrix * toSolve, uint numberOfEigenvalues, ComplexDouble shift, bool findEigenvectors)
 {
 
+
   if( ! toSolve->IsSquare() )
 	{
 	  throw RLException("Can only find eigenvalues of square matrices.");
 	}
+
+  if(numberOfEigenvalues == 0)
+	return new EigenInformation();
+
   
   uint n = toSolve->Rows();
   ComplexDouble * a = toSolve->GetArray();

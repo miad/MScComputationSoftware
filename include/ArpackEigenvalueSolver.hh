@@ -1,7 +1,7 @@
 #ifndef ArpackEigenvalueSolver_hh
 #define ArpackEigenvalueSolver_hh 1
 
-#include "MKL_options.hpp"
+//#include "MKL_options.hpp"
 #include "ardnsmat.h"
 #include "arcomp.h"
 #include "ardscomp.h"
