@@ -21,7 +21,7 @@ function Main()
 function InitArpack()
 {
 	cd ARPACK
-	sed -e -i "s_home = [.]*ARPACK_home = $(pwd)_g"
+	sed -i -e "s_home = .*ARPACK_home = $(pwd)_g" ARmake.inc
 	make -j 200 lib
 	if [ "$?" -ne "0" ]
 	then
