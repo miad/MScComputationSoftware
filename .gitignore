@@ -37,3 +37,4 @@ src/fparser.cc
 src/fpconfig.cc
 src/fpoptimizer.cc
 *.conf
+ARPACK/ARmake.inc

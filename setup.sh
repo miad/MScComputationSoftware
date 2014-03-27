@@ -21,7 +21,10 @@ function Main()
 function InitArpack()
 {
 	cd ARPACK
+	cp ARmake.inc.in ARmake.inc
+	chmod u+w ARmake.inc
 	sed -i -e "s_home = .*ARPACK_home = $(pwd)_g" ARmake.inc
+	chmod u-w ARmake.inc
 	make -j 200 lib
 	if [ "$?" -ne "0" ]
 	then
