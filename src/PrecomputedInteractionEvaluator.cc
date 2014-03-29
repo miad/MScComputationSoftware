@@ -77,12 +77,12 @@ ComplexDouble PrecomputedInteractionEvaluator::ComputeSingleElement(uint a, uint
 
 
 
-uint PrecomputedInteractionEvaluator::GetNumberOfBases() const
+ulong PrecomputedInteractionEvaluator::GetNumberOfBases() const
 {
   return 2; ///for now. Function for portability in the future.
 }
 
-uint PrecomputedInteractionEvaluator::GetBasisElements(uint basisIndex) const
+ulong PrecomputedInteractionEvaluator::GetBasisElements(uint basisIndex) const
 {
   switch(basisIndex)
 	{

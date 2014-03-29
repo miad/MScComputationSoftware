@@ -377,6 +377,9 @@ CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
 
   myMultiTasker->RegisterListener(&myPrinter);
   
+  myPrinter.Print(4, "Queuing up %ld chunks of work...", MatrixSize);
+
+
 
   for(ulong i = 0; i<MatrixSize; ++i)
 	{
@@ -390,14 +393,15 @@ CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
 							  );
 	  
 	}
+  myPrinter.Print(4, "done\n. Performing async computation...");
   myMultiTasker->LaunchThreads();
   myMultiTasker->PauseUntilOutputIsGenerated();
   myMultiTasker->DestroyThreads();
   delete myMultiTasker; 
   myMultiTasker = NULL;
+  myPrinter.Print(4, "done.\n");
 
-
-  myPrinter.Print(3, "Done, returning Hamiltonian.\n");
+  myPrinter.Print(3, "Returning Hamiltonian.\n");
   return HamiltonianMatrix;
 }
 
