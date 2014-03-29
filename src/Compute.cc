@@ -363,7 +363,7 @@ CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
 
   myPrinter.Print(3, "Creating 2-particle Hamiltonian\n");
   
-  uint MatrixSize = myPrecomputedInteractionEvaluator->GetBasisElements(0) * myPrecomputedInteractionEvaluator->GetBasisElements(1);
+  ulong MatrixSize = myPrecomputedInteractionEvaluator->GetBasisElements(0) * myPrecomputedInteractionEvaluator->GetBasisElements(1);
 
   CMatrix * HamiltonianMatrix = new CMatrix(MatrixSize, MatrixSize);
   HamiltonianMatrix->InitializeAll(0.);
@@ -377,8 +377,10 @@ CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
 
   myMultiTasker->RegisterListener(&myPrinter);
   
+  myPrinter.Print(4, "Queuing up %ld chunks of work...", MatrixSize);
 
-  for(uint i = 0; i<MatrixSize; ++i)
+
+  for(ulong i = 0; i<MatrixSize; ++i)
 	{
 	  myMultiTasker->AddInput(TwoParticleWorkerData(HamiltonianMatrix,
 													myPrecomputedInteractionEvaluator,
@@ -390,14 +392,15 @@ CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
 							  );
 	  
 	}
+  myPrinter.Print(4, "done\n. Performing async computation...");
   myMultiTasker->LaunchThreads();
   myMultiTasker->PauseUntilOutputIsGenerated();
   myMultiTasker->DestroyThreads();
   delete myMultiTasker; 
   myMultiTasker = NULL;
+  myPrinter.Print(4, "done.\n");
 
-
-  myPrinter.Print(3, "Done, returning Hamiltonian.\n");
+  myPrinter.Print(3, "Returning Hamiltonian.\n");
   return HamiltonianMatrix;
 }
 
@@ -463,26 +466,26 @@ void * EvaluateSubMatrixTwoParticles(TwoParticleWorkerData w)
 {
   CMatrix * HamiltonianMatrix = w.HamiltonianMatrix;
   const PrecomputedInteractionEvaluator * myPrecomputedInteractionEvaluator = w.myPrecomputedInteractionEvaluator;
-  uint m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
+  ulong m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
 
   if(myPrecomputedInteractionEvaluator == NULL)
 	{
 	  throw RLException("myPrecomputedInteractionEvaluator was NULL.");
 	}
 
-  uint N1 = myPrecomputedInteractionEvaluator->GetBasisElements(0);
-  uint N2 = myPrecomputedInteractionEvaluator->GetBasisElements(1);
+  ulong N1 = myPrecomputedInteractionEvaluator->GetBasisElements(0);
+  ulong N2 = myPrecomputedInteractionEvaluator->GetBasisElements(1);
 
 
-  for(uint i = m1; i<m2; ++i)
+  for(ulong i = m1; i<m2; ++i)
 	{
-	  uint a = i / N1;
-	  uint b = i % N2;
+	  ulong a = i / N1;
+	  ulong b = i % N2;
 
-	  for(uint j = n1; j<n2; ++j)
+	  for(ulong j = n1; j<n2; ++j)
 		{
-		  uint c = j / N1;
-		  uint d = j % N2;
+		  ulong c = j / N1;
+		  ulong d = j % N2;
 		  
 		  if(a==c && b==d)
 			{

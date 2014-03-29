@@ -54,9 +54,9 @@ public:
 						  uint index
 						  ) const;
 
-  uint GetNumberOfBases() const;
+  ulong GetNumberOfBases() const;
 
-  uint GetBasisElements(uint basisIndex
+  ulong GetBasisElements(uint basisIndex
 						) const;
 
   void SetNewCouplingCoefficient(double value);

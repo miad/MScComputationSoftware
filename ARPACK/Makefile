@@ -68,8 +68,6 @@ arpacklib:
 cleantest:
 
 cleanlib:
-	( cd $(BLASdir); $(MAKE) clean )
-	( cd $(LAPACKdir); $(MAKE) clean )
 	( cd $(UTILdir); $(MAKE) clean )
 	( cd $(SRCdir); $(MAKE) clean )
 

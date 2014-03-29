@@ -68,10 +68,10 @@ class TwoParticleWorkerData
 public:
   TwoParticleWorkerData(CMatrix * _HamiltonianMatrix,
 						const PrecomputedInteractionEvaluator * _myPrecomputedInteractionEvaluator,
-						uint _m1,
-						uint _m2,
-						uint _n1,
-						uint _n2 
+						ulong _m1,
+						ulong _m2,
+						ulong _n1,
+						ulong _n2 
 						); ///Constructor, basically initialize all values.
   
   ~TwoParticleWorkerData();
@@ -79,10 +79,10 @@ public:
   CMatrix * HamiltonianMatrix;
   const PrecomputedInteractionEvaluator * myPrecomputedInteractionEvaluator;
 
-  uint m1; /// Specifies the submatrix to use.
-  uint m2; /// Specifies the submatrix to use.
-  uint n1; /// Specifies the submatrix to use.
-  uint n2; /// Specifies the submatrix to use.
+  ulong m1; /// Specifies the submatrix to use.
+  ulong m2; /// Specifies the submatrix to use.
+  ulong n1; /// Specifies the submatrix to use.
+  ulong n2; /// Specifies the submatrix to use.
 };
 
 
