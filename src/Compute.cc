@@ -93,7 +93,7 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 	  if( myConfiguration.GetInteractionProperties()->GetCacheFile().empty() ||
 		  access(myConfiguration.GetInteractionProperties()->GetCacheFile().c_str(), F_OK) == -1)
 		{
-		  for(uint i = 0; i<2; ++i)
+		  for(ulong i = 0; i<2; ++i)
 			{
 			  myPrinter.Print(1, "Constructing Hamiltonian for particle %d.\n", i);
 			  CMatrix * OneBodyHamiltonian = ConstructOneParticleHamiltonian(myConfiguration, myPrinter, i);
@@ -121,7 +121,7 @@ void PerformSolution(ComputeConfig & myConfiguration, VerbosePrinter & myPrinter
 				}
 			  myProcessor.SetEigenInformation(myEigenInfo);
 			  myProcessor.WriteInterestingKPointsVerbosely(true, i);
-			  vector<uint> idx = myProcessor.FindInterestingKPointIndex(true);
+			  vector<ulong> idx = myProcessor.FindInterestingKPointIndex(true);
 			  if(idx.empty())
 				{
 				  myPrinter.Print(2, "Warning: no interesting K point for further processing.\n");
@@ -231,9 +231,9 @@ void VerifyMatrixBasicProperties(ComputeConfig & myConfiguration, VerbosePrinter
   if(myConfiguration.GetHarmonicOverride())
 	{
 	  myPrinter.Print(1, "Harmonic: Validating reality of matrix.\n");
-	  for(uint i = 0; i<HamiltonianMatrix->Rows(); ++i)
+	  for(ulong i = 0; i<HamiltonianMatrix->Rows(); ++i)
 		{
-		  for(uint j = 0; j<HamiltonianMatrix->Columns(); ++j)
+		  for(ulong j = 0; j<HamiltonianMatrix->Columns(); ++j)
 			{
 			  if(imag(HamiltonianMatrix->Element(i, j)) > 1E-9)
 				throw RLException("Element (%d, %d) had an imaginary part %f, but a real matrix was expected.", i, j, imag(HamiltonianMatrix->Element(i, j)));
@@ -248,10 +248,10 @@ void VerifyMatrixBasicProperties(ComputeConfig & myConfiguration, VerbosePrinter
 
 void PrintNumberOfNonzeroElements(CMatrix * HamiltonianMatrix, VerbosePrinter & myPrinter)
 {
-  uint nonzero = 0;
-  for(uint i = 0; i<HamiltonianMatrix->Rows(); ++i)
+  ulong nonzero = 0;
+  for(ulong i = 0; i<HamiltonianMatrix->Rows(); ++i)
 	{
-	  for(uint j = 0; j<HamiltonianMatrix->Columns(); ++j)
+	  for(ulong j = 0; j<HamiltonianMatrix->Columns(); ++j)
 		{
 		  nonzero += !DBL_EQUAL(HamiltonianMatrix->Element(i, j),0.0);
 		}
@@ -262,7 +262,7 @@ void PrintNumberOfNonzeroElements(CMatrix * HamiltonianMatrix, VerbosePrinter & 
 
 
 
-CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration, VerbosePrinter & myPrinter, uint particleID)
+CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration, VerbosePrinter & myPrinter, ulong particleID)
 {
 
   vector<BasisFunction> myBasisFunctions = myConfiguration.GetBasisFunctions();
@@ -284,9 +284,9 @@ CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration,
 
   myPrinter.Print(3, "Creating 1-particle Hamiltonian for particle : %d\n", particleID);
   
-  uint numberOfGLPoints = myConfiguration.GetKCurve()->GetTotalNumberOfGLPoints();
-  uint numberOfBasisFunctions =  (uint)myBasisFunctions.size();
-  uint MatrixSize = numberOfGLPoints * numberOfBasisFunctions;
+  ulong numberOfGLPoints = myConfiguration.GetKCurve()->GetTotalNumberOfGLPoints();
+  ulong numberOfBasisFunctions =  (ulong)myBasisFunctions.size();
+  ulong MatrixSize = numberOfGLPoints * numberOfBasisFunctions;
 
   if(myConfiguration.GetHarmonicOverride())
 	MatrixSize = myConfiguration.GetHarmonicNmax() ;
@@ -327,7 +327,7 @@ CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration,
   
   myMultiTasker->RegisterListener(&myPrinter);
   
-  for(uint i = 0; i<MatrixSize; ++i)
+  for(ulong i = 0; i<MatrixSize; ++i)
 	{
 	  myMultiTasker->AddInput(OneParticleWorkerData(HamiltonianMatrix,
 													myCurve,
@@ -363,7 +363,7 @@ CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
 
   myPrinter.Print(3, "Creating 2-particle Hamiltonian\n");
   
-  uint MatrixSize = myPrecomputedInteractionEvaluator->GetBasisElements(0) * myPrecomputedInteractionEvaluator->GetBasisElements(1);
+  ulong MatrixSize = myPrecomputedInteractionEvaluator->GetBasisElements(0) * myPrecomputedInteractionEvaluator->GetBasisElements(1);
 
   CMatrix * HamiltonianMatrix = new CMatrix(MatrixSize, MatrixSize);
   HamiltonianMatrix->InitializeAll(0.);
@@ -378,7 +378,7 @@ CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
   myMultiTasker->RegisterListener(&myPrinter);
   
 
-  for(uint i = 0; i<MatrixSize; ++i)
+  for(ulong i = 0; i<MatrixSize; ++i)
 	{
 	  myMultiTasker->AddInput(TwoParticleWorkerData(HamiltonianMatrix,
 													myPrecomputedInteractionEvaluator,
@@ -425,25 +425,25 @@ void * EvaluateSubMatrixOneParticle(OneParticleWorkerData w)
   ParametrizedCurve * myCurve = w.myCurve;
   Potential * myPotential = w.myPotential;
   vector<BasisFunction> * myBasisFunctions = &w.myBasisFunctions;
-  uint numberOfGLPoints = w.numberOfGLPoints;
+  ulong numberOfGLPoints = w.numberOfGLPoints;
   double hbarTimesLambda = w.hbarTimesLambda;
   double massOverLambda2 = w.massOverLambda2;
-  uint m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
+  ulong m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
 
-  for(uint i = m1; i<m2; ++i)
+  for(ulong i = m1; i<m2; ++i)
 	{
-	  uint curvePointerA = i % numberOfGLPoints;
-	  uint basisPointerA = i / numberOfGLPoints;
-	  uint curveSegmentA = myCurve->SegmentIndexFromGLNumber(curvePointerA);
+	  ulong curvePointerA = i % numberOfGLPoints;
+	  ulong basisPointerA = i / numberOfGLPoints;
+	  ulong curveSegmentA = myCurve->SegmentIndexFromGLNumber(curvePointerA);
 	  
 	  ComplexDouble kA = myCurve->GetRuleValue(curveSegmentA, curvePointerA);
 	  ComplexDouble wA = myCurve->GetRuleWeight(curveSegmentA, curvePointerA);
 	  
-	  for(uint j = n1; j<n2; ++j)
+	  for(ulong j = n1; j<n2; ++j)
 		{
-		  uint curvePointerB = j % numberOfGLPoints;
-		  uint basisPointerB = j / numberOfGLPoints;
-		  uint curveSegmentB = myCurve->SegmentIndexFromGLNumber(curvePointerB);
+		  ulong curvePointerB = j % numberOfGLPoints;
+		  ulong basisPointerB = j / numberOfGLPoints;
+		  ulong curveSegmentB = myCurve->SegmentIndexFromGLNumber(curvePointerB);
 		  
 		  ComplexDouble kB = myCurve->GetRuleValue(curveSegmentB, curvePointerB);
 		  ComplexDouble wB = myCurve->GetRuleWeight(curveSegmentB, curvePointerB);
@@ -463,26 +463,26 @@ void * EvaluateSubMatrixTwoParticles(TwoParticleWorkerData w)
 {
   CMatrix * HamiltonianMatrix = w.HamiltonianMatrix;
   const PrecomputedInteractionEvaluator * myPrecomputedInteractionEvaluator = w.myPrecomputedInteractionEvaluator;
-  uint m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
+  ulong m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
 
   if(myPrecomputedInteractionEvaluator == NULL)
 	{
 	  throw RLException("myPrecomputedInteractionEvaluator was NULL.");
 	}
 
-  uint N1 = myPrecomputedInteractionEvaluator->GetBasisElements(0);
-  uint N2 = myPrecomputedInteractionEvaluator->GetBasisElements(1);
+  ulong N1 = myPrecomputedInteractionEvaluator->GetBasisElements(0);
+  ulong N2 = myPrecomputedInteractionEvaluator->GetBasisElements(1);
 
 
-  for(uint i = m1; i<m2; ++i)
+  for(ulong i = m1; i<m2; ++i)
 	{
-	  uint a = i / N1;
-	  uint b = i % N2;
+	  ulong a = i / N1;
+	  ulong b = i % N2;
 
-	  for(uint j = n1; j<n2; ++j)
+	  for(ulong j = n1; j<n2; ++j)
 		{
-		  uint c = j / N1;
-		  uint d = j % N2;
+		  ulong c = j / N1;
+		  ulong d = j % N2;
 		  
 		  if(a==c && b==d)
 			{
@@ -503,10 +503,10 @@ void * EvaluateSubMatrixOneParticleHarmonic(OneParticleWorkerData w)
 {
   CMatrix * HamiltonianMatrix = w.HamiltonianMatrix;
 
-  uint m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
-  for(uint i = m1; i<m2; ++i)
+  ulong m1 = w.m1, m2 = w.m2, n1 = w.n1, n2 = w.n2;
+  for(ulong i = m1; i<m2; ++i)
 	{
-	  for(uint j = n1; j<n2; ++j)
+	  for(ulong j = n1; j<n2; ++j)
 		{
 		  ///Kinetic part.
 		  HamiltonianMatrix->Element(i, j) += w.myHarmonicBasisFunction->KineticTerm(i, j, w.particleID);

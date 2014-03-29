@@ -66,10 +66,10 @@ void OutputProcessor::SavePrimaryEigenvectors() const
 
   fprintf(fout, "#Format: Re(eigenval) Im(Eigenval) Re(eigvect[0]) Im(eigvect[0]) etc.\n");
 
-  for(uint i = 0; i<eigenData->Eigenvectors.size(); ++i)
+  for(ulong i = 0; i<eigenData->Eigenvectors.size(); ++i)
 	{
 	  fprintf(fout, "%+13.10e %+13.10e", real(eigenData->Eigenvalues[i]), imag(eigenData->Eigenvalues[i]));
-	  for(uint j = 0; j<eigenData->Eigenvectors[i].size(); ++j)
+	  for(ulong j = 0; j<eigenData->Eigenvectors[i].size(); ++j)
 		{
 		  fprintf(fout, " %+13.10e %+13.10e", real(eigenData->Eigenvectors[i][j]), imag(eigenData->Eigenvectors[i][j]));
 		}
@@ -161,7 +161,7 @@ void OutputProcessor::WriteKCurveToFile() const
   ParametrizedCurve * toPrint = config->GetKCurve();
   FILE * fout = AssuredFopen(fileName);
 
-  for(uint i = 0; i<toPrint->GetNumberOfSegments(); ++i)
+  for(ulong i = 0; i<toPrint->GetNumberOfSegments(); ++i)
 	{
 	  const vector<pair<ComplexDouble, ComplexDouble> > * rule = toPrint->GetSegmentRule(i);
 	  for(vector<pair<ComplexDouble, ComplexDouble> >::const_iterator it = rule->begin(); it != rule->end(); ++it)
@@ -257,12 +257,12 @@ void OutputProcessor::WriteEnergiesToFile() const
 
 
 
-void OutputProcessor::WriteInterestingKPointsVerbosely(bool forceFilter, uint pid) const
+void OutputProcessor::WriteInterestingKPointsVerbosely(bool forceFilter, ulong pid) const
 {
   vector<ComplexDouble> printVector = FindInterestingKPoints(forceFilter);
-  vector<uint> idxVector = FindInterestingKPointIndex(forceFilter);
+  vector<ulong> idxVector = FindInterestingKPointIndex(forceFilter);
 
-  for(uint id = 0; id<printVector.size(); ++id)
+  for(ulong id = 0; id<printVector.size(); ++id)
 	{
 	  double RVu = real(config->GetSpecificUnits()->KValueToEnergy(printVector[id]) - config->GetPotential(pid)->Evaluate(config->GetHarmonicBasisFunction()->GetXmin(pid)) ); ///Energy in custom unit.
 
@@ -282,7 +282,7 @@ void OutputProcessor::WriteInterestingKPointsVerbosely(bool forceFilter, uint pi
 		}
 	  else if((imag(printVector[id]) < -1E-6 && arg(printVector[id]) < 0.0 && arg(printVector[id]) > -1.0*PI/2 ))
 		{
-		  vPrint(1,"Resonant state (index %d): k = [ %+6.10f %+6.10fi ] [%s]^(-1)    =>    E = [ %+6.10f %+6.10fi ] %s  (= %6.10f Hz * h,  decayRate= %6.10f s^{-1})\n", 
+		  vPrint(1,"Resonant state (index %ld): k = [ %+6.10f %+6.10fi ] [%s]^(-1)    =>    E = [ %+6.10f %+6.10fi ] %s  (= %6.10f Hz * h,  decayRate= %6.10f s^{-1})\n", 
 				 idxVector[id],
 				 real(printVector[id]), 
 				 imag(printVector[id]), 
@@ -296,7 +296,7 @@ void OutputProcessor::WriteInterestingKPointsVerbosely(bool forceFilter, uint pi
 		}
 	  else
 		{
-		  vPrint(1,"Other state (index %d): k = [ %+6.10f %+6.10fi ] [%s]^(-1)  =>   E = [ %+6.10f + %6.10fi ] %s (= %6.10f Hz * h,  decayRate= %6.10f s^{-1}) \n", 
+		  vPrint(1,"Other state (index %ld): k = [ %+6.10f %+6.10fi ] [%s]^(-1)  =>   E = [ %+6.10f + %6.10fi ] %s (= %6.10f Hz * h,  decayRate= %6.10f s^{-1}) \n", 
 				 idxVector[id],
 				 real(printVector[id]), 
 				 imag(printVector[id]),
@@ -327,7 +327,7 @@ void OutputProcessor::WriteInterestingKPointsToFile() const
   vector<ComplexDouble> printVector = FindInterestingKPoints();
 
   FILE * fout = AssuredFopen(fileName);  
-  for(uint i = 0; i<printVector.size(); ++i)
+  for(ulong i = 0; i<printVector.size(); ++i)
 	{
 	  fprintf(fout,"%+13.10e %+13.10e\n", real(printVector[i]), imag(printVector[i]));
 	}
@@ -338,17 +338,17 @@ void OutputProcessor::WriteInterestingKPointsToFile() const
 }
 
 
-vector<uint> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) const
+vector<ulong> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) const
 {
     ///Retrieve k-points corresponding to the basis: those are the "filter", which means that
   ///points too close to them are considered "uninteresting".
   ///Filtering only enabled for 1 particle case however, otherwise they must be explicitly specified in the config file.
-  vector<uint> toReturn;
+  vector<ulong> toReturn;
 
   if(config->GetNumberOfParticles() == 1 || forceFilter)
 	{
 	  vector<ComplexDouble> filterVector;
-	  for(uint i = 0; i<config->GetKCurve()->GetNumberOfSegments(); ++i)
+	  for(ulong i = 0; i<config->GetKCurve()->GetNumberOfSegments(); ++i)
 		{
 		  const vector<pair<ComplexDouble, ComplexDouble> > * rule = config->GetKCurve()->GetSegmentRule(i);
 		  for(vector<pair<ComplexDouble, ComplexDouble> >::const_iterator it = rule->begin(); it != rule->end(); ++it)
@@ -359,14 +359,14 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) const
 	  
 	  
 	  double imagScale = 1E-8; ///The maximum imaginary part (without sign)
-	  for(uint i = 0; i<filterVector.size(); ++i)
+	  for(ulong i = 0; i<filterVector.size(); ++i)
 		{
 		  imagScale = MAX(imagScale, abs(imag(filterVector[i])));
 		}
 	  
 	  
 	  ///Filter out the uninteresting values and return the interesting ones.
-	  uint eigenCounter = 0;
+	  ulong eigenCounter = 0;
 	  for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
 		{
 		  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(*it);
@@ -386,7 +386,7 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) const
 			{
 			  bool tooClose = false;
 			  bool tooRight = true; ///Ignore rightmost points: they are never interesting.
-			  for(uint i = 0; i<filterVector.size(); ++i)
+			  for(ulong i = 0; i<filterVector.size(); ++i)
 				{
 				  ComplexDouble d1 = filterVector[i] - kToPrint;
 				  ComplexDouble d2 = 0;
@@ -435,7 +435,7 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) const
 	  int bestMatch = -1;
 	  
 
-	  uint loopCount = 0;
+	  ulong loopCount = 0;
 	  for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
 		{
 		  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(*it);
@@ -449,7 +449,7 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) const
 		}
 	  if(DBL_EQUAL(bestMatch, -1))
 		throw RLException("Best match was never found. This should never happen.");
-	  toReturn.push_back((uint)bestMatch);
+	  toReturn.push_back((ulong)bestMatch);
 	}
   return toReturn;
 }
@@ -460,8 +460,8 @@ vector<uint> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) const
 vector<ComplexDouble> OutputProcessor::FindInterestingKPoints(bool forceFilter) const
 {
   vector<ComplexDouble> toReturn;
-  vector<uint> ikpIndex = FindInterestingKPointIndex(forceFilter);
-  for(vector<uint>::const_iterator it = ikpIndex.begin(); it!=ikpIndex.end(); ++it)
+  vector<ulong> ikpIndex = FindInterestingKPointIndex(forceFilter);
+  for(vector<ulong>::const_iterator it = ikpIndex.begin(); it!=ikpIndex.end(); ++it)
 	{
 	  if(*it >= eigenData->Eigenvalues.size())
 		throw RLException("Consistency error: interesting index was larger than eigenvalue vector size.");
@@ -488,7 +488,7 @@ void OutputProcessor::WriteInterestingOneParticleWavefunctionsToFile() const
   vPrint(4, "Saving wavefunctions...\n");
 
   ///Some setup.
-  vector<uint> interestingIndexes = FindInterestingKPointIndex();
+  vector<ulong> interestingIndexes = FindInterestingKPointIndex();
   vector<ComplexDouble> interestingVector = FindInterestingKPoints();
 
 
@@ -515,9 +515,9 @@ void OutputProcessor::WriteInterestingOneParticleWavefunctionsToFile() const
 
   ///Compute the wavefunctions : this is where the magic is.
   vector<vector<ComplexDouble> > wavefunctionValues(interestingIndexes.size(), vector<ComplexDouble>(xValues.size(), 0.0));
-  for(uint iPtr = 0; iPtr < interestingVector.size(); ++iPtr)
+  for(ulong iPtr = 0; iPtr < interestingVector.size(); ++iPtr)
 	{
-	  for(uint i = 0; i<xValues.size(); ++i)
+	  for(ulong i = 0; i<xValues.size(); ++i)
 		{
 		  wavefunctionValues.at(iPtr).at(i) += myCompositeBasisFunction->Eval(xValues.at(i), interestingIndexes.at(iPtr));
 		}
@@ -531,15 +531,15 @@ void OutputProcessor::WriteInterestingOneParticleWavefunctionsToFile() const
   FILE * fout = AssuredFopen(fileName);
 
   fprintf(fout, "#x-value");
-  for(uint j = 0; j<wavefunctionValues.size(); ++j)
+  for(ulong j = 0; j<wavefunctionValues.size(); ++j)
 	{
-	  fprintf(fout, " Real_wave_%d(k=%+2.5f%+2.5fi) Imag_wave_%d", j, real(interestingVector[j]), imag(interestingVector[j]),j);
+	  fprintf(fout, " Real_wave_%ld(k=%+2.5f%+2.5fi) Imag_wave_%ld", j, real(interestingVector[j]), imag(interestingVector[j]),j);
 	}
   fprintf(fout, "\n");
-  for(uint i = 0; i<xValues.size(); ++i)
+  for(ulong i = 0; i<xValues.size(); ++i)
 	{
 	  fprintf(fout, "%+13.10e", xValues.at(i));
-	  for(uint j = 0; j < wavefunctionValues.size(); ++j)
+	  for(ulong j = 0; j < wavefunctionValues.size(); ++j)
 		{
 		  fprintf(fout, " %+13.10e %+13.10e", 
 				  real(wavefunctionValues.at(j).at(i)), 
@@ -579,11 +579,11 @@ bool OutputProcessor::SaveMatrix(CMatrix * toSave) const
   vPrint(4, "Saving matrix...");
   FILE * fout = AssuredFopen(fileName);
 
-  for(uint i = 0; i<toSave->Rows(); ++i)
+  for(ulong i = 0; i<toSave->Rows(); ++i)
 	{
-	  for(uint j = 0; j<toSave->Columns(); ++j)
+	  for(ulong j = 0; j<toSave->Columns(); ++j)
 		{
-		  fprintf(fout, "%d %d %+13.10e %+13.10e\n", i, j, real(toSave->Element(i, j)), imag(toSave->Element(i, j)));
+		  fprintf(fout, "%ld %ld %+13.10e %+13.10e\n", i, j, real(toSave->Element(i, j)), imag(toSave->Element(i, j)));
 		}
 	}
   fclose(fout);
@@ -617,7 +617,7 @@ void OutputProcessor::WriteInterestingRelativeTwoParticleWavefunctionsToFile() c
 	}
 
   ///Some setup.
-  vector<uint> interestingIndexes = FindInterestingKPointIndex();
+  vector<ulong> interestingIndexes = FindInterestingKPointIndex();
   vector<ComplexDouble> interestingVector = FindInterestingKPoints();
 
 
@@ -637,33 +637,33 @@ void OutputProcessor::WriteInterestingRelativeTwoParticleWavefunctionsToFile() c
   ///Compute the wavefunctions : this is where the magic is.
   vector<vector<double> > wavefunctionValues(interestingIndexes.size(), vector<double>(xrelValues.size(), 0.0));
 
-  uint N1 = myCompositeBasisFunctions->at(0)->GetSize();
-  uint N2 = myCompositeBasisFunctions->at(1)->GetSize();
+  ulong N1 = myCompositeBasisFunctions->at(0)->GetSize();
+  ulong N2 = myCompositeBasisFunctions->at(1)->GetSize();
 
 
-  for(uint i = 0; i<interestingIndexes.size(); ++i)
+  for(ulong i = 0; i<interestingIndexes.size(); ++i)
   {
-	vPrint(4, "Wavefunction # %d (of %d)\n", i, interestingIndexes.size());
+	vPrint(4, "Wavefunction # %ld (of %ld)\n", i, interestingIndexes.size());
 	vPrint(4, "Progress: 00.00%%");
 
-	for(uint j = 0; j<xrelValues.size(); ++j)
+	for(ulong j = 0; j<xrelValues.size(); ++j)
 		{
 		  vPrint(4, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\033[K");
 		  vPrint(4, "Progress: %04.02f%%", (double)100*((double)j/xrelValues.size()));
 		  double wval = 0;
-		  for(uint xabsP = 0; xabsP < wflRule.size(); ++xabsP)
+		  for(ulong xabsP = 0; xabsP < wflRule.size(); ++xabsP)
 			{
 			  ComplexDouble sum = 0.0;			  
 			  double xabs = wflRule.at(xabsP).first;
 			  double weight = wflRule.at(xabsP).second;
 
-			  for(uint k = 0; k<eigenData->Eigenvectors.at(interestingIndexes.at(i)).size(); ++k)
+			  for(ulong k = 0; k<eigenData->Eigenvectors.at(interestingIndexes.at(i)).size(); ++k)
 				{
 				  double xrel = xrelValues.at(j);
 
 				  
-				  uint a = k / N1;
-				  uint b = k % N2;
+				  ulong a = k / N1;
+				  ulong b = k % N2;
 				  
 				  sum += 
 					eigenData->Eigenvectors.at(interestingIndexes.at(i)).at(k) *
@@ -675,7 +675,7 @@ void OutputProcessor::WriteInterestingRelativeTwoParticleWavefunctionsToFile() c
 		  wavefunctionValues.at(i).at(j) += wval;
 		}
 	double totalSum = 0;
-	for(uint a = 0; a<xrelValues.size(); ++a)
+	for(ulong a = 0; a<xrelValues.size(); ++a)
 	  {
 		totalSum += wavefunctionValues.at(i).at(a);
 	  }
@@ -687,15 +687,15 @@ void OutputProcessor::WriteInterestingRelativeTwoParticleWavefunctionsToFile() c
   FILE * fout = AssuredFopen(fileName);
   
   fprintf(fout, "#x-value");
-  for(uint j = 0; j<wavefunctionValues.size(); ++j)
+  for(ulong j = 0; j<wavefunctionValues.size(); ++j)
 	{
-	  fprintf(fout, " WaveABS_%d(k=%+2.5f%+2.5fi) zero-padding", j, real(interestingVector[j]), imag(interestingVector[j]));
+	  fprintf(fout, " WaveABS_%ld(k=%+2.5f%+2.5fi) zero-padding", j, real(interestingVector[j]), imag(interestingVector[j]));
 	}
   fprintf(fout, "\n");
-  for(uint i = 0; i<xrelValues.size(); ++i)
+  for(ulong i = 0; i<xrelValues.size(); ++i)
 	{
 	  fprintf(fout, "%+13.10e", xrelValues[i]);
-	  for(uint j = 0; j < wavefunctionValues.size(); ++j)
+	  for(ulong j = 0; j < wavefunctionValues.size(); ++j)
 		{
 		  fprintf(fout, " %+13.10e 0.0000000", sqrt(wavefunctionValues.at(j).at(i)));
 		}
@@ -741,31 +741,31 @@ void OutputProcessor::WriteProductTwoParticleWavefunctionToFile() const
 
   vector<vector<double> > mesh(xrelValues.size(), vector<double>(xrelValues.size(), 0.0));
   
-  vector<uint> interestingIndexes = FindInterestingKPointIndex();
+  vector<ulong> interestingIndexes = FindInterestingKPointIndex();
   if(interestingIndexes.empty())
 	return;
  
   
-  uint N1 = myCompositeBasisFunctions->at(0)->GetSize();
-  uint N2 = myCompositeBasisFunctions->at(1)->GetSize();
+  ulong N1 = myCompositeBasisFunctions->at(0)->GetSize();
+  ulong N2 = myCompositeBasisFunctions->at(1)->GetSize();
 
   if(eigenData->Eigenvectors.size() != N1 * N2)
 	{
-	  throw RLException("Size mismatch: N1 = %d, N2 = %d but there are %d eigenvectors.", N1, N2, eigenData->Eigenvectors.size());
+	  throw RLException("Size mismatch: N1 = %ld, N2 = %ld but there are %ld eigenvectors.", N1, N2, eigenData->Eigenvectors.size());
 	}
   
   double area = 0;
   vPrint(4, "Progress: 00.00%%");
-  for(uint ux1 = 0; ux1 < xrelValues.size(); ++ux1)
+  for(ulong ux1 = 0; ux1 < xrelValues.size(); ++ux1)
 	{
 	  vPrint(4, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\033[K");
 	  vPrint(4, "Progress: %04.02f%%", (double)100*((double)ux1/xrelValues.size()));
-	  for(uint ux2 = 0; ux2 < xrelValues.size(); ++ux2)
+	  for(ulong ux2 = 0; ux2 < xrelValues.size(); ++ux2)
 		{
-		  for(uint i = 0; i<eigenData->Eigenvectors.size(); ++i)
+		  for(ulong i = 0; i<eigenData->Eigenvectors.size(); ++i)
 			{
-			  uint a = i / N1;
-			  uint b = i % N2;
+			  ulong a = i / N1;
+			  ulong b = i % N2;
 			  double x1 = xrelValues[ux1];
 			  double x2 = xrelValues[ux2];
 			  mesh.at(ux1).at(ux2) += real(
@@ -781,9 +781,9 @@ void OutputProcessor::WriteProductTwoParticleWavefunctionToFile() const
   vPrint(2, "2D probability area: %+13.10e\n", area);
 
   
-  for(uint a = 0; a<xrelValues.size(); ++a)
+  for(ulong a = 0; a<xrelValues.size(); ++a)
 	{
-	  for(uint b = 0; b<xrelValues.size(); ++b)
+	  for(ulong b = 0; b<xrelValues.size(); ++b)
 		{
 		  fprintf(fout, "%13.10e ", mesh[a][b]);
 		}

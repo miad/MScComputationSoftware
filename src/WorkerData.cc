@@ -4,15 +4,15 @@ OneParticleWorkerData::OneParticleWorkerData(CMatrix * _HamiltonianMatrix,
 											 ParametrizedCurve * _myCurve,
 											 Potential * _myPotential,
 											 vector<BasisFunction> _myBasisFunctions,
-											 uint _numberOfGLPoints, 
+											 ulong _numberOfGLPoints, 
 											 double _hbarTimesLambda, 
 											 double _massOverLambda2, 
 											 HarmonicBasisFunction * _myHarmonicBasisFunction,
-											 uint _particleID,
-											 uint _m1,
-											 uint _m2,
-											 uint _n1,
-											 uint _n2 
+											 ulong _particleID,
+											 ulong _m1,
+											 ulong _m2,
+											 ulong _n1,
+											 ulong _n2 
 											 )
   :HamiltonianMatrix(_HamiltonianMatrix),
    myCurve(_myCurve),
@@ -48,10 +48,10 @@ OneParticleWorkerData::~OneParticleWorkerData()
 
 TwoParticleWorkerData::TwoParticleWorkerData(CMatrix * _HamiltonianMatrix,
 											 const PrecomputedInteractionEvaluator * _myPrecomputedInteractionEvaluator,
-											 uint _m1,
-											 uint _m2,
-											 uint _n1,
-											 uint _n2 
+											 ulong _m1,
+											 ulong _m2,
+											 ulong _n1,
+											 ulong _n2 
 											 )
   :HamiltonianMatrix(_HamiltonianMatrix),
    myPrecomputedInteractionEvaluator(_myPrecomputedInteractionEvaluator),

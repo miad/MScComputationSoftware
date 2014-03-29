@@ -45,10 +45,10 @@ public:
 								  );
 
   void WriteInterestingKPointsVerbosely(bool forceFilter = false,
-										uint pid = 0
+										ulong pid = 0
 										) const; ///Writes output.
 
-  vector<uint> FindInterestingKPointIndex(bool forceFilter = false
+  vector<ulong> FindInterestingKPointIndex(bool forceFilter = false
 										  ) const; ///Returns the interesting K points by index (in the eigenData object)
 
 
@@ -86,7 +86,7 @@ private:
 							 ); ///Opens a file FOR WRITING and returns the handle, throws exception if the open failed. Ownership passed on.
 
 
-  vector<double> GetOneParticleBasisRatio(uint eigenIndex, ///Index of wavevector to compute ratio for.
+  vector<double> GetOneParticleBasisRatio(ulong eigenIndex, ///Index of wavevector to compute ratio for.
 										  double & totalSum /// Output value. May be used.
 										  ) const; ///Returns a vector with entries corresponding to the relative dominance (all sum up to 1) of each basis vector
 

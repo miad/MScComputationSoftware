@@ -72,7 +72,7 @@ void * EvaluateSubMatrixOneParticleHarmonic(OneParticleWorkerData w
 
 CMatrix * ConstructOneParticleHamiltonian(const ComputeConfig & myConfiguration, 
 										  VerbosePrinter & myPrinter,
-										  uint particleID = 0
+										  ulong particleID = 0
 										  );
 
 CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,

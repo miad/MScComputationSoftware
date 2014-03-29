@@ -28,15 +28,15 @@ public:
 			 ParametrizedCurve * _myCurve, ///Pointer to the ParametrizedCurve in use.
 			 Potential * _myPotential, ///Pointer to the potential in use. NOTE: may not be threadsafe, should be checked (due to underlying function evaluator class).
 			 vector<BasisFunction> _myBasisFunctions, ///Basis functions in use.
-			 uint _numberOfGLPoints, ///Number of GL points in use.
+			 ulong _numberOfGLPoints, ///Number of GL points in use.
 			 double _hbarTimesLambda, ///Used for k-E transformation.
 			 double _massOverLambda2, ///Used for k-E transformation.
 			 HarmonicBasisFunction * _harmonicBasisFunction,
-						uint _particleID, ///Particle ID.
-			 uint _m1, /// Specifies the submatrix to use.
-			 uint _m2, /// Specifies the submatrix to use.
-			 uint _n1, /// Specifies the submatrix to use.
-			 uint _n2 /// Specifies the submatrix to use.
+						ulong _particleID, ///Particle ID.
+			 ulong _m1, /// Specifies the submatrix to use.
+			 ulong _m2, /// Specifies the submatrix to use.
+			 ulong _n1, /// Specifies the submatrix to use.
+			 ulong _n2 /// Specifies the submatrix to use.
 			 ); ///Constructor, basically initialize all values.
 
   ~OneParticleWorkerData();
@@ -45,15 +45,15 @@ public:
   ParametrizedCurve * myCurve; ///Pointer to the ParametrizedCurve in use.
   Potential * myPotential; ///Pointer to the potential in use. NOTE: may not be threadsafe, should be checked (due to underlying function evaluator class).
   vector<BasisFunction> myBasisFunctions;
-  uint numberOfGLPoints; ///Number of GL points in use.
+  ulong numberOfGLPoints; ///Number of GL points in use.
   double hbarTimesLambda; /// Used for k-E transformation.
   double massOverLambda2; /// Used for k-E transformation.
   HarmonicBasisFunction * myHarmonicBasisFunction; ///Harmonic basis function if we are integrating harmonically.
-  uint particleID;
-  uint m1; /// Specifies the submatrix to use.
-  uint m2; /// Specifies the submatrix to use.
-  uint n1; /// Specifies the submatrix to use.
-  uint n2; /// Specifies the submatrix to use.
+  ulong particleID;
+  ulong m1; /// Specifies the submatrix to use.
+  ulong m2; /// Specifies the submatrix to use.
+  ulong n1; /// Specifies the submatrix to use.
+  ulong n2; /// Specifies the submatrix to use.
 };
 
 
@@ -68,10 +68,10 @@ class TwoParticleWorkerData
 public:
   TwoParticleWorkerData(CMatrix * _HamiltonianMatrix,
 						const PrecomputedInteractionEvaluator * _myPrecomputedInteractionEvaluator,
-						uint _m1,
-						uint _m2,
-						uint _n1,
-						uint _n2 
+						ulong _m1,
+						ulong _m2,
+						ulong _n1,
+						ulong _n2 
 						); ///Constructor, basically initialize all values.
   
   ~TwoParticleWorkerData();
@@ -79,10 +79,10 @@ public:
   CMatrix * HamiltonianMatrix;
   const PrecomputedInteractionEvaluator * myPrecomputedInteractionEvaluator;
 
-  uint m1; /// Specifies the submatrix to use.
-  uint m2; /// Specifies the submatrix to use.
-  uint n1; /// Specifies the submatrix to use.
-  uint n2; /// Specifies the submatrix to use.
+  ulong m1; /// Specifies the submatrix to use.
+  ulong m2; /// Specifies the submatrix to use.
+  ulong n1; /// Specifies the submatrix to use.
+  ulong n2; /// Specifies the submatrix to use.
 };
 
 
