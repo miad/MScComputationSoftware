@@ -18,7 +18,7 @@ class EigenvalueSolver
 {
 public:
   EigenvalueSolver(EigenSolverType _mySolverType = LapackSolver, 
-				   uint _numberOfEigenvalues = 10, 
+				   ulong _numberOfEigenvalues = 10, 
 				   ComplexDouble _shift = 0.0,
 				   string _workArea = "", 
 				   bool _findEigenvectors = true
@@ -31,9 +31,9 @@ public:
   void SetShift(ComplexDouble value
 				);
   
-  uint GetNumberOfEigenvalues() const;
+  ulong GetNumberOfEigenvalues() const;
 
-  void SetNumberOfEigenvalues(uint value
+  void SetNumberOfEigenvalues(ulong value
 							  );
 
   EigenSolverType GetSolverType() const;
@@ -68,7 +68,7 @@ public:
 
 private:
   EigenSolverType mySolverType;
-  uint numberOfEigenvalues;
+  ulong numberOfEigenvalues;
   ComplexDouble shift;
   string workArea;
   bool findEigenvectors;

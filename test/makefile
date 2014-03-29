@@ -4,7 +4,7 @@ CCFLAGS:=  -pthread -Wall -fPIC -DFP_USE_THREAD_SAFE_EVAL_WITH_ALLOCA -pedantic 
 INCLUDE:= -Iinclude -I../include -I../RLlib/include -I../libconfig-1.4.9/lib  -I../arpack
 
 
-LIBS:=  -lm -L../RLlib -lRLlib -lconfig++ -lgfortran ../ARPACK/libarpack.a
+LIBS:=  -lm -L../RLlib -lRLlib -lconfig++ -lgfortran ../ARPACK_LIB/libarpack.a
 LIBS+= -L/net/opt/intel/composer_xe_2013.0.079/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -liomp5
 
 SRC:= $(wildcard src/*.cc)

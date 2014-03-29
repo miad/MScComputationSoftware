@@ -3,7 +3,7 @@ killall -9 gnuplot 2>/dev/null
 
 xmax=20
 
-values=("A" "B" "C" "D" "E" "F" "A2" "A3" "A4" "B4" "Ad3" "Bd3")
+values=("A" "B" "C" "D" "E" "F" "A2" "B2" "A3" "B3" "A4" "B4" "A5" "B5" "A6" "B6" "Ad3" "Bd3")
 
 LEN=`expr ${#values[@]} - 1`
 

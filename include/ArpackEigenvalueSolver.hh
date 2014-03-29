@@ -29,7 +29,7 @@ class ArpackEigenvalueSolver
 {
 public:
   static EigenInformation * Solve(CMatrix * toSolve,
-								  uint numberOfEigenvalues,
+								  ulong numberOfEigenvalues,
 								  ComplexDouble shift = 0.0,
 								  bool findEigenvectors = true
 								);

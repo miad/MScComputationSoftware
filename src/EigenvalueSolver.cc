@@ -1,6 +1,6 @@
 #include "EigenvalueSolver.hh"
 
-EigenvalueSolver::EigenvalueSolver(EigenSolverType _mySolverType, uint _numberOfEigenvalues, ComplexDouble _shift, string _workArea, bool _findEigenvectors)
+EigenvalueSolver::EigenvalueSolver(EigenSolverType _mySolverType, ulong _numberOfEigenvalues, ComplexDouble _shift, string _workArea, bool _findEigenvectors)
   :mySolverType(_mySolverType), numberOfEigenvalues(_numberOfEigenvalues), shift(_shift), workArea(_workArea)
 {
 
@@ -23,13 +23,13 @@ void EigenvalueSolver::SetShift(ComplexDouble value)
 }
 
 
-uint EigenvalueSolver::GetNumberOfEigenvalues() const
+ulong EigenvalueSolver::GetNumberOfEigenvalues() const
 {
   return numberOfEigenvalues;
 }
 
 
-void EigenvalueSolver::SetNumberOfEigenvalues(uint value)
+void EigenvalueSolver::SetNumberOfEigenvalues(ulong value)
 {
   numberOfEigenvalues = value;
 }
@@ -111,15 +111,15 @@ void EigenvalueSolver::SetFindEigenvectors(bool value)
 void EigenvalueSolver::RescaleEigenvectors(EigenInformation * eigenData)
 {
   ///First rescale all eigenvectors to norm 1.
-  for(uint i = 0; i<eigenData->Eigenvectors.size(); ++i)
+  for(ulong i = 0; i<eigenData->Eigenvectors.size(); ++i)
 	{
 	  ComplexDouble sum = 0.0;
-	  for(uint a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
+	  for(ulong a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
 		{
 		  sum += pow(eigenData->Eigenvectors[i][a], 2);
 		}
 	  ComplexDouble sqRoot = sqrt(sum);
-	  for(uint a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
+	  for(ulong a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
 		{
 		  eigenData->Eigenvectors[i][a] /= sqRoot;
 		}	  
@@ -132,14 +132,14 @@ double EigenvalueSolver::AssureEigenOrthonormality(EigenInformation * eigenData)
   RescaleEigenvectors(eigenData);
 
   double maxDeviation = 0;
-  pair<uint, uint> maxP;
+  pair<ulong, ulong> maxP;
   ///Now verify orthonormality and throw if fail.
-  for(uint i = 0; i<eigenData->Eigenvectors.size(); ++i)
+  for(ulong i = 0; i<eigenData->Eigenvectors.size(); ++i)
 	{
-	  for(uint j = i; j<eigenData->Eigenvectors.size(); ++j)
+	  for(ulong j = i; j<eigenData->Eigenvectors.size(); ++j)
 		{
 		  ComplexDouble sum = 0.0;
-		  for(uint a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
+		  for(ulong a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
 			{
 			  sum += eigenData->Eigenvectors[i][a] * eigenData->Eigenvectors[j][a]; 
 			}
