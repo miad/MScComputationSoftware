@@ -26,9 +26,10 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool Comput
 
   RIKARD_COMPLEX_TYPE * a = toSolve->GetArray();
 
+  cout << "Calling ZGEEV." << endl;
   int reply = LAPACKE_zgeev(matrix_order, jobvl, jobvr,
 							n, a, lda, &w[0], vl, ldvl, &vr[0], ldvr);
-  
+  cout << "ZGEEV finished." << endl;
   if( reply )
 	{
 	  throw RLException("LapackeEigenvalueSolver: LAPACKe terminated with return code %d.", reply);
@@ -49,6 +50,6 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool Comput
 		  toReturn->Eigenvectors[i%n][i/n] = vr.at(i);
 		}
 	}
-
+  cout << "Returning." << endl;
   return toReturn;
 }

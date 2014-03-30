@@ -1,6 +1,7 @@
 #ifndef LapackeEigenvalueSolver_hh
 #define LapackeEigenvalueSolver_hh 1
 
+#include <iostream>
 #include "MKL_options.hpp"
 #include <stdio.h>
 #include <vector>
