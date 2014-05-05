@@ -17,6 +17,7 @@
 #include "WavefunctionTwoParticleWorkerData.hh"
 #include "RLMacros.hpp"
 #include "CompositeBasisFunction.hh"
+#include "EigenPair.hh"
 
 
 using namespace std;

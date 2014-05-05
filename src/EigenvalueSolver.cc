@@ -111,17 +111,17 @@ void EigenvalueSolver::SetFindEigenvectors(bool value)
 void EigenvalueSolver::RescaleEigenvectors(EigenInformation * eigenData)
 {
   ///First rescale all eigenvectors to norm 1.
-  for(ulong i = 0; i<eigenData->Eigenvectors.size(); ++i)
+  for(ulong i = 0; i<eigenData->EigenPairs.size(); ++i)
 	{
 	  ComplexDouble sum = 0.0;
-	  for(ulong a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
+	  for(ulong a = 0; a<eigenData->EigenPairs[i].Eigenvector.size(); ++a)
 		{
-		  sum += pow(eigenData->Eigenvectors[i][a], 2);
+		  sum += pow(eigenData->EigenPairs[i].Eigenvector[a], 2);
 		}
 	  ComplexDouble sqRoot = sqrt(sum);
-	  for(ulong a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
+	  for(ulong a = 0; a<eigenData->EigenPairs[i].Eigenvector.size(); ++a)
 		{
-		  eigenData->Eigenvectors[i][a] /= sqRoot;
+		  eigenData->EigenPairs[i].Eigenvector[a] /= sqRoot;
 		}	  
 	}
 }
@@ -131,17 +131,19 @@ double EigenvalueSolver::AssureEigenOrthonormality(EigenInformation * eigenData)
 {
   RescaleEigenvectors(eigenData);
 
+  ///Used for exception info on failure.
   double maxDeviation = 0;
   pair<ulong, ulong> maxP;
+
   ///Now verify orthonormality and throw if fail.
-  for(ulong i = 0; i<eigenData->Eigenvectors.size(); ++i)
+  for(ulong i = 0; i<eigenData->EigenPairs.size(); ++i)
 	{
-	  for(ulong j = i; j<eigenData->Eigenvectors.size(); ++j)
+	  for(ulong j = i; j<eigenData->EigenPairs.size(); ++j)
 		{
 		  ComplexDouble sum = 0.0;
-		  for(ulong a = 0; a<eigenData->Eigenvectors[i].size(); ++a)
+		  for(ulong a = 0; a<eigenData->EigenPairs[i].Eigenvector.size(); ++a)
 			{
-			  sum += eigenData->Eigenvectors[i][a] * eigenData->Eigenvectors[j][a]; 
+			  sum += eigenData->EigenPairs[i].Eigenvector[a] * eigenData->EigenPairs[j].Eigenvector[a];
 			}
 		  double d = abs(sum-(double)(i==j));
 		  if(d > maxDeviation)
@@ -153,7 +155,7 @@ double EigenvalueSolver::AssureEigenOrthonormality(EigenInformation * eigenData)
 	}
   if(maxDeviation > 1E-6) ///If it's worse than this, it's probably so bad that we should throw() on it.
 	{
-	  throw RLException("Too large eigenvector deviation: %+13.10e between eigenvectors %d and %d with eigenvalues %+13.10f%+13.10fi and %+13.10f%+13.10fi respectively. Investigate this.", maxDeviation, maxP.first, maxP.second, real(eigenData->Eigenvalues[maxP.first]), imag(eigenData->Eigenvalues[maxP.first]), real(eigenData->Eigenvalues[maxP.second]), imag(eigenData->Eigenvalues[maxP.second]));
+	  throw RLException("Too large eigenvector deviation: %+13.10e between eigenvectors %d and %d with eigenvalues %+13.10f%+13.10fi and %+13.10f%+13.10fi respectively. Investigate this.", maxDeviation, maxP.first, maxP.second, real(eigenData->EigenPairs[maxP.first].Eigenvalue), imag(eigenData->EigenPairs[maxP.first].Eigenvalue), real(eigenData->EigenPairs[maxP.second].Eigenvalue), imag(eigenData->EigenPairs[maxP.second].Eigenvalue));
 	}
   return maxDeviation;
 }

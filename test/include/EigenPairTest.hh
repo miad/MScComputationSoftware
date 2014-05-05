@@ -1,5 +1,5 @@
-#ifndef LapackeEigenvalueSolverTest_hh
-#define LapackeEigenvalueSolverTest_hh 1
+#ifndef EigenPairTest_hh
+#define EigenPairTest_hh 1
 
 #include <iostream>
 #include <assert.h>
@@ -11,24 +11,26 @@
 
 #include "Globals.hpp"
 #include "GenericUnitTest.hh"
-#include "Matrix.hpp"
-#include "LapackeEigenvalueSolver.hh"
 #include "EigenPair.hh"
 
 #include <algorithm>
 
 using namespace std;
 
-#define EIGEN_EQUAL(a, b) (DBL_EQUAL(a, b) || DBL_EQUAL(a, -1.0*b))
-
-class LapackeEigenvalueSolverTest : public GenericUnitTest
+class EigenPairTest : public GenericUnitTest
 {
  public:
   int runUnitTests() const; ///Main function.
  protected:
   int TestCase1() const; /// Test case.
-  int TestCase2() const; /// Test case.
+  int TestCase2() const;
   int TestCase3() const;
+  int TestCase4() const;
+  int TestCase5() const;
+  int TestCase6() const;
+  int TestCase7() const;
+  int TestCase8() const;
+  int TestCase9() const;
 
 };
 #endif

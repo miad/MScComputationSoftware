@@ -8,7 +8,7 @@ CompositeBasisFunction::CompositeBasisFunction(vector<BasisFunction> _functions,
 	  throw RLException("CompositeBasisFunction: tried to initialize with too empty input parameters.");
 	}
 
-  if(myInformation->Eigenvalues.size() % functions.size() != 0)
+  if(myInformation->EigenPairs.size() % functions.size() != 0)
 	{
 	  throw RLException("CompositeBasisFunction: Invalid input dimensions.");
 	}
@@ -31,15 +31,15 @@ CompositeBasisFunction::~CompositeBasisFunction()
 
 ComplexDouble CompositeBasisFunction::GetE(uint pIndex) const
 {
-  return myInformation->Eigenvalues.at(pIndex);
+  return myInformation->EigenPairs.at(pIndex).Eigenvalue;
 }
 
 
 ComplexDouble CompositeBasisFunction::Eval(const double & x, uint pIndex)
 {
-  if(pIndex >= myInformation->Eigenvectors.size())
+  if(pIndex >= myInformation->EigenPairs.size())
 	{
-	  throw RLException("Invalid p-index: %d but %d is max", pIndex, myInformation->Eigenvectors.size());
+	  throw RLException("Invalid p-index: %d but %d is max", pIndex, myInformation->EigenPairs.size());
 	}
 
   if(myHarmonicBasisFunction != NULL)
@@ -53,7 +53,7 @@ ComplexDouble CompositeBasisFunction::KEval(const double & x, uint pIndex)
   uint N = KCurve->GetTotalNumberOfGLPoints();
   ComplexDouble sum = 0;
 
-  for(uint i = 0; i<myInformation->Eigenvectors.at(pIndex).size(); ++i)
+  for(uint i = 0; i<myInformation->EigenPairs.at(pIndex).Eigenvector.size(); ++i)
 	{
 	  ///By convention (when creating the Hamiltonian)
 	  uint curvePointer = i % N;
@@ -61,7 +61,7 @@ ComplexDouble CompositeBasisFunction::KEval(const double & x, uint pIndex)
 	  ComplexDouble kVal = KCurve->GetRuleValue(curvePointer);
 	  ComplexDouble kWeight = KCurve->GetRuleWeight(curvePointer);
 	  
-	  sum += myInformation->Eigenvectors.at(pIndex).at(i) * 
+	  sum += myInformation->EigenPairs.at(pIndex).Eigenvector.at(i) * 
 		sqrt(kWeight) * functions.at(basisPointer).Eval(x, kVal);
 	}
   return sum;
@@ -72,9 +72,9 @@ ComplexDouble CompositeBasisFunction::KEval(const double & x, uint pIndex)
 double CompositeBasisFunction::HarmonicEval(const double & x, uint pIndex) const
 {
   long double sum = 0;
-  for(uint n = 0; n<myInformation->Eigenvectors.at(pIndex).size(); ++n)
+  for(uint n = 0; n<myInformation->EigenPairs.at(pIndex).Eigenvector.size(); ++n)
 	{
-	  ComplexDouble coefficient = myInformation->Eigenvectors.at(pIndex).at(n);
+	  ComplexDouble coefficient = myInformation->EigenPairs.at(pIndex).Eigenvector.at(n);
 	  if(imag(coefficient) > 1E-9)
 		throw RLException("Complex coefficient (imag part %+13.10f ) for harmonic oscillator basis: something is wrong here.", imag(coefficient));
 
@@ -85,7 +85,7 @@ double CompositeBasisFunction::HarmonicEval(const double & x, uint pIndex) const
 
 uint CompositeBasisFunction::GetSize() const
 {
-  return myInformation->Eigenvalues.size();
+  return myInformation->EigenPairs.size();
 }
 
 
@@ -97,11 +97,11 @@ bool CompositeBasisFunction::IsHarmonic() const
 pair<uint, ComplexDouble> CompositeBasisFunction::GetDominatingVectorPart(uint eigenVector) const
 {
   pair<uint, ComplexDouble> best = make_pair(0, 0.0);
-  for(uint i = 0; i<myInformation->Eigenvectors.at(eigenVector).size(); ++i)
+  for(uint i = 0; i<myInformation->EigenPairs.at(eigenVector).Eigenvector.size(); ++i)
 	{
-	  if(abs(myInformation->Eigenvectors.at(eigenVector).at(i)) > abs(best.second))
+	  if(abs(myInformation->EigenPairs.at(eigenVector).Eigenvector.at(i)) > abs(best.second))
 		{
-		  best.second = myInformation->Eigenvectors.at(eigenVector).at(i);
+		  best.second = myInformation->EigenPairs.at(eigenVector).Eigenvector.at(i);
 		  best.first = i;
 		}
 	}

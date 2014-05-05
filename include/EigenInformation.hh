@@ -3,19 +3,16 @@
 
 
 #include <vector>
+#include <algorithm>
 #include "Globals.hpp"
+#include "EigenPair.hh"
 
 class EigenInformation
 {
 public:
   EigenInformation();
   ~EigenInformation();
-  
 
-  vector<vector<ComplexDouble> > Eigenvectors;
-  vector<ComplexDouble> Eigenvalues;
-
-private:
-
+  vector<EigenPair> EigenPairs;
 };
 #endif

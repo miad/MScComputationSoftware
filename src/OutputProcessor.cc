@@ -66,12 +66,12 @@ void OutputProcessor::SavePrimaryEigenvectors() const
 
   fprintf(fout, "#Format: Re(eigenval) Im(Eigenval) Re(eigvect[0]) Im(eigvect[0]) etc.\n");
 
-  for(ulong i = 0; i<eigenData->Eigenvectors.size(); ++i)
+  for(ulong i = 0; i<eigenData->EigenPairs.size(); ++i)
 	{
-	  fprintf(fout, "%+13.10e %+13.10e", real(eigenData->Eigenvalues[i]), imag(eigenData->Eigenvalues[i]));
-	  for(ulong j = 0; j<eigenData->Eigenvectors[i].size(); ++j)
+	  fprintf(fout, "%+13.10e %+13.10e", real(eigenData->EigenPairs[i].Eigenvalue), imag(eigenData->EigenPairs[i].Eigenvalue));
+	  for(ulong j = 0; j<eigenData->EigenPairs[i].Eigenvector.size(); ++j)
 		{
-		  fprintf(fout, " %+13.10e %+13.10e", real(eigenData->Eigenvectors[i][j]), imag(eigenData->Eigenvectors[i][j]));
+		  fprintf(fout, " %+13.10e %+13.10e", real(eigenData->EigenPairs[i].Eigenvector[j]), imag(eigenData->EigenPairs[i].Eigenvector[j]));
 		}
 	  fprintf(fout, "\n");
 	}
@@ -199,12 +199,9 @@ void OutputProcessor::WriteKFoundToFile() const
 
   FILE * fout = AssuredFopen(fileName);
 
-  vector<ComplexDouble> sorted = eigenData->Eigenvalues;
-  sort(sorted.begin(), sorted.end(), ComplexCompare);
-
-  for(vector<ComplexDouble>::const_iterator it = sorted.begin(); it!=sorted.end(); ++it)
+  for(vector<EigenPair>::const_iterator it = eigenData->EigenPairs.begin(); it!=eigenData->EigenPairs.end(); ++it)
 	{
-	  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(*it);
+	  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(it->Eigenvalue);
 
 	  ///If numerical stability is mean to us, then rotate.
 	  if( (abs(imag(kToPrint)) > 1E2*abs(real(kToPrint))  && imag(kToPrint) < 0))
@@ -217,13 +214,6 @@ void OutputProcessor::WriteKFoundToFile() const
   fclose(fout);
   fout = NULL;
   vPrint(4, "done\n");
-}
-
-bool OutputProcessor::ComplexCompare(const ComplexDouble & d1, const ComplexDouble & d2)
-{
-  if(real(d1) != real(d2))
-	return real(d1) < real(d2);
-  return imag(d1) < imag(d2);
 }
 
 
@@ -242,12 +232,9 @@ void OutputProcessor::WriteEnergiesToFile() const
   FILE * fout = AssuredFopen(fileName);
 
 
-  vector<ComplexDouble> sorted = eigenData->Eigenvalues;
-  sort(sorted.begin(), sorted.end(), ComplexCompare);
-
-  for(vector<ComplexDouble>::const_iterator it = sorted.begin(); it!=sorted.end(); ++it)
+  for(vector<EigenPair>::const_iterator it = eigenData->EigenPairs.begin(); it!=eigenData->EigenPairs.end(); ++it)
 	{
-	  fprintf(fout, "%+13.10e %+13.10e\n", real(*it), imag(*it));
+	  fprintf(fout, "%+13.10e %+13.10e\n", real(it->Eigenvalue), imag(it->Eigenvalue));
 	}
   
   fclose(fout);
@@ -367,9 +354,9 @@ vector<ulong> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) cons
 	  
 	  ///Filter out the uninteresting values and return the interesting ones.
 	  ulong eigenCounter = 0;
-	  for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
+	  for(vector<EigenPair>::const_iterator it = eigenData->EigenPairs.begin(); it!=eigenData->EigenPairs.end(); ++it)
 		{
-		  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(*it);
+		  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(it->Eigenvalue);
 		  
 		  ///Now apply filter rule.
 		  
@@ -422,7 +409,7 @@ vector<ulong> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) cons
 			}
 		  ++eigenCounter;
 		}
-	  if(eigenCounter != eigenData->Eigenvalues.size() )
+	  if(eigenCounter != eigenData->EigenPairs.size() )
 		throw RLException("Consistency error: invalid number of eigenvalues.");
 	}
 
@@ -436,9 +423,9 @@ vector<ulong> OutputProcessor::FindInterestingKPointIndex(bool forceFilter) cons
 	  
 
 	  ulong loopCount = 0;
-	  for(vector<ComplexDouble>::const_iterator it = eigenData->Eigenvalues.begin(); it!=eigenData->Eigenvalues.end(); ++it)
+	  for(vector<EigenPair>::const_iterator it = eigenData->EigenPairs.begin(); it!=eigenData->EigenPairs.end(); ++it)
 		{
-		  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(*it);
+		  ComplexDouble kToPrint = config->GetSpecificUnits()->EnergyToKValue(it->Eigenvalue);
 		  double locDist = abs(kToPrint-*ip);
 		  if(minDistance > locDist)
 			{
@@ -463,9 +450,9 @@ vector<ComplexDouble> OutputProcessor::FindInterestingKPoints(bool forceFilter) 
   vector<ulong> ikpIndex = FindInterestingKPointIndex(forceFilter);
   for(vector<ulong>::const_iterator it = ikpIndex.begin(); it!=ikpIndex.end(); ++it)
 	{
-	  if(*it >= eigenData->Eigenvalues.size())
+	  if(*it >= eigenData->EigenPairs.size())
 		throw RLException("Consistency error: interesting index was larger than eigenvalue vector size.");
-	  toReturn.push_back(config->GetSpecificUnits()->EnergyToKValue(eigenData->Eigenvalues[*it]));
+	  toReturn.push_back(config->GetSpecificUnits()->EnergyToKValue(eigenData->EigenPairs[*it].Eigenvalue));
 	}
 
   return toReturn;
@@ -657,7 +644,7 @@ void OutputProcessor::WriteInterestingRelativeTwoParticleWavefunctionsToFile() c
 			  double xabs = wflRule.at(xabsP).first;
 			  double weight = wflRule.at(xabsP).second;
 
-			  for(ulong k = 0; k<eigenData->Eigenvectors.at(interestingIndexes.at(i)).size(); ++k)
+			  for(ulong k = 0; k<eigenData->EigenPairs.at(interestingIndexes.at(i)).Eigenvector.size(); ++k)
 				{
 				  double xrel = xrelValues.at(j);
 
@@ -666,7 +653,7 @@ void OutputProcessor::WriteInterestingRelativeTwoParticleWavefunctionsToFile() c
 				  ulong b = k % N2;
 				  
 				  sum += 
-					eigenData->Eigenvectors.at(interestingIndexes.at(i)).at(k) *
+					eigenData->EigenPairs.at(interestingIndexes.at(i)).Eigenvector.at(k) *
 					myCompositeBasisFunctions->at(0)->Eval((xabs-xrel)/sqrt(2.0), a) *
 					myCompositeBasisFunctions->at(1)->Eval((xabs+xrel)/sqrt(2.0), b);
 				}
@@ -749,9 +736,9 @@ void OutputProcessor::WriteProductTwoParticleWavefunctionToFile() const
   ulong N1 = myCompositeBasisFunctions->at(0)->GetSize();
   ulong N2 = myCompositeBasisFunctions->at(1)->GetSize();
 
-  if(eigenData->Eigenvectors.size() != N1 * N2)
+  if(eigenData->EigenPairs.size() != N1 * N2)
 	{
-	  throw RLException("Size mismatch: N1 = %ld, N2 = %ld but there are %ld eigenvectors.", N1, N2, eigenData->Eigenvectors.size());
+	  throw RLException("Size mismatch: N1 = %ld, N2 = %ld but there are %ld eigenvectors.", N1, N2, eigenData->EigenPairs.size());
 	}
   
   double area = 0;
@@ -762,7 +749,7 @@ void OutputProcessor::WriteProductTwoParticleWavefunctionToFile() const
 	  vPrint(4, "Progress: %04.02f%%", (double)100*((double)ux1/xrelValues.size()));
 	  for(ulong ux2 = 0; ux2 < xrelValues.size(); ++ux2)
 		{
-		  for(ulong i = 0; i<eigenData->Eigenvectors.size(); ++i)
+		  for(ulong i = 0; i<eigenData->EigenPairs.size(); ++i)
 			{
 			  ulong a = i / N1;
 			  ulong b = i % N2;
@@ -771,7 +758,7 @@ void OutputProcessor::WriteProductTwoParticleWavefunctionToFile() const
 			  mesh.at(ux1).at(ux2) += real(
 										     myCompositeBasisFunctions->at(0)->Eval(x1, a) 
 										   * myCompositeBasisFunctions->at(1)->Eval(x2, b) 
-										   * eigenData->Eigenvectors.at(interestingIndexes.front()).at(i)
+										   * eigenData->EigenPairs.at(interestingIndexes.front()).Eigenvector.at(i)
 										   );
 			  
 			}

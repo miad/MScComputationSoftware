@@ -36,19 +36,18 @@ EigenInformation * ArpackEigenvalueSolver::Solve(CMatrix * toSolve, ulong number
 	  throw RLException("Only %d eigenvalues converged, %d were requested.\n",Prob.ConvergedEigenvalues(), numberOfEigenvalues);
 	}
   EigenInformation * toReturn = new EigenInformation();
-  toReturn->Eigenvalues.resize(Prob.ConvergedEigenvalues());
-  if(findEigenvectors)
-	toReturn->Eigenvectors.resize(Prob.ConvergedEigenvalues(), vector<ComplexDouble>(n, 0.0) );
+  toReturn->EigenPairs.resize(Prob.ConvergedEigenvalues());
   for(long i = 0; i<Prob.ConvergedEigenvalues(); ++i)
 	{
-	  toReturn->Eigenvalues.at(i) = Prob.Eigenvalue(i);
+	  toReturn->EigenPairs[i].Eigenvalue = Prob.Eigenvalue(i);
 	  if(findEigenvectors)
-		for(ulong j = 0; j<n; ++j)
-		  {
-			toReturn->Eigenvectors.at(i).at(j) = Prob.Eigenvector(i, j);
-		  }
+		{
+		  toReturn->EigenPairs[i].Eigenvector.resize(n);
+		  for(ulong j = 0; j<n; ++j)
+			{
+			  toReturn->EigenPairs[i].Eigenvector[j] = Prob.Eigenvector(i, j);
+			}
+		}
 	}
-
-
   return toReturn;
 }
