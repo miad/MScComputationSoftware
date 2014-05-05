@@ -393,7 +393,7 @@ CMatrix * ConstructTwoParticleHamiltonian(const ComputeConfig & myConfiguration,
 							  );
 	  
 	}
-  myPrinter.Print(4, "done\n. Performing async computation...");
+  myPrinter.Print(4, "done.\n Performing async computation...");
   myMultiTasker->LaunchThreads();
   myMultiTasker->PauseUntilOutputIsGenerated();
   myMultiTasker->DestroyThreads();

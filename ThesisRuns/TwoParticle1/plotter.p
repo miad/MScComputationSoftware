@@ -3,18 +3,21 @@
 killall -9 gnuplot 2>/dev/null
 
 xmax=20
+dirName="/net/data2/riklund/ThesisTwoparticle1Output/"
+#dirName="/net/data2/riklund/LplusG2/"
 
-values=("A" "B" "C" "D" "F")
+values=("Ag8_ok.out")
 titles=("Real part" "Imaginary part" "Overlap")
 use=('u 0:1:(abs($3-1)*$1) with errorbars' 'u 0:2:(100*abs($3-1)*$2) with errorbars' 'u 0:3')
 yra=('[0.5927:0.59285]' '[-2E-4:0]' '[0.98:1.01]')
 for v in "${values[@]}"
 do
-	if [ -f "/net/data2/riklund/ThesisTwoparticle1Output/lanc$v.out" ]
+	echo $dirName"lanc$v"
+	if [ -f $dirName"lanc$v" ]
 	then
-		./overlap.sh /net/data2/riklund/ThesisTwoparticle1Output/lanc$v.out > lanc$v.plot
+		./overlap.sh $dirName"lanc$v" > lanc$v.plot
 	else
-		echo "Could not find LANC file $v." 
+		echo "Could not find LANC file lanc$v." 
 	fi
 done
 

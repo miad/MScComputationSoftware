@@ -907,6 +907,7 @@ void ComputeConfig::ReadPiecewiseConstantPotential(Setting & poten)
 	}
   locPot->RecomputeLegendreRules();
   potentials.push_back(locPot);
+  potentials.push_back(locPot);
 }
 
 void ComputeConfig::ReadParametrizedPotential(Setting & poten)

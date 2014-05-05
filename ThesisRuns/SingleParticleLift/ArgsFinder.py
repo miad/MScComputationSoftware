@@ -13,7 +13,7 @@ xLimBottom = [0, 9]
 hbar = 7.638233053909147
 mass = 723.4530251050578
 
-KStdPoints = [2.5, 2.73, 2.85, 9.5]
+KStdPoints = [2.5, 2.73, 2.85, 20]
 
 
 def PotV(cB, p, Bp, RLOffset, x):    
