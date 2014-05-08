@@ -68,6 +68,7 @@ private:
   void WriteEnergiesToFile() const; ///Writes output.
   void WriteInterestingKPointsToFile() const; ///Writes output.
   void WriteInterestingOneParticleWavefunctionsToFile() const; ///Writes output.
+  void WriteKGLPointsToFile() const;
 
 
   void WriteInterestingTwoParticleWavefunctionsToFile() const;

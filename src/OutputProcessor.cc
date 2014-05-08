@@ -33,6 +33,7 @@ void OutputProcessor::WritePostOutput() const
   WritePotentialToFile();
   WritePotentialPrecisionToFile();
   WriteKCurveToFile();
+  WriteKGLPointsToFile();
   WriteKFoundToFile();
   WriteEnergiesToFile();
   SavePrimaryEigenvectors();
@@ -167,6 +168,36 @@ void OutputProcessor::WriteKCurveToFile() const
 	  for(vector<pair<ComplexDouble, ComplexDouble> >::const_iterator it = rule->begin(); it != rule->end(); ++it)
 		{
 		  fprintf(fout, "%+13.10e %+13.10e\n", real(it->first), imag(it->first));
+		}
+	}
+  
+  fclose(fout);
+  fout = NULL;
+  
+  vPrint(4, "done\n");
+}
+
+
+void OutputProcessor::WriteKGLPointsToFile() const
+{
+  string fileName = config->GetOutputFilenames()->Get("KGLPoints");
+
+  if(fileName.empty() )
+	{
+	  vPrint(4, "Empty KCurve filename, not saving.\n");
+	  return;
+	}
+
+  vPrint(4, "Saving K-curve...");
+  ParametrizedCurve * toPrint = config->GetKCurve();
+  FILE * fout = AssuredFopen(fileName);
+
+  for(ulong i = 0; i<toPrint->GetNumberOfSegments(); ++i)
+	{
+	  const vector<pair<ComplexDouble, ComplexDouble> > * rule = toPrint->GetSegmentRule(i);
+	  for(vector<pair<ComplexDouble, ComplexDouble> >::const_iterator it = rule->begin(); it != rule->end(); ++it)
+		{
+		  fprintf(fout, "%+13.10e %+13.10e\n", real(it->second), imag(it->second));
 		}
 	}
   

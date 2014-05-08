@@ -23,7 +23,7 @@
 using namespace std;
 using namespace libconfig;
 
-#define CONFIG_FILE_VERSION 0.41
+#define CONFIG_FILE_VERSION 0.42
 
 
 enum ExpectedMatrixType
