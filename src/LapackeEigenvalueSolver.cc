@@ -42,11 +42,11 @@ EigenInformation * LapackeEigenvalueSolver::Solve(CMatrix * toSolve, bool Comput
 
   if(ComputeEigenvectors)
 	{
-	  for(ulong i = 0; i<n; ++i)
+	  for(long long i = 0; i<n; ++i)
 		{
 		  toReturn->EigenPairs[i].Eigenvector.resize(n);
 		}
-	  for(ulong i = 0; i<n*n; ++i)
+	  for(long long i = 0; i<n*n; ++i)
 		{
 		  toReturn->EigenPairs[i%n].Eigenvector[i/n] = vr.at(i);
 		}
