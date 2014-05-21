@@ -188,7 +188,7 @@ void OutputProcessor::WriteKGLPointsToFile() const
 	  return;
 	}
 
-  vPrint(4, "Saving K-curve...");
+  vPrint(4, "Saving GL-points...");
   ParametrizedCurve * toPrint = config->GetKCurve();
   FILE * fout = AssuredFopen(fileName);
 
