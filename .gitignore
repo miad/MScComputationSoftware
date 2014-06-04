@@ -39,4 +39,4 @@ src/fpoptimizer.cc
 *.conf
 ARPACK/ARmake.inc
 *.mp4
-ThesisRuns/TwoParticle1/FullEigenv/eigBig1.tar.gz
+AuxScripts/*
